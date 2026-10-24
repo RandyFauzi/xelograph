@@ -1,0 +1,1055 @@
+/* Bright campus: original Xelograph styling inspired by the clarity of a miniature world. */
+:root {
+  --world-blue: #2877cd;
+  --world-navy: #213d55;
+  --world-green: #78ad4e;
+  --world-paper: #fbfcf8;
+  --world-line: #dce5dc;
+}
+.boot-screen {
+  position: fixed;
+  inset: 0;
+  background: #eff5e7;
+  color: var(--world-navy);
+}
+.game-screen {
+  background: #c7e0ee;
+}
+.game-vignette {
+  box-shadow: inset 0 0 80px #597f7712;
+}
+.title-shade {
+  background: linear-gradient(
+    90deg,
+    #fbfcf8 0%,
+    #fbfcf8 25%,
+    #fbfcf8f7 31%,
+    #fbfcf8c7 37%,
+    #fbfcf800 55%
+  );
+}
+.title-menu {
+  left: 5.5%;
+  max-width: 460px;
+  transform: translateY(-43%);
+  color: var(--world-navy);
+}
+.title-menu h1 {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: clamp(53px, 5.1vw, 79px);
+  line-height: 1.03;
+  letter-spacing: -3px;
+  font-weight: 650;
+  color: var(--world-navy);
+  margin: 25px 0;
+}
+.title-menu h1 em {
+  font-style: normal;
+  color: var(--world-blue);
+  font-weight: 650;
+}
+.title-kicker {
+  font-size: 9px;
+  letter-spacing: 1.8px;
+  color: #6d8d62;
+}
+.title-kicker > span {
+  background: #81a26b;
+}
+.title-menu > p {
+  color: #708271;
+  font-size: 13px;
+  line-height: 1.9;
+  max-width: 370px;
+}
+.title-header {
+  left: 5.5%;
+  right: 3%;
+  top: 32px;
+}
+.game-logo {
+  font-size: 30px;
+  color: var(--world-navy);
+  font-weight: 700;
+  letter-spacing: -1.6px;
+}
+.game-logo > span {
+  color: #6f8d69;
+  font-size: 8px;
+  letter-spacing: 3px;
+}
+.game-edition {
+  color: #34584c;
+  text-shadow: none;
+  background: #ffffff9c;
+  padding: 9px 13px;
+  border-radius: 8px;
+  font-size: 8px;
+}
+.title-header .game-icon {
+  background: #ffffffea;
+  color: var(--world-navy);
+  border-color: #edf2e5;
+  box-shadow: 0 3px 15px #3e665713;
+}
+.play-button {
+  background: var(--world-blue);
+  border-color: var(--world-blue);
+  color: #fff;
+  box-shadow: 0 5px 14px #2877cd20;
+  font-weight: 550;
+  border-radius: 9px;
+}
+.play-button:hover {
+  background: #1c68bd;
+}
+.explore-button {
+  background: #fff;
+  border-color: #d7e0d9;
+  color: #354e62;
+  border-radius: 9px;
+  font-size: 13px;
+}
+.title-resume {
+  color: #697f71;
+  font-size: 11px;
+}
+.title-footnote {
+  color: #7a8a73;
+}
+.title-footnote i {
+  background: #d5dfcd;
+}
+.title-bottom {
+  color: #6d8170;
+  letter-spacing: 0.7px;
+  font-size: 8px;
+}
+.title-bottom > span:last-child {
+  color: #f8fff3;
+  background: #42664c73;
+  backdrop-filter: blur(6px);
+  border-radius: 5px;
+  padding: 5px 8px;
+}
+.title-world-caption {
+  color: #fff;
+  text-shadow: 0 2px 10px #315a446b;
+}
+.title-world-caption b {
+  font-family: 'Segoe UI', sans-serif;
+  font-style: normal;
+  font-size: 23px;
+  font-weight: 500;
+}
+.title-world-caption small {
+  font-size: 7px;
+}
+.caption-rule {
+  background: #d5e9f2;
+}
+.title-menu + .title-world-caption {
+  bottom: 12%;
+}
+.game-demo {
+  color: #546f685e;
+}
+.at-title .game-demo {
+  left: 5.5%;
+  transform: none;
+  bottom: 9px;
+  font-size: 7px;
+}
+.is-playing .game-demo {
+  font-size: 7px;
+  opacity: 0.6;
+}
+.game-hud {
+  left: 22px;
+  right: 22px;
+  top: 22px;
+}
+.player-card {
+  background: #fffffff0;
+  border-color: #fff;
+  color: var(--world-navy);
+  box-shadow: 0 4px 20px #325c4720;
+  min-width: 220px;
+  border-radius: 11px;
+  padding: 8px 12px 8px 8px;
+  backdrop-filter: blur(12px);
+}
+.hud-portrait {
+  width: 43px;
+  height: 43px;
+  border: 2px solid #e5eddb;
+  background: #dceac6;
+}
+.player-card small {
+  color: #90a08c;
+  font-size: 6px;
+}
+.player-card b {
+  font-size: 15px;
+  font-weight: 600;
+}
+.player-card em {
+  font-size: 8px;
+  color: #80917b;
+}
+.player-level {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 20px;
+  color: var(--world-blue);
+  border-left-color: #dce6d8;
+}
+.player-level small {
+  font-size: 8px;
+  color: #8d9b8a;
+}
+.game-location {
+  display: none;
+}
+.hud-actions {
+  gap: 8px;
+}
+.game-icon {
+  background: #fffffff2;
+  border-color: #fff;
+  color: #284e68;
+  box-shadow: 0 3px 13px #365d3c1c;
+  width: 43px;
+  height: 43px;
+  border-radius: 10px;
+}
+.game-icon:hover {
+  background: #eaf3fb;
+}
+.game-icon > span {
+  background: var(--world-blue);
+  border-color: #fff;
+  color: #fff;
+  font-size: 8px;
+}
+.quest-tracker {
+  left: 50%;
+  transform: translateX(-50%);
+  top: 22px;
+  width: 290px;
+  border-color: #fff;
+  background: #ffffffed;
+  box-shadow: 0 4px 20px #325c4720;
+  padding: 10px 13px;
+  border-radius: 11px;
+}
+.quest-track-heading {
+  display: none;
+}
+.tracked-quest {
+  padding: 0;
+  gap: 10px;
+}
+.quest-diamond {
+  height: 35px;
+  width: 35px;
+  background: var(--world-blue);
+  border-color: var(--world-blue);
+  color: #fff;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.tracked-quest b {
+  font-size: 12px;
+  font-weight: 600;
+}
+.tracked-quest small {
+  color: #8c9a87;
+  font-size: 9px;
+  margin-top: 4px;
+}
+.tracked-quest > svg {
+  color: var(--world-blue);
+}
+.quest-track-bottom {
+  margin-left: 45px;
+  padding-top: 6px;
+  border: 0;
+}
+.quest-beads {
+  gap: 3px;
+}
+.quest-beads i {
+  height: 3px;
+  width: 15px;
+  border-radius: 3px;
+  background: #e0e7dd;
+}
+.quest-beads i.filled {
+  background: var(--world-blue);
+}
+.quest-track-bottom > button {
+  color: var(--world-blue);
+  font-size: 8px;
+  min-height: 20px;
+  padding: 0;
+}
+.world-minimap {
+  background: #fffffff2;
+  border-color: #fff;
+  border-radius: 50%;
+  width: 127px;
+  height: 127px;
+  padding: 8px;
+  top: auto;
+  right: auto;
+  left: 25px;
+  bottom: 195px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px #325c4720;
+}
+.world-minimap > span {
+  position: absolute;
+  top: 7px;
+  left: calc(50% - 4px);
+  z-index: 1;
+  background: #fff;
+  border-radius: 50%;
+  width: 12px;
+  height: 12px;
+  font-size: 7px;
+  padding-top: 2px;
+}
+.world-minimap svg {
+  height: 100%;
+  border-radius: 50%;
+  opacity: 1;
+}
+.world-minimap > small {
+  display: none;
+}
+.world-presence {
+  background: #ffffffe8;
+  color: #6d886e;
+  text-shadow: none;
+  font-size: 9px;
+  border: 1px solid #fff;
+  box-shadow: 0 3px 12px #33593f12;
+}
+.world-presence i {
+  background: #79ab5c;
+}
+.journal-shortcut {
+  background: #fffef5ed;
+  color: #3e6073;
+  border-color: #fff;
+  box-shadow: 0 3px 12px #33593f12;
+}
+.journal-shortcut kbd {
+  border-color: #d3dfd7;
+  color: #7c9184;
+}
+.guest-create {
+  background: var(--world-blue);
+  color: #fff;
+  border-color: #fff;
+  box-shadow: 0 4px 18px #2877cd26;
+}
+.analog-joystick {
+  background: #ffffff45;
+  border-color: #fff9;
+  box-shadow:
+    inset 0 0 0 10px #ffffff0a,
+    0 4px 18px #345b4321;
+}
+.joystick-thumb {
+  background: linear-gradient(135deg, #ffffffd9, #c4dcea9c);
+  border-color: #fff;
+  box-shadow: 0 4px 12px #31557525;
+}
+.joystick-axis {
+  background: #ffffff65;
+}
+.analog-control > span {
+  color: #355c4b;
+  text-shadow: 0 1px 5px #fff9;
+  font-size: 7px;
+}
+.run-button {
+  background: #fffffff0;
+  color: var(--world-blue);
+  border-color: #fff;
+  box-shadow: 0 4px 20px #325c4720;
+}
+.run-button:active {
+  background: #e0eefb;
+}
+.game-viewport .interact {
+  background: var(--world-blue);
+  border-color: #b4d8ff;
+  color: #fff;
+  box-shadow: 0 4px 20px #2877cd30;
+}
+.interact-key {
+  background: #ffffff26;
+  color: #fff;
+}
+.interact small {
+  color: #d8ebff;
+}
+.world-controls > span {
+  background: #ffffffc9;
+  color: #54715b;
+  text-shadow: none;
+}
+.world-controls kbd {
+  border-color: #c5d6c1;
+}
+.world-controls i {
+  background: #bacfba;
+}
+.world-controls > button {
+  background: #fffffff0;
+  border-color: #fff;
+  color: var(--world-blue);
+}
+.navigation-status {
+  background: #fff;
+  color: var(--world-blue);
+  border-color: #fff;
+  box-shadow: 0 4px 15px #315a3024;
+}
+.navigation-status > button {
+  border-left-color: #d8e7ef;
+  color: #7e97a2;
+}
+.game-viewport .map-pin > span {
+  background: #fff;
+  color: var(--world-blue);
+  border-color: #d8eaff;
+}
+.game-viewport .map-pin.next > span {
+  background: var(--world-blue);
+  color: #fff;
+  border-color: #fff;
+  box-shadow:
+    0 0 0 4px #3c8deb26,
+    0 3px 12px #3c6d8e33;
+}
+.game-viewport .map-pin b {
+  background: #fffffff5;
+  color: #35566b;
+  border-color: #fff;
+  box-shadow: 0 3px 10px #315a4426;
+}
+.game-viewport .map-pin.done > span {
+  background: #78a96b;
+  border-color: #edf5df;
+  color: #fff;
+}
+.game-viewport .map-pin.locked > span {
+  background: #81939499;
+  color: #fff;
+  border-color: #d8e0da88;
+}
+.game-viewport .player-label {
+  background: #fff;
+  color: var(--world-blue);
+  border-color: #e1effa;
+  font-weight: 600;
+}
+.game-viewport .alumni-tag {
+  background: #fff;
+  color: #537653;
+  border-color: #e8f0e3;
+}
+.game-app .modal {
+  background: #fbfcf8;
+  border-color: #fff;
+}
+.game-app .modal h2 {
+  color: var(--world-navy);
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-weight: 600;
+  letter-spacing: -1.5px;
+  font-size: 33px;
+}
+.game-app .modal h2 em {
+  font-style: normal;
+  color: var(--world-blue);
+}
+.game-app .modal-close {
+  background: #edf3e9;
+  color: #668261;
+}
+.game-app .dialog-eyebrow {
+  color: var(--world-blue);
+}
+.game-app .dialog-description {
+  color: #85917d;
+}
+.game-app .modal .primary {
+  background: var(--world-blue);
+  border-color: var(--world-blue);
+}
+.game-app .option {
+  background: #fff;
+  border-color: #dfe8d9;
+}
+.game-app .option.selected {
+  background: #edf5fe;
+  border-color: #6da4d9;
+}
+.game-app .selected .option-check {
+  background: var(--world-blue);
+  border-color: var(--world-blue);
+}
+.game-app .concept-notes {
+  background: #eff3e9;
+}
+.game-app .field input,
+.game-app .field textarea {
+  background: #fff;
+  border-color: #dce7d6;
+}
+.game-app .toast {
+  background: #fff;
+  color: #345c51;
+  border-color: #dbe8d2;
+  box-shadow: 0 5px 25px #345b4430;
+}
+.quest-journal article {
+  background: #f0f5e9;
+  border-color: #dce7d4;
+}
+.journal-symbol {
+  background: #dfebd5;
+  color: #77995e;
+}
+.quest-finished .journal-symbol {
+  background: var(--world-blue);
+  color: #fff;
+}
+.quest-journal h3 {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-weight: 500;
+  font-size: 19px;
+}
+.game-alumni-list > button {
+  background: #f1f6ea;
+  border-color: #dce7d4;
+}
+.settings-list > button {
+  background: #f0f5e9;
+  border-color: #dce7d4;
+}
+.settings-list > button > span {
+  color: #3d5d51;
+}
+@media (max-width: 1100px) {
+  .title-menu {
+    max-width: 390px;
+    left: 5%;
+  }
+  .title-menu h1 {
+    font-size: 60px;
+  }
+  .title-shade {
+    background: linear-gradient(90deg, #fbfcf8 0%, #fbfcf8f5 30%, #fbfcf8a3 43%, transparent 62%);
+  }
+  .quest-tracker {
+    width: 250px;
+  }
+  .player-card {
+    min-width: 190px;
+  }
+  .player-card em {
+    display: none;
+  }
+  .player-level {
+    margin-left: 0;
+    padding-left: 10px;
+  }
+  .game-hud {
+    left: 17px;
+    right: 17px;
+  }
+  .quest-beads i {
+    width: 11px;
+  }
+}
+@media (max-width: 760px) {
+  .title-shade {
+    background: linear-gradient(
+      0deg,
+      #fbfcf8 0%,
+      #fbfcf8fc 29%,
+      #fbfcf8d9 42%,
+      #fbfcf84d 65%,
+      #fbfcf800 82%
+    );
+  }
+  .title-header {
+    left: 25px;
+    right: 22px;
+    top: 25px;
+  }
+  .title-menu {
+    left: 27px;
+    right: 27px;
+    max-width: none;
+    bottom: 65px;
+    top: auto;
+    transform: none;
+  }
+  .title-menu h1 {
+    font-size: 55px;
+    line-height: 1.03;
+    letter-spacing: -2.4px;
+    margin: 20px 0 16px;
+  }
+  .title-menu > p {
+    font-size: 12px;
+    margin-bottom: 20px;
+  }
+  .title-kicker {
+    font-size: 8px;
+  }
+  .title-bottom {
+    left: 27px;
+    bottom: 25px;
+  }
+  .at-title .game-demo {
+    left: 27px;
+    font-size: 6px;
+    bottom: 8px;
+  }
+  .title-bottom > span:last-child {
+    display: none;
+  }
+  .game-logo {
+    font-size: 27px;
+  }
+  .title-footnote {
+    margin-top: 14px;
+    font-size: 9px;
+  }
+  .title-resume {
+    font-size: 10px;
+  }
+  .play-button {
+    font-size: 13px;
+    min-height: 51px;
+  }
+  .explore-button {
+    font-size: 12px;
+    min-height: 45px;
+  }
+  .game-hud {
+    top: 15px;
+    left: 14px;
+    right: 14px;
+  }
+  .player-card {
+    min-width: 0;
+    padding: 6px 8px 6px 6px;
+    gap: 7px;
+    max-width: 190px;
+  }
+  .hud-portrait {
+    width: 35px;
+    height: 35px;
+  }
+  .player-card b {
+    font-size: 12px;
+  }
+  .player-card small {
+    font-size: 5px;
+  }
+  .player-level {
+    display: none;
+  }
+  .hud-actions {
+    gap: 6px;
+  }
+  .game-icon {
+    width: 41px;
+    height: 41px;
+  }
+  .quest-tracker {
+    left: 14px;
+    transform: none;
+    top: 79px;
+    width: 234px;
+    padding: 9px 11px;
+  }
+  .quest-diamond {
+    height: 29px;
+    width: 29px;
+    font-size: 9px;
+  }
+  .tracked-quest b {
+    font-size: 11px;
+  }
+  .tracked-quest small {
+    font-size: 8px;
+  }
+  .quest-track-bottom {
+    margin-left: 39px;
+    padding-top: 4px;
+  }
+  .quest-beads i {
+    width: 12px;
+    height: 3px;
+  }
+  .quest-track-bottom > button {
+    font-size: 7px;
+  }
+  .world-minimap {
+    left: auto;
+    right: 15px;
+    bottom: auto;
+    top: 78px;
+    width: 85px;
+    height: 85px;
+    padding: 5px;
+  }
+  .world-minimap > span {
+    top: 3px;
+    font-size: 6px;
+    width: 10px;
+    height: 10px;
+    left: calc(50% - 5px);
+  }
+  .game-app .modal h2 {
+    font-size: 29px;
+  }
+  .world-presence {
+    font-size: 7px;
+  }
+  .journal-shortcut {
+    font-size: 10px;
+  }
+  .title-header .game-icon {
+    width: 42px;
+    height: 42px;
+  }
+  .game-viewport .interact {
+    font-size: 12px;
+  }
+}
+@media (max-width: 400px) {
+  .title-menu {
+    left: 24px;
+    right: 24px;
+    bottom: 60px;
+  }
+  .title-menu h1 {
+    font-size: 48px;
+  }
+  .title-menu > p {
+    font-size: 11px;
+  }
+  .title-kicker {
+    font-size: 7px;
+  }
+  .title-footnote {
+    font-size: 8px;
+  }
+  .title-header {
+    left: 24px;
+  }
+  .player-card {
+    max-width: 175px;
+  }
+  .hud-portrait {
+    width: 31px;
+    height: 31px;
+  }
+  .player-card b {
+    font-size: 11px;
+  }
+  .game-hud {
+    left: 12px;
+    right: 12px;
+    gap: 7px;
+  }
+  .game-icon {
+    width: 38px;
+    height: 38px;
+  }
+  .quest-tracker {
+    left: 12px;
+    width: 216px;
+    top: 72px;
+  }
+  .world-minimap {
+    right: 13px;
+    top: 72px;
+    width: 75px;
+    height: 75px;
+  }
+  .quest-beads i {
+    width: 10px;
+  }
+  .tracked-quest b {
+    font-size: 10px;
+  }
+  .quest-track-bottom > button {
+    font-size: 7px;
+  }
+}
+@media (orientation: landscape) and (max-height: 620px) {
+  .title-shade {
+    background: linear-gradient(90deg, #fbfcf8 0%, #fbfcf8f7 31%, #fbfcf896 44%, transparent 67%);
+  }
+  .title-menu {
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-39%);
+    max-width: 370px;
+    left: 40px;
+    right: auto;
+  }
+  .title-menu h1 {
+    font-size: 48px;
+    margin: 15px 0;
+  }
+  .title-menu > p {
+    font-size: 11px;
+    margin-bottom: 15px;
+  }
+  .title-header {
+    top: 17px;
+    left: 30px;
+  }
+  .title-buttons {
+    max-width: 350px;
+  }
+  .title-kicker {
+    font-size: 7px;
+  }
+  .title-bottom {
+    bottom: 15px;
+    left: 30px;
+  }
+  .game-logo {
+    font-size: 24px;
+  }
+  .quest-tracker {
+    left: 50%;
+    transform: translateX(-50%);
+    top: 13px;
+    width: 230px;
+    padding: 8px 10px;
+  }
+  .player-card {
+    min-width: 0;
+    max-width: 180px;
+  }
+  .player-card em {
+    display: none;
+  }
+  .player-card small {
+    font-size: 5px;
+  }
+  .player-card b {
+    font-size: 12px;
+  }
+  .hud-portrait {
+    width: 33px;
+    height: 33px;
+  }
+  .player-level {
+    display: none;
+  }
+  .game-hud {
+    top: 13px;
+  }
+  .quest-diamond {
+    width: 28px;
+    height: 28px;
+  }
+  .tracked-quest b {
+    font-size: 10px;
+  }
+  .tracked-quest small {
+    font-size: 8px;
+  }
+  .quest-track-bottom {
+    margin-left: 38px;
+    padding-top: 3px;
+  }
+  .quest-track-bottom > button {
+    font-size: 7px;
+    min-height: 15px;
+  }
+  .quest-beads i {
+    width: 11px;
+  }
+  .world-minimap {
+    top: 76px;
+    bottom: auto;
+    left: auto;
+    right: 18px;
+    width: 78px;
+    height: 78px;
+  }
+}
+
+.jump-button {
+  position: absolute;
+  right: 114px;
+  bottom: 35px;
+  z-index: 22;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  background: #2877cdeb;
+  color: #fff;
+  box-shadow: 0 4px 20px #2877cd30;
+  touch-action: none;
+  user-select: none;
+}
+.jump-button span {
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+.jump-button:active {
+  transform: scale(0.94);
+  background: #1d68b8;
+}
+.game-viewport .interact {
+  right: 26px;
+  bottom: 133px;
+}
+.game-viewport .world-controls {
+  right: 205px;
+  bottom: 40px;
+}
+.world-controls > button {
+  margin-bottom: 0;
+}
+.overview-caption {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  background: #fffffff0;
+  color: #47677c;
+  border: 1px solid #fff;
+  border-radius: 11px;
+  padding: 12px 18px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 4px 20px #315c3433;
+  white-space: nowrap;
+}
+.overview-caption button {
+  background: #2877cd;
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  padding: 9px 12px;
+  font-size: 10px;
+}
+@media (max-width: 760px) {
+  .jump-button {
+    right: 98px;
+    bottom: 38px;
+    width: 63px;
+    height: 63px;
+  }
+  .game-viewport .world-controls {
+    display: none;
+  }
+  .game-bottom-center .world-presence {
+    display: none;
+  }
+  .journal-shortcut > span {
+    display: none;
+  }
+  .journal-shortcut {
+    width: 42px;
+    height: 42px;
+    justify-content: center;
+    padding: 0;
+    border-radius: 50%;
+  }
+  .journal-shortcut > svg {
+    width: 19px;
+    height: 19px;
+  }
+  .game-bottom-center {
+    bottom: 28px;
+  }
+  .overview-caption {
+    bottom: 110px;
+    width: calc(100vw - 30px);
+    white-space: normal;
+    font-size: 10px;
+    gap: 12px;
+    padding: 11px 14px;
+  }
+  .overview-caption button {
+    flex-shrink: 0;
+    font-size: 9px;
+  }
+  .game-viewport .interact {
+    right: 20px;
+    bottom: 125px;
+  }
+}
+@media (max-width: 400px) {
+  .jump-button {
+    right: 88px;
+    width: 57px;
+    height: 57px;
+  }
+  .jump-button span {
+    font-size: 7px;
+  }
+  .journal-shortcut {
+    width: 38px;
+    height: 38px;
+  }
+  .game-bottom-center {
+    bottom: 27px;
+  }
+}
+@media (max-width: 350px) {
+  .game-bottom-center {
+    left: 45%;
+  }
+}
+@media (orientation: landscape) and (max-height: 620px) {
+  .jump-button {
+    right: 94px;
+    bottom: 22px;
+    width: 56px;
+    height: 56px;
+  }
+  .game-viewport .interact {
+    bottom: 96px;
+    right: 22px;
+  }
+  .game-viewport .world-controls {
+    right: 165px;
+    bottom: 24px;
+  }
+  .guest-create {
+    right: 210px;
+    bottom: 24px;
+  }
+  .overview-caption {
+    bottom: 25px;
+  }
+}

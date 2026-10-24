@@ -1,0 +1,109 @@
+# Arsitektur & data
+
+## Keputusan implementasi
+
+Next.js App Router + React + TypeScript untuk antarmuka, Three.js melalui React Three Fiber untuk dunia, Express untuk API, SQLite untuk penyimpanan lokal persisten. Scene dimuat lewat dynamic import tanpa SSR; halaman panitia berada dalam bundle route /admin terpisah. Next.js meneruskan /api ke Express internal pada 127.0.0.1:3002, sehingga cookie dan frontend tetap memakai satu origin. Node 24 menyediakan SQLite bawaan. Supabase dapat menjadi jalur migrasi untuk hosting multi-instance; implementasi ini memakai SQLite.
+
+```mermaid
+flowchart LR
+  UI[React: creator / survei / direktori] --> API[Express API]
+  World[Three.js: dunia & avatar GLB] --> UI
+  API --> DB[(SQLite persisten)]
+  Blender[Blender: sumber aset] --> GLB[GLB lokal]
+  GLB --> World
+  Admin[Dashboard panitia] --> API
+```
+
+## Relasi database
+
+```mermaid
+erDiagram
+  ALUMNI ||--|| RESPONSES : memiliki
+  ALUMNI ||--o{ CHECKPOINT_PROGRESS : menyelesaikan
+  ALUMNI ||--o{ SESSIONS : mengakses
+  ALUMNI o|--o{ INVITATIONS : diikat
+  ALUMNI {
+    text id PK
+    text full_name
+    text nickname
+    text whatsapp UK
+    json avatar_json
+    boolean consent_public
+    datetime consent_at
+  }
+  RESPONSES {
+    text alumni_id PK,FK
+    json answers_json
+    datetime completed_at
+    datetime updated_at
+  }
+  CHECKPOINT_PROGRESS {
+    text alumni_id PK,FK
+    integer checkpoint PK
+    datetime completed_at
+  }
+  INVITATIONS {
+    text code_hash PK
+    text label
+    text alumni_id FK
+  }
+  SESSIONS {
+    text token_hash PK
+    text alumni_id FK
+    integer expires_at
+  }
+```
+
+Jawaban menggunakan objek JSON dengan whitelist nilai dan validasi per checkpoint di `server/domain.mjs`. Ini menjaga kontrak sederhana untuk tujuh checkpoint tetap sambil memungkinkan ekspor. Kolom status final terpisah dari JSON; progres memakai primary key gabungan agar satu checkpoint tidak dihitung dua kali. SQLite menyediakan constraint JSON valid, foreign key, dan nomor WhatsApp unik. Untuk analitik besar, pindahkan jawaban kategori ke tabel/kolom bertipe dan agregasikan melalui SQL.
+
+## Kontrak jawaban
+
+| Checkpoint | Kunci                  | Bentuk                                     |
+| ---------- | ---------------------- | ------------------------------------------ |
+| 0          | concept                | fun / bukber / both / unsure               |
+| 1          | attendance             | yes / maybe / no                           |
+| 2          | committee, department  | kategori + array bidang                    |
+| 3          | activities, production | array kegiatan + kategori                  |
+| 4          | venue, venueNote       | kategori + teks opsional; wajib jika other |
+| 5          | contribution, sponsor  | dua kategori independen                    |
+| 6          | message                | teks opsional, maksimal 1.000 karakter     |
+
+Status hadir tidak menyatakan kesediaan membantu. Panitia aktif yang tidak bisa hadir tetap memiliki badge Crew. Penempatan utama: `attendance=no` → supporter; selebihnya `committee=active/occasional` → crew; lainnya → plaza. Kehadiran mungkin belum menjadi kepastian hadir. Dashboard menghitung angka sesuai nilai aslinya, bukan menganggap semua penghuni plaza pasti hadir.
+
+## Alur penyimpanan
+
+1. Kode undangan diperiksa; kode terikat memulihkan profil yang sama.
+2. Pendaftaran baru memvalidasi nama, WhatsApp, avatar, dan izin data; insert profil + respons + ikatan undangan dalam transaksi.
+3. Server membuat token sesi acak 256-bit di cookie HttpOnly, SameSite=Lax, Secure pada produksi. Hanya hash token disimpan.
+4. PUT checkpoint memvalidasi hanya kunci checkpoint terkait, menolak lompatan ke checkpoint masa depan, merge jawaban, lalu update progres dalam transaksi. Pertanyaan berikutnya tidak dibuka langsung; client kembali ke dunia dan membuka area baru.
+5. POST complete hanya berhasil jika ketujuh checkpoint ada. Waktu selesai pertama dipertahankan saat memperbarui jawaban.
+6. Endpoint world memproyeksikan hanya alumni selesai dan setuju: ID acak, panggilan, avatar, area, badge. Tidak mengembalikan WhatsApp, nama lengkap, atau pesan.
+7. Keluar menghapus sesi terkait. Menarik persetujuan menghilangkan avatar pada pembaruan dunia berikutnya. Client memuat dunia ulang setiap 60 detik; perubahan sendiri diperbarui segera.
+
+## Endpoint
+
+| Endpoint                     | Akses            | Tujuan                                 |
+| ---------------------------- | ---------------- | -------------------------------------- |
+| GET /api/config              | publik           | mode dan konfigurasi demo              |
+| POST /api/join               | undangan         | buat / pulihkan identitas              |
+| POST /api/resume             | undangan terikat | masuk ulang                            |
+| GET /api/me                  | sesi             | profil, jawaban, progres milik sendiri |
+| POST /api/logout             | sesi opsional    | cabut sesi saat ini                    |
+| PUT /api/answers/:index      | sesi             | simpan checkpoint                      |
+| POST /api/complete           | sesi             | finalisasi                             |
+| PATCH /api/profile           | sesi             | ubah izin tampil                       |
+| GET /api/world               | publik           | direktori avatar yang diizinkan        |
+| GET /api/admin               | bearer admin     | respons lengkap untuk panitia          |
+| DELETE /api/admin/alumni/:id | bearer admin     | hapus profil dan data terkait          |
+
+API memakai prepared statements, batas payload 16 KB, pemeriksaan Origin untuk perubahan data, cache no-store, dan pembatasan 1.200 permintaan per IP per menit untuk mengakomodasi Wi-Fi reuni bersama. Origin frontend eksplisit diterima hanya melalui koneksi loopback dari proxy Next.js. Atur PUBLIC_ORIGIN pada hosting. Rate limiter lokal memadai untuk server tunggal; proxy harus menambahkan limit login yang sesuai jaringan alumni. Jangan mengaktifkan trust proxy tanpa daftar proxy yang dipercaya. Bearer admin diperiksa dengan perbandingan hash constant-time; tidak dikirim melalui URL atau disimpan di localStorage.
+
+## Performa dan audio
+
+World GLB memakai Meshopt dengan decoder lokal. Dekorasi dibatch per material, sementara penghalang kamera tetap terpisah untuk fading. Avatar publik di Reunion Commons menggunakan instancing berdasarkan material dan rambut, dengan warna per instance dan label hanya dekat pemain. Kualitas DPR dan shadow diturunkan saat performa turun. Penempatan tetap mendukung seluruh alumni tanpa batas render 16/32.
+
+Web Audio menghasilkan BGM dan efek original tanpa file jaringan. AudioContext dibuat setelah gesture pengguna; tab tersembunyi menghentikan scheduler dan menangguhkan context. Preferensi mute/volume disimpan di localStorage, sedangkan profil dan jawaban tetap di SQLite.
+
+## Batas cakupan
+
+Belum ada pemulihan undangan otomatis, verifikasi WhatsApp, dashboard multi-peran, audit trail admin, sinkronisasi gerak, atau deployment. Identitas berbasis kepemilikan kode undangan, bukan bukti kepemilikan nomor WhatsApp. Seluruh akses profil bergantung pada kode atau cookie sesi. Perubahan identitas dilakukan panitia lewat proses terkontrol di luar UI; penghapusan sudah tersedia.

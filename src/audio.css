@@ -1,0 +1,74 @@
+.audio-settings {
+  border: 1px solid #dce6d4;
+  border-radius: 11px;
+  padding: 15px 17px;
+  margin: 0 0 22px;
+  background: #f1f6ea;
+  color: #47654e;
+  min-width: 0;
+}
+.audio-settings legend {
+  font-size: 12px;
+  padding: 0 7px;
+  font-weight: 500;
+}
+.audio-settings > label {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  gap: 8px;
+  margin: 12px 0 17px;
+}
+.audio-settings input[type='range'] {
+  width: 100%;
+  accent-color: #2877cd;
+  min-height: 28px;
+  margin: 0;
+}
+.audio-settings output {
+  font-size: 10px;
+  color: #819277;
+}
+.audio-settings .audio-toggle {
+  margin-top: 0;
+  min-height: 32px;
+}
+.audio-settings .audio-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: #2877cd;
+}
+.audio-settings p {
+  font-size: 10px;
+  line-height: 1.8;
+  color: #8b997d;
+  margin-bottom: 0;
+}
+.player-card > span:nth-child(2) {
+  min-width: 0;
+}
+.player-card b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 125px;
+}
+.hud-actions {
+  flex-shrink: 0;
+}
+@media (max-width: 400px) {
+  .player-card b {
+    max-width: 65px;
+  }
+  .player-card > span:nth-child(2) > small {
+    display: none;
+  }
+  .audio-settings {
+    padding: 12px;
+  }
+  .audio-settings > label {
+    font-size: 11px;
+  }
+}
