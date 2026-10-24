@@ -2,7 +2,7 @@
 
 ## Keputusan implementasi
 
-Next.js App Router + React + TypeScript untuk antarmuka, Three.js melalui React Three Fiber untuk dunia, Express untuk API, SQLite untuk penyimpanan lokal persisten. Scene dimuat lewat dynamic import tanpa SSR; halaman panitia berada dalam bundle route /admin terpisah. Next.js meneruskan /api ke Express internal pada 127.0.0.1:3002, sehingga cookie dan frontend tetap memakai satu origin. Node 24 menyediakan SQLite bawaan. Supabase dapat menjadi jalur migrasi untuk hosting multi-instance; implementasi ini memakai SQLite.
+Next.js App Router + React + TypeScript untuk antarmuka dan route API Node.js. Three.js melalui React Three Fiber untuk dunia; SQLite Node 24 menyimpan data di disk persisten. API memakai Web Request/Response langsung dalam server Next.js standalone. Express hanya adapter opsional untuk CLI/pengujian, dengan handler yang sama; tidak ada proxy atau proses API tambahan. Halaman panitia dimuat dalam bundle /admin terpisah.
 
 ```mermaid
 flowchart LR
@@ -96,7 +96,7 @@ Status hadir tidak menyatakan kesediaan membantu. Panitia aktif yang tidak bisa 
 | GET /api/admin               | bearer admin     | respons lengkap untuk panitia          |
 | DELETE /api/admin/alumni/:id | bearer admin     | hapus profil dan data terkait          |
 
-API memakai prepared statements, batas payload 16 KB, pemeriksaan Origin untuk perubahan data, cache no-store, dan pembatasan 1.200 permintaan per IP per menit untuk mengakomodasi Wi-Fi reuni bersama. Origin frontend eksplisit diterima hanya melalui koneksi loopback dari proxy Next.js. Atur PUBLIC_ORIGIN pada hosting. Rate limiter lokal memadai untuk server tunggal; proxy harus menambahkan limit login yang sesuai jaringan alumni. Jangan mengaktifkan trust proxy tanpa daftar proxy yang dipercaya. Bearer admin diperiksa dengan perbandingan hash constant-time; tidak dikirim melalui URL atau disimpan di localStorage.
+API memakai prepared statements, batas payload 16 KB, pemeriksaan Origin untuk perubahan data, cache no-store, dan pembatasan 1.200 permintaan per IP per menit untuk mengakomodasi Wi-Fi reuni bersama. Origin frontend diperiksa terhadap host atau PUBLIC_ORIGIN eksplisit pada adapter Next.js. Atur PUBLIC_ORIGIN pada hosting. Rate limiter lokal memadai untuk server tunggal; proxy harus menambahkan limit login yang sesuai jaringan alumni. Jangan mengaktifkan trust proxy tanpa daftar proxy yang dipercaya. Bearer admin diperiksa dengan perbandingan hash constant-time; tidak dikirim melalui URL atau disimpan di localStorage.
 
 ## Performa dan audio
 

@@ -16,7 +16,7 @@ npm run build
 npm start
 ```
 
-Buka `http://127.0.0.1:3001`. Untuk pengembangan, `npm run dev` memakai alamat yang sama. Next.js App Router melayani frontend dan meneruskan `/api` ke Express internal di loopback port 3002.
+Buka `http://127.0.0.1:3001`. Untuk pengembangan, `npm run dev` memakai alamat yang sama. Next.js App Router melayani frontend dan API langsung dalam satu server; tidak memerlukan port API atau proses Express tambahan.
 
 File `.env` lokal sudah disiapkan dengan token admin acak. Jangan commit atau bagikan file tersebut. Untuk instalasi baru, salin `.env.example` ke `.env` dan isi `ADMIN_TOKEN` dengan secret acak yang panjang.
 
@@ -98,7 +98,7 @@ Pengujian juga mensimulasikan gerakan frame demi frame menuju semua misi, arah i
 
 Gunakan HTTPS, `NODE_ENV=production`, `DEMO_MODE=false`, reverse proxy ke port lokal, dan token admin yang kuat. `NODE_ENV=production` mengaktifkan cookie Secure; akses HTTP biasa tidak dapat mempertahankan sesi pada konfigurasi ini. Tentukan pengelola data, kontak panitia, dan jadwal retensi yang sebenarnya di pemberitahuan privasi.
 
-SQLite cocok untuk satu instance server dengan disk persisten dan beban reuni kecil. Jangan taruh database dalam direktori statis, folder sinkronisasi, atau deployment ephemeral. Backup database dengan SQLite backup API atau saat server berhenti; jangan menyalin hanya file `.sqlite` saat WAL masih aktif. Baca [operasional](docs/OPERATIONS.md) sebelum hosting. Belum ada hosting, pembayaran, OTP, email, maupun integrasi layanan eksternal yang diaktifkan.
+SQLite cocok untuk satu instance server dengan disk persisten dan beban reuni kecil. Pada Hostinger, gunakan DATABASE_PATH absolut di luar public_html/hbuilds dan PERSISTENT_DATABASE_REQUIRED=true. Lihat [konfigurasi Hostinger, pemeriksaan integritas, dan backup](docs/HOSTINGER.md). Backup memakai SQLite backup API; jangan menyalin hanya file .sqlite saat WAL aktif. Tidak ada pembayaran, OTP, atau email yang diaktifkan.
 
 ## Pemeriksaan versi game
 

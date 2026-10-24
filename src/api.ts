@@ -4,7 +4,12 @@ export async function api<T = any>(path: string, options: RequestInit = {}): Pro
     headers: { 'Content-Type': 'application/json', ...options.headers },
     credentials: 'same-origin',
   });
-  const data = await res.json();
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error(`Server belum siap (${res.status}). Coba lagi sebentar atau hubungi panitia.`);
+  }
   if (!res.ok) throw new Error(data.error || 'Koneksi gagal. Coba lagi.');
   return data;
 }

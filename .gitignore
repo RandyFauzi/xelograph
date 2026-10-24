@@ -5,6 +5,7 @@ next-env.d.ts
 *.tsbuildinfo
 data/
 .env
+*.env
 *.log
 *.blend1
 __pycache__/

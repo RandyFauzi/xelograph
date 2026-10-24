@@ -2,13 +2,11 @@
 const config = {
   poweredByHeader: false,
   reactStrictMode: true,
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: `http://127.0.0.1:${process.env.API_PORT || 3002}/api/:path*`,
-      },
-    ];
+  output: 'standalone',
+  serverExternalPackages: ['node:sqlite'],
+  outputFileTracingIncludes: { '/api/*': ['./database/schema.sql'] },
+  outputFileTracingExcludes: {
+    '/api/*': ['./.env', './.env.*', './data/**/*', './assets/**/*', './tests/**/*'],
   },
   async headers() {
     return [

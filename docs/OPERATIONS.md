@@ -2,7 +2,7 @@
 
 ## Lokal
 
-`npm start` memuat `.env`, menjalankan Next.js pada PORT (default 3001), dan Express internal pada API_PORT (default 3002). `npm run dev` memakai pasangan port yang sama dengan Next dev. API selalu terikat ke 127.0.0.1; frontend memakai HOST (default 127.0.0.1). Tidak perlu konfigurasi Apache Laragon; aplikasi ini memakai Node 24.
+`npm start` memuat .env dan menjalankan satu server Next.js pada PORT (default 3001), termasuk API di /api. npm run dev memakai Next dev pada port yang sama. HOST default 127.0.0.1. Preset Next.js Hostinger menjalankan standalone server yang juga mencakup route API. Tidak perlu port 3002.
 
 Jangan menjalankan dua runtime pada port yang sama. Sebelum restart lokal, jalankan `npm run build` agar `.next` memuat versi terbaru. Tutup runtime dengan Ctrl+C. Untuk akses HP di LAN, set HOST=0.0.0.0 dan PUBLIC_ORIGIN=http://IP-KOMPUTER:3001 sesuai alamat yang dipakai HP.
 
@@ -10,7 +10,7 @@ Jangan menjalankan dua runtime pada port yang sama. Sebelum restart lokal, jalan
 
 1. Isi `ADMIN_TOKEN` dengan secret acak; batasi akses endpoint admin di reverse proxy bila memungkinkan.
 2. Set `DEMO_MODE=false` dan `NODE_ENV=production`.
-3. Letakkan reverse proxy HTTPS di depan Next.js port 3001; biarkan API 3002 tetap internal. Set PUBLIC_ORIGIN=https://domain-reuni-anda (tanpa trailing slash); situs dan API memakai origin yang sama.
+3. Letakkan reverse proxy HTTPS di depan Next.js port 3001. Set PUBLIC_ORIGIN=https://domain-reuni-anda (tanpa trailing slash); situs dan API memakai origin yang sama.
 4. Gunakan satu instance server dan volume disk persisten untuk `DATABASE_PATH`. Perubahan ke multi-instance memerlukan migrasi ke database server seperti PostgreSQL dan limiter bersama.
 5. Tambahkan rate limit login pada proxy. Banyak alumni di satu jaringan berbagi IP; jangan menetapkan batas seluruh situs terlalu rendah.
 6. Buat undangan per alumni. Jangan memakai kode demo bersama untuk data sebenarnya.
@@ -30,3 +30,5 @@ Penarikan persetujuan tampil dilakukan alumni melalui pass. Penghapusan keseluru
 ## Migrasi PostgreSQL / Supabase
 
 Pertahankan UUID, unique normalized WhatsApp, FK progres dan respons, serta status selesai. Ganti SQLite JSON text menjadi JSONB, timestamp text menjadi timestamptz, parameter SQL `?` menjadi `$n`, dan repository sinkron menjadi async. Terapkan autentikasi serta aturan akses yang setara sebelum memindahkan operasi dari server ke client. Jangan mengekspos tabel alumni lengkap sebagai endpoint publik; pertahankan proyeksi world yang sempit.
+
+Konfigurasi Hostinger dan prosedur backup/restore: [HOSTINGER.md](HOSTINGER.md). Database wajib berada di path absolut di luar public_html/hbuilds; aktifkan PERSISTENT_DATABASE_REQUIRED=true.
