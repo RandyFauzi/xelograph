@@ -15,6 +15,7 @@ import {
   OrbitControls,
   useGLTF,
   PerformanceMonitor,
+  useProgress,
 } from '@react-three/drei';
 import * as THREE from 'three';
 import { findPath, MISSION_ZONES } from './game/navigation.mjs';
@@ -278,6 +279,7 @@ export default function World({
     mapDot = useRef<SVGCircleElement>(null),
     zoneLatch = useRef(-1);
   const [dpr, setDpr] = useState(window.innerWidth < 760 ? 1.25 : 1.5);
+  const loading = useProgress((state) => state.active);
   const [near, setNear] = useState(-1),
     [failed, setFailed] = useState(false),
     [navigation, setNavigation] = useState(false);
@@ -411,13 +413,7 @@ export default function World({
             shadow-camera-bottom={-26}
             shadow-bias={-0.001}
           />
-          <Suspense
-            fallback={
-              <Html center>
-                <div className="loading-world">Menyiapkan tempat pulang…</div>
-              </Html>
-            }
-          >
+          <Suspense fallback={null}>
             <PerformanceMonitor
               onDecline={() => setDpr(1)}
               flipflops={1}
@@ -545,6 +541,11 @@ export default function World({
             />
           </Suspense>
         </Canvas>
+        {loading && (
+          <div className="world-loading-overlay" role="status">
+            <span className="loading-world">Menyiapkan tempat pulang…</span>
+          </div>
+        )}
         {playing && (
           <>
             {overview && (

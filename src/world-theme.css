@@ -1,4 +1,11 @@
 /* Bright campus: original Xelograph styling inspired by the clarity of a miniature world. */
+.world-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
 :root {
   --world-blue: #2877cd;
   --world-navy: #213d55;
