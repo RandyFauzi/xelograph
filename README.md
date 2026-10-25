@@ -37,6 +37,7 @@ Mekanisme undangan lama tetap didukung backend untuk kompatibilitas, tetapi kolo
 - Dunia 51 × 57 unit, gerakan WASD / panah relatif kamera, Shift / tombol Lari, Space / tombol Loncat, klik tanah untuk menuju titik, joystick analog, kamera mengikuti pemain, minimap, tampilan keseluruhan O, interaksi E, fullscreen.
 - Sekolah putih beratap slate, plaza air mancur, lapangan biru, jalan lingkar dengan zebra cross, kafe, taman, pergola, danau, dan Reunion Commons besar dengan panggung serta tempat duduk untuk kumpul 50+ alumni.
 - BGM original lembut dan efek langkah, loncat, mendarat, tombol, serta misi selesai. Audio mulai setelah interaksi pertama, berhenti saat tab disembunyikan, dan memiliki mute serta volume musik/efek terpisah.
+- Satu monumen kreator dari aset PNG transparan pemilik di taman barat daya. Mendekat membuka kredit Randy Developher sekali; klik atau E membuka kembali. Tombol portofolio membuka tab baru hanya setelah dipilih pengguna.
 - Pilih **Jelajahi dulu** untuk langsung berjalan tanpa registrasi. Buat karakter saat ingin menyimpan jawaban.
 - Area misi terbuka berurutan. Pertanyaan muncul otomatis saat pemain mencapai area aktif. Setelah menyimpan, pemain kembali ke dunia dan area selanjutnya terbuka. Jurnal tidak membuka semua pertanyaan sekaligus.
 - Tombol **Tunjukkan jalan** menjalankan pencarian jalur menghindari bangunan, air, dan area misi yang terkunci. Input joystick atau keyboard membatalkan perjalanan otomatis.

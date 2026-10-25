@@ -21,6 +21,7 @@ import {
 } from './GameScreen';
 import { Survey } from './Survey';
 import { campusAudio, loadAudioPreferences, type AudioPreferences } from './game/audio';
+import { CREATOR_MONUMENT } from './game/creatorMonument.mjs';
 import { api, download } from './api';
 import {
   CHECKPOINTS,
@@ -41,7 +42,16 @@ function Preview({ config }: { config: AvatarConfig }) {
 }
 
 type Modal =
-  'join' | 'resume' | 'survey' | 'pass' | 'privacy' | 'quests' | 'alumni' | 'settings' | null;
+  | 'join'
+  | 'resume'
+  | 'survey'
+  | 'pass'
+  | 'privacy'
+  | 'quests'
+  | 'alumni'
+  | 'settings'
+  | 'creator'
+  | null;
 export default function App() {
   const [audioPrefs, setAudioPrefs] = useState<AudioPreferences>(loadAudioPreferences),
     [entered, setEntered] = useState(false),
@@ -303,13 +313,15 @@ export default function App() {
             role="dialog"
             aria-modal="true"
             aria-label={
-              modal === 'survey'
-                ? CHECKPOINTS[index].name
-                : modal === 'join'
-                  ? 'Buat karakter'
-                  : modal === 'pass'
-                    ? 'Reunion pass'
-                    : 'Xylograph'
+              modal === 'creator'
+                ? 'Dibuat oleh Randy Developher'
+                : modal === 'survey'
+                  ? CHECKPOINTS[index].name
+                  : modal === 'join'
+                    ? 'Buat karakter'
+                    : modal === 'pass'
+                      ? 'Reunion pass'
+                      : 'Xylograph'
             }
           >
             <button
@@ -319,6 +331,35 @@ export default function App() {
             >
               <X size={20} />
             </button>
+            {modal === 'creator' && (
+              <div className="creator-credit">
+                <img
+                  src={CREATOR_MONUMENT.asset}
+                  alt="Monumen Dibuat Oleh Randy Fauzi"
+                  width="144"
+                  height="144"
+                />
+                <div className="dialog-eyebrow">BEHIND THIS LITTLE WORLD</div>
+                <h2>
+                  Dibuat oleh
+                  <br />
+                  Randy Developher.
+                </h2>
+                <p>
+                  Dunia kecil ini dibuat dengan ide, kode, dan sedikit nostalgia. Punya ide dunia
+                  interaktif atau website sendiri?
+                </p>
+                <a
+                  className="primary"
+                  href={CREATOR_MONUMENT.portfolio}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Mau buat seperti ini juga? <ArrowRight size={17} />
+                </a>
+                <small>Portofolio Randy · terbuka di tab baru</small>
+              </div>
+            )}
             {modal === 'quests' && (
               <QuestJournal profile={profile} onCheckpoint={openCheckpoint} onTravel={goTo} />
             )}

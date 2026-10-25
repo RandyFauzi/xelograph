@@ -1,4 +1,32 @@
 /* Bright campus: original Xylograph styling inspired by the clarity of a miniature world. */
+.creator-credit {
+  text-align: center;
+}
+.creator-credit > img {
+  display: block;
+  object-fit: contain;
+  margin: -4px auto 14px;
+}
+.creator-credit .dialog-eyebrow {
+  justify-content: center;
+}
+.creator-credit > p {
+  color: #65766b;
+  line-height: 1.7;
+  margin: 14px 0 24px;
+}
+.creator-credit > a {
+  display: inline-flex;
+  justify-content: center;
+  text-decoration: none;
+  min-height: 48px;
+}
+.creator-credit > small {
+  display: block;
+  margin-top: 12px;
+  color: #65766b;
+  font-size: 12px;
+}
 .world-loading-overlay {
   position: absolute;
   inset: 0;

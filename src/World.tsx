@@ -25,6 +25,7 @@ import { createOcclusionController, collectOccluderMeshes } from './game/occlusi
 import { usePlayerMotion, CameraFollow, type PathPoint } from './game/PlayerController';
 import Joystick from './game/Joystick';
 import AlumniCrowd from './game/AlumniCrowd';
+import CreatorMonument from './game/CreatorMonument';
 import { layoutAlumni } from './game/alumniLayout.mjs';
 import type { TravelRequest } from './GameScreen';
 import { Lock, Navigation, RotateCcw, Footprints, ArrowUp } from 'lucide-react';
@@ -257,6 +258,7 @@ export default function World({
   overview,
   onNavigate,
   onOverview,
+  onCreator,
 }: {
   avatar: AvatarConfig;
   alumni: Alumnus[];
@@ -271,6 +273,7 @@ export default function World({
   overview: boolean;
   onNavigate: (i: number) => void;
   onOverview: () => void;
+  onCreator: () => void;
 }) {
   const keys = useRef(new Set<string>()),
     stick = useRef({ x: 0, y: 0 }),
@@ -282,6 +285,7 @@ export default function World({
   const [dpr, setDpr] = useState(window.innerWidth < 760 ? 1.25 : 1.5);
   const loading = useProgress((state) => state.active);
   const [near, setNear] = useState(-1),
+    [nearCreator, setNearCreator] = useState(false),
     [failed, setFailed] = useState(false),
     [navigation, setNavigation] = useState(false);
   const next = CHECKPOINTS.findIndex((_, i) => !progress.includes(i)),
@@ -294,6 +298,11 @@ export default function World({
     },
     [unlocked],
   );
+  const openCreator = useCallback(() => {
+    path.current = [];
+    setNavigation(false);
+    onCreator();
+  }, [onCreator]);
   const lastTravel = useRef<number | null>(null),
     lastFocus = useRef<string | null>(null);
   useEffect(() => {
@@ -359,7 +368,8 @@ export default function World({
         } else keys.current.add(k);
         setNavigation(false);
       }
-      if (k === 'e' && near >= 0) onCheckpoint(near);
+      if (k === 'e' && nearCreator) openCreator();
+      else if (k === 'e' && near >= 0) onCheckpoint(near);
     };
     const up = (e: KeyboardEvent) => keys.current.delete(e.key.toLowerCase());
     const clear = () => {
@@ -376,7 +386,7 @@ export default function World({
       window.removeEventListener('keyup', up);
       window.removeEventListener('blur', clear);
     };
-  }, [active, near, onCheckpoint]);
+  }, [active, near, nearCreator, openCreator, onCheckpoint]);
   const fallback = (
     <div className="world-fallback">
       <h3>Perjalanan tetap berlanjut.</h3>
@@ -421,6 +431,15 @@ export default function World({
               onFallback={() => setDpr(1)}
             />
             <MapModel position={position} playing={playing} />
+            <Suspense fallback={null}>
+              <CreatorMonument
+                player={position}
+                active={active}
+                onNear={setNearCreator}
+                onOpen={openCreator}
+                onWalk={navigate}
+              />
+            </Suspense>
             {playing && <RouteTrail path={path} />}
             <mesh
               rotation={[-Math.PI / 2, 0, 0]}
@@ -635,7 +654,16 @@ export default function World({
                   <Footprints size={23} />
                   <span>LARI</span>
                 </button>
-                {near >= 0 && (
+                {nearCreator && (
+                  <button className="interact" onClick={openCreator}>
+                    <span className="interact-key">E</span>
+                    <span>
+                      Kenalan dengan pembuatnya<small>Randy Developher</small>
+                    </span>
+                    <Navigation size={18} />
+                  </button>
+                )}
+                {near >= 0 && !nearCreator && (
                   <button className="interact" onClick={() => onCheckpoint(near)}>
                     <span className="interact-key">E</span>
                     <span>

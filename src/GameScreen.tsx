@@ -62,7 +62,7 @@ export function GameScreen({
   onEnter: () => void;
   onJoin: () => void;
   onResume: () => void;
-  onPanel: (panel: 'quests' | 'alumni' | 'settings' | 'pass') => void;
+  onPanel: (panel: 'quests' | 'alumni' | 'settings' | 'pass' | 'creator') => void;
   onCheckpoint: (i: number) => void;
   onTravel: (i: number) => void;
   onError: (message: string) => void;
@@ -126,6 +126,7 @@ export function GameScreen({
               overview={overview}
               onNavigate={onTravel}
               onOverview={onOverview}
+              onCreator={() => onPanel('creator')}
             />
           </Suspense>
         )}
