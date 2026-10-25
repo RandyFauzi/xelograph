@@ -425,6 +425,11 @@ export default function App() {
                   );
                 }}
                 onResume={() => setModal('resume')}
+                onExplore={() => {
+                  setEntered(true);
+                  setModal(null);
+                  setToast('Jawaban survei sebelumnya sudah tercatat. Selamat menjelajah!');
+                }}
               />
             )}
             {modal === 'resume' && (
@@ -658,10 +663,19 @@ function AvatarSettings({
     </>
   );
 }
-function Join({ onDone, onResume }: { onDone: (p: Profile) => void; onResume: () => void }) {
+function Join({
+  onDone,
+  onResume,
+  onExplore,
+}: {
+  onDone: (p: Profile) => void;
+  onResume: () => void;
+  onExplore: () => void;
+}) {
   const [avatar, setAvatar] = useState<AvatarConfig>(DEFAULT_AVATAR),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState('');
+    [error, setError] = useState(''),
+    [imported, setImported] = useState(false);
   return (
     <>
       <div className="dialog-eyebrow">
@@ -677,6 +691,7 @@ function Join({ onDone, onResume }: { onDone: (p: Profile) => void; onResume: ()
           setBusy(true);
           setError('');
           const f = new FormData(e.currentTarget);
+          setImported(false);
           try {
             onDone(
               await api('/join', {
@@ -692,7 +707,10 @@ function Join({ onDone, onResume }: { onDone: (p: Profile) => void; onResume: ()
               }),
             );
           } catch (err) {
-            setError((err as Error).message);
+            if ((err as { code?: string }).code === 'legacy_registered') {
+              setImported(true);
+              setError('');
+            } else setError((err as Error).message);
           } finally {
             setBusy(false);
           }
@@ -756,6 +774,14 @@ function Join({ onDone, onResume }: { onDone: (p: Profile) => void; onResume: ()
           <p className="error" role="alert">
             {error}
           </p>
+        )}
+        {imported && (
+          <div className="note">
+            <p>Jawaban survei sebelumnya sudah tercatat. Kamu tidak perlu mengisi ulang.</p>
+            <button type="button" className="primary" onClick={onExplore}>
+              Sudah tercatat · Jelajahi dunia <ArrowRight size={17} />
+            </button>
+          </div>
         )}
         <div className="dialog-actions">
           <button type="button" className="text-button" onClick={onResume}>

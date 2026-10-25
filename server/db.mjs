@@ -48,6 +48,18 @@ export function openDb(path = process.env.DATABASE_PATH || './data/xelograph.sql
       );
     if (!columns.includes('avatar_updated_at'))
       db.exec('ALTER TABLE alumni ADD COLUMN avatar_updated_at TEXT');
+    const responseColumns = db
+      .prepare('PRAGMA table_info(responses)')
+      .all()
+      .map((column) => column.name);
+    if (!responseColumns.includes('completion_basis'))
+      db.exec("ALTER TABLE responses ADD COLUMN completion_basis TEXT NOT NULL DEFAULT 'game'");
+    const adminColumns = db
+      .prepare('PRAGMA table_info(admin_sessions)')
+      .all()
+      .map((column) => column.name);
+    if (!adminColumns.includes('credential_hash'))
+      db.exec("ALTER TABLE admin_sessions ADD COLUMN credential_hash TEXT NOT NULL DEFAULT ''");
     db.exec('UPDATE alumni SET avatar_updated_at=created_at WHERE avatar_updated_at IS NULL');
     db.exec('COMMIT');
   } catch (error) {

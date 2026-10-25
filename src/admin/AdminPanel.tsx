@@ -1,95 +1,150 @@
 'use client';
-import { useState } from 'react';
-import { Shield, ArrowRight, Download, RefreshCw } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Shield, ArrowRight, Download, RefreshCw, Search, Lock } from 'lucide-react';
 import { api, download } from '../api';
 import { LABELS } from '../types';
+type Row = {
+  id: string;
+  full_name: string;
+  nickname: string;
+  whatsapp: string | null;
+  completed_at: string | null;
+  sourceType: 'game' | 'legacy';
+  sourceName?: string;
+  sourceRow?: number;
+  answers: Record<string, string | string[]>;
+  raw?: Record<string, string>;
+  mappingNotes?: string[];
+};
+const fields: Record<string, string> = {
+  concept: 'Konsep game',
+  attendance: 'Kehadiran',
+  committee: 'Kepanitiaan',
+  department: 'Bidang panitia',
+  activities: 'Kegiatan game',
+  production: 'Tim produksi',
+  venue: 'Tempat',
+  venueNote: 'Usulan tempat',
+  contribution: 'Iuran',
+  sponsor: 'Dukungan',
+  message: 'Pesan',
+};
+function value(v: unknown): string {
+  if (Array.isArray(v)) return v.map(value).join(', ') || 'Belum ada';
+  return typeof v === 'string' ? LABELS[v] || v : 'Belum ada';
+}
+function attendance(v: unknown) {
+  return (
+    (
+      { yes: 'Ingin hadir', maybe: 'Masih menyesuaikan', no: 'Tidak bisa hadir' } as Record<
+        string,
+        string
+      >
+    )[String(v)] || 'Belum ada'
+  );
+}
 export default function AdminPanel() {
-  const [token, setToken] = useState(''),
-    [rows, setRows] = useState<any[] | null>(null),
+  const [code, setCode] = useState(''),
+    [rows, setRows] = useState<Row[] | null>(null),
+    [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
-    [busy, setBusy] = useState(false);
+    [search, setSearch] = useState(''),
+    [source, setSource] = useState('all');
   const load = async () => {
-    setBusy(true);
-    try {
-      setRows(await api('/admin', { headers: { Authorization: 'Bearer ' + token } }));
-      setError('');
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
+    const data = await api<Row[]>('/admin');
+    setRows(data);
+    setError('');
   };
-  const completed = rows?.filter((r) => r.completed_at) || [];
-  const exportCsv = () => {
-    const cols = [
-      'full_name',
-      'nickname',
-      'whatsapp',
-      'completed_at',
-      'concept',
-      'attendance',
-      'committee',
-      'department',
-      'activities',
-      'production',
-      'venue',
-      'venueNote',
-      'contribution',
-      'sponsor',
-      'message',
+  useEffect(() => {
+    void load().catch(() => {});
+  }, []);
+  const filtered = useMemo(
+    () =>
+      rows?.filter(
+        (row) =>
+          (source === 'all' || row.sourceType === source) &&
+          [row.full_name, row.nickname, row.whatsapp || '']
+            .join(' ')
+            .toLowerCase()
+            .includes(search.toLowerCase()),
+      ) || [],
+    [rows, search, source],
+  );
+  const exported = () => {
+    const columns = [
+      'Nama',
+      'WhatsApp',
+      'Sumber',
+      'Status',
+      'Persetujuan bukber/reuni lama',
+      ...Object.values(fields),
+      'Jawaban asli',
+      'Catatan pemetaan',
     ];
-    const quote = (v: unknown) =>
-      '"' +
-      String(v ?? '')
-        .replace(/^[=+@\-\t\r]/, "'$&")
-        .replaceAll('"', '""') +
-      '"';
+    const quote = (v: unknown) => {
+      let s = String(v ?? '');
+      if (/^\s*[=+@-]/.test(s)) s = "'" + s;
+      return '"' + s.replaceAll('"', '""') + '"';
+    };
+    const content = [
+      columns,
+      ...filtered.map((row) => [
+        row.full_name,
+        row.whatsapp || '',
+        row.sourceType === 'legacy' ? 'Survei lama' : 'Game',
+        row.completed_at ? 'Selesai' : 'Draf',
+        Object.entries(row.raw || {}).find(([k]) => k.toLowerCase().includes('setuju jika'))?.[1] ||
+          '',
+        ...Object.keys(fields).map((k) =>
+          Array.isArray(row.answers[k])
+            ? (row.answers[k] as string[]).map(value).join('; ')
+            : row.answers[k] || '',
+        ),
+        JSON.stringify(row.raw || {}),
+        (row.mappingNotes || []).join('; '),
+      ]),
+    ];
     download(
-      'xylograph-alumni.csv',
-      '\uFEFF' +
-        [
-          cols.map(quote).join(','),
-          ...rows!.map((r) =>
-            cols
-              .map((k) =>
-                quote(
-                  Array.isArray(r.answers[k]) ? r.answers[k].join('; ') : (r[k] ?? r.answers[k]),
-                ),
-              )
-              .join(','),
-          ),
-        ].join('\r\n'),
+      'xylograph-responden.csv',
+      '\uFEFF' + content.map((r) => r.map(quote).join(',')).join('\r\n'),
       'text/csv;charset=utf-8',
     );
   };
   return (
-    <div className="page-content alternate">
-      <div className="eyebrow">BEHIND THE GATHERING</div>
-      <h1>
-        Ruang
-        <br />
-        <span>para penggerak.</span>
-      </h1>
-      <p>Ringkasan aspirasi dan partisipasi alumni.</p>
+    <div className="respondent-page">
+      <div className="eyebrow">XYLOGRAPH / PANITIA</div>
+      <h1>Tabel Responden</h1>
+      <p>Hasil survei dan jawaban asli dalam satu tempat.</p>
       {!rows ? (
         <form
           className="admin-login"
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            load();
+            setBusy(true);
+            setError('');
+            try {
+              await api('/admin/session', { method: 'POST', body: JSON.stringify({ code }) });
+              setCode('');
+              await load();
+            } catch (e) {
+              setError((e as Error).message);
+            } finally {
+              setBusy(false);
+            }
           }}
         >
-          <Shield size={26} />
-          <h2>Akses khusus panitia</h2>
-          <p>Masukkan token admin yang diatur pada server.</p>
+          <Shield size={28} />
+          <h2>Akses admin</h2>
+          <p>Masukkan kode akses panitia. Data responden hanya ditampilkan setelah masuk.</p>
           <label className="field">
-            Token admin
+            Kode admin
             <input
               type="password"
               required
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              autoComplete="off"
+              autoComplete="current-password"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              maxLength={128}
             />
           </label>
           {error && (
@@ -98,87 +153,87 @@ export default function AdminPanel() {
             </p>
           )}
           <button className="primary" disabled={busy}>
-            {busy ? 'Memeriksa…' : 'Buka dashboard'}
+            {busy ? 'Memeriksa…' : 'Buka tabel responden'}
             <ArrowRight size={17} />
           </button>
         </form>
       ) : (
         <>
           <div className="admin-toolbar">
-            <button className="primary" onClick={exportCsv}>
+            <button className="primary" onClick={exported}>
               <Download size={17} />
-              Ekspor CSV
+              Ekspor hasil filter
             </button>
-            <button className="secondary" onClick={load}>
-              <RefreshCw size={16} />
+            <button
+              className="secondary"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  await load();
+                } catch (e) {
+                  setError((e as Error).message);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              <RefreshCw size={17} />
               Perbarui
             </button>
             <button
               className="text-button"
-              onClick={() => {
-                setRows(null);
-                setToken('');
+              onClick={async () => {
+                try {
+                  await api('/admin/session', { method: 'DELETE' });
+                  setRows(null);
+                  setCode('');
+                } catch (e) {
+                  setError((e as Error).message);
+                }
               }}
             >
-              Kunci dashboard
+              <Lock size={16} />
+              Keluar admin
             </button>
           </div>
           <div className="admin-stats">
             {[
-              ['Respons unik', rows.length],
-              ['Survei selesai', completed.length],
-              ['Ingin hadir', completed.filter((r) => r.answers.attendance === 'yes').length],
-              [
-                'Calon crew',
-                completed.filter((r) => ['active', 'occasional'].includes(r.answers.committee))
-                  .length,
-              ],
-            ].map(([l, n]) => (
-              <article key={l}>
-                <p>{l}</p>
+              ['Total responden', rows.length],
+              ['Survei lama', rows.filter((r) => r.sourceType === 'legacy').length],
+              ['Dari game', rows.filter((r) => r.sourceType === 'game').length],
+              ['Draf game', rows.filter((r) => r.sourceType === 'game' && !r.completed_at).length],
+            ].map(([label, n]) => (
+              <article key={label}>
+                <p>{label}</p>
                 <b>{n}</b>
               </article>
             ))}
           </div>
-          <div className="admin-breakdowns">
-            {[
-              ['Pilihan acara', 'concept', ['fun', 'bukber', 'both', 'unsure']],
-              ['Venue', 'venue', ['sekolah', 'outdoor', 'restoran', 'hotel', 'other']],
-              ['Iuran', 'contribution', ['yes', 'depends', 'details', 'no']],
-              [
-                'Bidang kepanitiaan',
-                'department',
-                ['acara', 'kreatif', 'logistik', 'humas', 'dokumentasi'],
-              ],
-            ].map(([title, key, opts]) => (
-              <article key={title as string}>
-                <h3>{title as string}</h3>
-                {(opts as string[]).map((v) => {
-                  const n = completed.filter((r) =>
-                    Array.isArray(r.answers[key as string])
-                      ? r.answers[key as string].includes(v)
-                      : r.answers[key as string] === v,
-                  ).length;
-                  return (
-                    <div className="breakdown" key={v}>
-                      <span>{LABELS[v]}</span>
-                      <b>{n}</b>
-                      <div>
-                        <i
-                          style={{
-                            width: (completed.length ? (n / completed.length) * 100 : 0) + '%',
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </article>
-            ))}
+          <div className="respondent-tools">
+            <label className="search">
+              <Search size={18} />
+              <input
+                aria-label="Cari nama atau WhatsApp"
+                placeholder="Cari nama atau WhatsApp…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </label>
+            <label>
+              Sumber
+              <select value={source} onChange={(e) => setSource(e.target.value)}>
+                <option value="all">Semua sumber</option>
+                <option value="legacy">Survei lama</option>
+                <option value="game">Game</option>
+              </select>
+            </label>
+            <span>{filtered.length} ditampilkan</span>
           </div>
           <p className="helper">
-            Ringkasan kategori memakai survei selesai. Ekspor memuat seluruh respons termasuk draf.
-            Dukungan dan kehadiran dihitung terpisah.
+            Survei lama dianggap sudah diisi. Jawaban yang tidak ditanyakan dalam formulir lama
+            tetap ditandai “Belum ada”; tidak diubah menjadi “Tidak”. Buka detail untuk melihat teks
+            asli dan catatan pemetaan.
           </p>
           {error && (
             <p className="error" role="alert">
@@ -186,65 +241,100 @@ export default function AdminPanel() {
             </p>
           )}
           <div className="table-scroll">
-            <table>
+            <table className="respondent-table">
+              <caption>Responden dan hasil survei</caption>
               <thead>
                 <tr>
-                  <th>Alumni</th>
-                  <th>WhatsApp</th>
-                  <th>Pilihan</th>
-                  <th>Kehadiran</th>
-                  <th>Partisipasi</th>
-                  <th>Status</th>
-                  <th>Pesan</th>
-                  <th>Aksi</th>
+                  {[
+                    'Alumni',
+                    'WhatsApp',
+                    'Sumber / status',
+                    'Setuju bukber/reuni (lama)',
+                    'Kehadiran',
+                    'Kepanitiaan',
+                    'Tempat',
+                    'Jawaban lengkap',
+                  ].map((t) => (
+                    <th key={t}>{t}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id}>
+                {filtered.map((row) => (
+                  <tr key={row.id}>
                     <td>
-                      <b>{r.full_name}</b>
-                      <small>{r.nickname}</small>
+                      <b>{row.full_name}</b>
+                      <small>{row.nickname}</small>
                     </td>
-                    <td>{r.whatsapp}</td>
-                    <td>{LABELS[r.answers.concept] || '—'}</td>
+                    <td>{row.whatsapp || 'Tidak tersedia'}</td>
                     <td>
-                      {{ yes: 'Ingin hadir', maybe: 'Mungkin', no: 'Belum bisa' }[
-                        r.answers.attendance as string
-                      ] || '—'}
+                      <span className="source-tag">
+                        {row.sourceType === 'legacy' ? 'Survei lama' : 'Game'}
+                      </span>
+                      <small>{row.completed_at ? 'Sudah diisi' : 'Draf'}</small>
                     </td>
-                    <td>{LABELS[r.answers.committee] || '—'}</td>
-                    <td>{r.completed_at ? 'Selesai' : 'Draf'}</td>
-                    <td className="message-cell">{r.answers.message || '—'}</td>
                     <td>
-                      <button
-                        className="delete-button"
-                        onClick={async () => {
-                          if (
-                            !window.confirm(
-                              'Hapus permanen data ' + r.full_name + ' beserta jawaban dan sesi?',
-                            )
-                          )
-                            return;
-                          try {
-                            await api('/admin/alumni/' + r.id, {
-                              method: 'DELETE',
-                              headers: { Authorization: 'Bearer ' + token },
-                            });
-                            load();
-                          } catch (e) {
-                            setError((e as Error).message);
-                          }
-                        }}
-                      >
-                        Hapus
-                      </button>
+                      {Object.entries(row.raw || {}).find(([k]) =>
+                        k.toLowerCase().includes('setuju jika'),
+                      )?.[1] || '—'}
+                    </td>
+                    <td>{attendance(row.answers.attendance)}</td>
+                    <td>{value(row.answers.committee)}</td>
+                    <td>
+                      {value(row.answers.venue)}
+                      {row.answers.venueNote && <small>{value(row.answers.venueNote)}</small>}
+                    </td>
+                    <td>
+                      <details>
+                        <summary>Lihat detail</summary>
+                        <div className="response-detail">
+                          <h3>Jawaban yang dipetakan</h3>
+                          <dl>
+                            {Object.entries(fields).map(([key, label]) => (
+                              <div key={key}>
+                                <dt>{label}</dt>
+                                <dd>
+                                  {key === 'attendance'
+                                    ? attendance(row.answers[key])
+                                    : value(row.answers[key])}
+                                </dd>
+                              </div>
+                            ))}
+                          </dl>
+                          {row.raw && (
+                            <>
+                              <h3>Jawaban asli survei lama</h3>
+                              <p>
+                                {row.sourceName} · baris {row.sourceRow}
+                              </p>
+                              <dl>
+                                {Object.entries(row.raw).map(([question, answer]) => (
+                                  <div key={question}>
+                                    <dt>{question}</dt>
+                                    <dd>{answer || 'Kosong di sumber'}</dd>
+                                  </div>
+                                ))}
+                              </dl>
+                            </>
+                          )}
+                          {!!row.mappingNotes?.length && (
+                            <>
+                              <h3>Catatan pemetaan</h3>
+                              <ul>
+                                {row.mappingNotes.map((note, i) => (
+                                  <li key={i}>{note}</li>
+                                ))}
+                              </ul>
+                            </>
+                          )}
+                        </div>
+                      </details>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {!rows.length && <p className="empty-state">Belum ada respons.</p>}
+            {!filtered.length && <p className="empty-state">Tidak ada responden yang cocok.</p>}
           </div>
         </>
       )}

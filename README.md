@@ -46,11 +46,11 @@ Mekanisme undangan lama tetap didukung backend untuk kompatibilitas, tetapi kolo
 - Ketujuh checkpoint, validasi server, pilihan majemuk, bidang panitia bersyarat, usulan venue, pesan opsional.
 - Jawaban disimpan setelah menekan **Simpan & lanjut**; indikator tersimpan hanya muncul setelah server berhasil menyimpan. Jawaban yang sedang diketik belum menjadi draf server.
 - Progres dapat dilanjutkan, jawaban dapat diperbarui, satu respons per alumni.
-- Avatar publik hanya muncul setelah semua checkpoint selesai dan ada persetujuan. Izin dapat ditarik melalui pass.
+- Avatar dari game tampil setelah checkpoint selesai dan ada persetujuan. Izin dapat ditarik melalui pass. Respons survei lama dapat dipublikasikan admin melalui impor dengan avatar acak yang tersimpan, tanpa pengisian ulang.
 - Area utama ditentukan dari kehadiran dan kepanitiaan; badge Crew / Production / Supporter tetap independen.
 - Direktori, pencarian, filter area, temukan avatar, pass SVG yang dapat diunduh.
 - Mode ringan tanpa navigasi 3D menyediakan misi satu per satu untuk aksesibilitas. Fallback jika render gagal; navigasi dialog dengan keyboard.
-- Dashboard: respons/draf, minat acara, kehadiran, panitia, venue, kontribusi, pesan, ekspor CSV, penghapusan data.
+- Tabel Responden di `/admin`: login kode privat, pencarian, filter sumber, respons/draf, jawaban asli survei lama, catatan pemetaan, dan ekspor CSV. Lihat [migrasi survei lama dan akses admin](docs/LEGACY-SURVEY.md).
 
 Direktori dan Reunion Commons menampilkan semua alumni yang mengizinkan tampil. Avatar publik menggunakan instanced meshes per material dan gaya rambut; tidak ada batas 16/32 karakter. Label nama dibatasi ke 14 karakter dekat pemain agar layar tetap terbaca. Empat karakter dekoratif saat demo kosong bukan data alumni; label demo menjelaskan hal ini. Kapasitas 50 pengisian bersamaan dan tata letak 100 avatar telah diuji; FPS pada HP tetap bergantung pada perangkat.
 
@@ -104,4 +104,4 @@ SQLite cocok untuk satu instance server dengan disk persisten dan beban reuni ke
 
 ## Pemeriksaan versi game
 
-Muat ulang dengan Ctrl+F5 setelah build baru. Pilih Jelajahi dulu, gunakan WASD atau joystick, lalu pilih Tunjukkan jalan. Pertanyaan baru muncul ketika mencapai area misi. Materi pertanyaan tetap sama; yang berubah adalah penyajiannya. Untuk HP pada jaringan lokal, jalankan server dengan HOST=0.0.0.0 dan akses alamat IP komputer dari HP; batasi firewall sesuai jaringan yang dipercaya. Deployment publik belum dilakukan.
+Muat ulang dengan Ctrl+F5 setelah build baru. Pilih Jelajahi dulu, gunakan WASD atau joystick, lalu pilih Tunjukkan jalan. Pertanyaan baru muncul ketika mencapai area misi. Materi pertanyaan tetap sama; yang berubah adalah penyajiannya. Untuk HP pada jaringan lokal, jalankan server dengan HOST=0.0.0.0 dan akses alamat IP komputer dari HP; batasi firewall sesuai jaringan yang dipercaya. Deployment publik tersedia di https://xelograph.appku.site.

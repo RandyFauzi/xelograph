@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS responses (
  alumni_id TEXT PRIMARY KEY REFERENCES alumni(id) ON DELETE CASCADE,
  answers_json TEXT NOT NULL DEFAULT '{}' CHECK(json_valid(answers_json)),
  completed_at TEXT,
+ completion_basis TEXT NOT NULL DEFAULT 'game',
  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS checkpoint_progress (
@@ -37,3 +38,35 @@ CREATE TABLE IF NOT EXISTS checkpoint_progress (
 CREATE INDEX IF NOT EXISTS sessions_expiry_idx ON sessions(expires_at);
 CREATE INDEX IF NOT EXISTS alumni_public_idx ON alumni(consent_public);
 CREATE INDEX IF NOT EXISTS responses_completed_idx ON responses(completed_at);
+
+CREATE TABLE IF NOT EXISTS admin_sessions (
+ token_hash TEXT PRIMARY KEY,
+ credential_hash TEXT NOT NULL,
+ expires_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS survey_imports (
+ id TEXT PRIMARY KEY,
+ source_hash TEXT NOT NULL UNIQUE,
+ source_name TEXT NOT NULL,
+ summary_json TEXT NOT NULL CHECK(json_valid(summary_json)),
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS legacy_responses (
+ id TEXT PRIMARY KEY,
+ import_id TEXT NOT NULL REFERENCES survey_imports(id),
+ source_key TEXT NOT NULL UNIQUE,
+ sheet_name TEXT NOT NULL,
+ row_number INTEGER NOT NULL,
+ full_name TEXT NOT NULL,
+ nickname TEXT NOT NULL,
+ whatsapp TEXT,
+ submitted_at TEXT,
+ answers_json TEXT NOT NULL CHECK(json_valid(answers_json)),
+ raw_json TEXT NOT NULL CHECK(json_valid(raw_json)),
+ notes_json TEXT NOT NULL CHECK(json_valid(notes_json)),
+ avatar_json TEXT NOT NULL CHECK(json_valid(avatar_json)),
+ published_by_admin INTEGER NOT NULL DEFAULT 0 CHECK(published_by_admin IN (0,1)),
+ linked_alumni_id TEXT REFERENCES alumni(id) ON DELETE SET NULL,
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS legacy_phone_idx ON legacy_responses(whatsapp);

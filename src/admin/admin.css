@@ -1,0 +1,104 @@
+.respondent-page {
+  max-width: 1500px;
+  margin: auto;
+  padding: 34px 24px 70px;
+}
+.respondent-page h1 {
+  font:
+    650 clamp(28px, 4vw, 42px)/1.15 'Segoe UI',
+    sans-serif;
+  letter-spacing: -1px;
+  margin: 16px 0 12px;
+}
+.respondent-page > p {
+  color: #5d716a;
+  line-height: 1.6;
+}
+.respondent-tools {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 28px 0 16px;
+}
+.respondent-tools select {
+  margin-left: 8px;
+  padding: 10px;
+  border: 1px solid #cbd7d1;
+  border-radius: 8px;
+  background: white;
+}
+.respondent-table {
+  font-size: 13px;
+  min-width: 1100px;
+}
+.respondent-table caption {
+  text-align: left;
+  font-weight: 600;
+  padding: 12px 0;
+}
+.respondent-table th {
+  white-space: normal;
+  min-width: 120px;
+}
+.respondent-table small {
+  display: block;
+  color: #66766c;
+  margin-top: 5px;
+}
+.respondent-table summary {
+  cursor: pointer;
+  color: #2268ad;
+  padding: 10px 0;
+  min-height: 44px;
+}
+.response-detail {
+  width: min(520px, 75vw);
+  white-space: normal;
+  padding: 16px;
+  background: #f7faf7;
+  border-radius: 10px;
+}
+.response-detail h3 {
+  margin: 18px 0 10px;
+  font-size: 15px;
+}
+.response-detail dl > div {
+  margin: 12px 0;
+}
+.response-detail dt {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+.response-detail dd {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.response-detail li {
+  margin: 8px 0;
+  line-height: 1.5;
+}
+.source-tag {
+  display: inline-block;
+  background: #e8f1fa;
+  color: #28587c;
+  padding: 5px 8px;
+  border-radius: 6px;
+}
+.respondent-page .admin-login {
+  max-width: 480px;
+  margin: 32px 0;
+}
+@media (max-width: 640px) {
+  .respondent-page {
+    padding: 24px 16px 50px;
+  }
+  .respondent-tools .search {
+    flex-basis: 100%;
+  }
+  .respondent-page .admin-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

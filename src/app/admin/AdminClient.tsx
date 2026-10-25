@@ -1,5 +1,6 @@
 'use client';
 import dynamic from 'next/dynamic';
+import '../../admin/admin.css';
 const AdminPanel = dynamic(() => import('../../admin/AdminPanel'), {
   ssr: false,
   loading: () => <p className="empty-state">Menyiapkan ruang panitia…</p>,

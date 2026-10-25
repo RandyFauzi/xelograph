@@ -10,7 +10,11 @@ export async function api<T = any>(path: string, options: RequestInit = {}): Pro
   } catch {
     throw new Error(`Server belum siap (${res.status}). Coba lagi sebentar atau hubungi panitia.`);
   }
-  if (!res.ok) throw new Error(data.error || 'Koneksi gagal. Coba lagi.');
+  if (!res.ok)
+    throw Object.assign(new Error(data.error || 'Koneksi gagal. Coba lagi.'), {
+      code: data.code,
+      status: res.status,
+    });
   return data;
 }
 export function download(name: string, text: string, type = 'text/plain') {
