@@ -37,7 +37,7 @@ Mekanisme undangan lama tetap didukung backend untuk kompatibilitas, tetapi kolo
 - Dunia 51 × 57 unit, gerakan WASD / panah relatif kamera, Shift / tombol Lari, Space / tombol Loncat, klik tanah untuk menuju titik, joystick analog, kamera mengikuti pemain, minimap, tampilan keseluruhan O, interaksi E, fullscreen.
 - Sekolah putih beratap slate, plaza air mancur, lapangan biru, jalan lingkar dengan zebra cross, kafe, taman, pergola, danau, dan Reunion Commons besar dengan panggung serta tempat duduk untuk kumpul 50+ alumni.
 - BGM original lembut dan efek langkah, loncat, mendarat, tombol, serta misi selesai. Audio mulai setelah interaksi pertama, berhenti saat tab disembunyikan, dan memiliki mute serta volume musik/efek terpisah.
-- Satu monumen kreator dari aset PNG transparan pemilik di taman barat daya. Mendekat membuka kredit Randy Developher sekali; klik atau E membuka kembali. Tombol portofolio membuka tab baru hanya setelah dipilih pengguna.
+- Satu easter egg kreator 3D kecil di taman barat daya: papan kayu, batu, mahkota dan kristal dari geometri Blender, tinggi 1,16 unit (lebih pendek dari avatar). Cahaya dan enam partikel halus hanya dianimasikan dari dekat; reduced-motion menghentikan efek. Mendekat dalam radius 1,6 unit membuka kredit sekali; klik/E membuka kembali. Portofolio terbuka di tab baru hanya setelah tombol dipilih.
 - Pilih **Jelajahi dulu** untuk langsung berjalan tanpa registrasi. Buat karakter saat ingin menyimpan jawaban.
 - Area misi terbuka berurutan. Pertanyaan muncul otomatis saat pemain mencapai area aktif. Setelah menyimpan, pemain kembali ke dunia dan area selanjutnya terbuka. Jurnal tidak membuka semua pertanyaan sekaligus.
 - Tombol **Tunjukkan jalan** menjalankan pencarian jalur menghindari bangunan, air, dan area misi yang terkunci. Input joystick atau keyboard membatalkan perjalanan otomatis.
@@ -78,6 +78,8 @@ Model dibuat secara prosedural untuk proyek ini. Logo asli dari pemilik dipasang
 & 'C:\Program Files\Blender Foundation\Blender 5.2\blender.exe' --background --python assets/blender/build_campus.py
 npm run models:optimize
 & 'C:\Program Files\Blender Foundation\Blender 5.2\blender.exe' --background --python assets/blender/render_preview.py
+& 'C:\Program Files\Blender Foundation\Blender 5.2\blender.exe' --background --python assets/blender/build_creator_relic.py
+npm run models:optimize -- public/models/creator-relic.glb
 ```
 
 Sumber bisa dibuka di Blender lalu diedit. Rambut dan material karakter bernama agar mudah dipilih/tint di aplikasi. Tangan dan kaki memakai pivot terpisah untuk animasi langkah runtime; loncat memakai gravitasi sederhana tanpa double jump. Pohon/bangunan yang menghalangi pandangan memudar lalu kembali normal. Belum berupa rig skeletal atau klip animasi GLB. Pass unduhan menggunakan monogram; preview pass dalam aplikasi memakai avatar 3D. `build_world.py` adalah generator versi lama yang disimpan sebagai referensi.

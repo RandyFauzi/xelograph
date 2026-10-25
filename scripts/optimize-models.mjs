@@ -8,11 +8,11 @@ await MeshoptDecoder.ready;
 const io = new NodeIO()
   .registerExtensions(ALL_EXTENSIONS)
   .registerDependencies({ 'meshopt.encoder': MeshoptEncoder, 'meshopt.decoder': MeshoptDecoder });
-const file = 'public/models/world.glb';
+const file = process.argv[2] || 'public/models/world.glb';
 const before = (await stat(file)).size;
 const document = await io.read(file);
 await document.transform(dedup(), meshopt({ encoder: MeshoptEncoder, level: 'high' }));
 await io.write(file, document);
 console.log(
-  `Campus GLB: ${before} → ${(await stat(file)).size} bytes; Meshopt decoder bundled locally.`,
+  `${file}: ${before} → ${(await stat(file)).size} bytes; Meshopt decoder bundled locally.`,
 );

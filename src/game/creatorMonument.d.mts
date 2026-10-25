@@ -4,6 +4,7 @@ export const CREATOR_MONUMENT: {
   radius: number;
   exitRadius: number;
   asset: string;
+  model: string;
   portfolio: string;
 };
 export function creatorProximity(

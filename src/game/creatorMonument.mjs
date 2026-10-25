@@ -2,9 +2,10 @@
 export const CREATOR_MONUMENT = {
   x: -10,
   z: 10,
-  radius: 2.8,
-  exitRadius: 4,
-  asset: '/branding/randy-creator-monument.png',
+  radius: 1.6,
+  exitRadius: 2.6,
+  model: '/models/creator-relic.glb',
+  asset: '/branding/creator-relic-preview.png',
   portfolio: 'https://randyfauzi.github.io/Randy-Fauzi-Portofolio/',
 };
 
