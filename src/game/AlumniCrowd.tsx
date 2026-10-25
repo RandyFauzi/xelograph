@@ -21,10 +21,18 @@ export default function AlumniCrowd({
     placements = useMemo(() => layoutAlumni(alumni), [alumni]);
   const templates = useMemo(
     () =>
-      ['short', 'bob', 'cap'].map((hair) => ({
-        hair,
-        model: createStaticAvatar(scene, { hair, outfitColor: '#ffffff', skinColor: '#ffffff' }),
-      })),
+      ['male', 'female'].flatMap((character) =>
+        ['short', 'bob', 'cap', 'long'].map((hair) => ({
+          hair,
+          character,
+          model: createStaticAvatar(scene, {
+            hair,
+            character,
+            outfitColor: '#ffffff',
+            skinColor: '#ffffff',
+          }),
+        })),
+      ),
     [scene],
   );
   useEffect(
@@ -61,11 +69,18 @@ export default function AlumniCrowd({
   const labels = alumni.filter((a) => visibleIds.includes(a.id));
   return (
     <>
-      {templates.map(({ hair, model }) => {
-        const members = alumni.filter((a) => a.avatar.hair === hair);
+      {templates.map(({ hair, character, model }) => {
+        const members = alumni.filter(
+          (a) => a.avatar.hair === hair && (a.avatar.character || 'male') === character,
+        );
         return (
           members.length > 0 && (
-            <CrowdBatch key={hair} members={members} template={model} placements={placements} />
+            <CrowdBatch
+              key={character + hair}
+              members={members}
+              template={model}
+              placements={placements}
+            />
           )
         );
       })}

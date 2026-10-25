@@ -2,7 +2,7 @@ import bpy,os,math
 from mathutils import Vector
 ROOT=os.path.abspath(os.path.join(os.path.dirname(__file__),'../..'))
 OUT=os.path.join(ROOT,'assets','previews');os.makedirs(OUT,exist_ok=True)
-def render(asset,name,location,target,scale):
+def render(asset,name,location,target,scale,character='male'):
  bpy.ops.wm.open_mainfile(filepath=os.path.join(ROOT,'assets','blender',asset))
  s=bpy.context.scene
  try:s.render.engine='CYCLES';s.cycles.samples=16
@@ -18,7 +18,11 @@ def render(asset,name,location,target,scale):
  s.render.filepath=os.path.join(OUT,name);s.render.image_settings.file_format='PNG'
  if asset.endswith('avatar.blend'):
   for o in s.objects:
-   if o.name.startswith(('Hair_bob','Hair_cap','Cap_brim')):o.hide_render=True
+   if o.name.startswith('Hair_'):o.hide_render=not o.name.startswith('Hair_long' if character=='female' else 'Hair_short')
+   if o.name.startswith('Cap_brim'):o.hide_render=True
+   if o.name=='Torso':o.hide_render=character=='female'
+   if o.name.startswith('Body_female_'):o.hide_render=character!='female'
  bpy.ops.render.render(write_still=True)
 render('xelograph-world.blend','world.png',(45,-57,50),(0,-6,0),78)
 render('xelograph-avatar.blend','avatar.png',(2,-4,2.1),(0,0,.9),2.3)
+render('xelograph-avatar.blend','avatar-female.png',(2,-4,2.1),(0,0,.9),2.3,'female')

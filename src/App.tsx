@@ -104,7 +104,7 @@ export default function App() {
     ])
       .then(([config, p, world]) => {
         if (alive) {
-          setDemo(config.demo);
+          setDemo(config.demo && !config.registrationOpen);
           setProfile(p);
           setAlumni(world);
           setReady(true);
@@ -309,7 +309,7 @@ export default function App() {
                   ? 'Buat karakter'
                   : modal === 'pass'
                     ? 'Reunion pass'
-                    : 'Xelograph'
+                    : 'Xylograph'
             }
           >
             <button
@@ -354,7 +354,6 @@ export default function App() {
             )}
             {modal === 'join' && (
               <Join
-                demo={demo}
                 onDone={(p) => {
                   setProfile(p);
                   setEntered(true);
@@ -401,7 +400,7 @@ export default function App() {
                 </h2>
                 <div className="privacy-copy">
                   <p>
-                    Xelograph mengumpulkan aspirasi alumni untuk merencanakan reuni 2027. Konsep Fun
+                    Xylograph mengumpulkan aspirasi alumni untuk merencanakan reuni 2027. Konsep Fun
                     Reunion dan Bukber masih berupa rencana, bukan pengumuman acara resmi.
                   </p>
                   <h3>Data yang disimpan</h3>
@@ -417,10 +416,10 @@ export default function App() {
                   </p>
                   <h3>Akses & penghapusan</h3>
                   <p>
-                    Simpan kode undanganmu secara pribadi untuk melanjutkan dari perangkat lain.
-                    Untuk koreksi identitas, kode hilang, atau penghapusan data, hubungi panitia
-                    yang memberimu undangan. Pengelola dan masa penyimpanan harus ditetapkan panitia
-                    sebelum peluncuran publik.
+                    Progres dapat dilanjutkan dari browser yang sama selama sesi masih tersimpan.
+                    Untuk pindah perangkat, koreksi identitas, atau penghapusan data, hubungi
+                    panitia. Pengelola dan masa penyimpanan harus ditetapkan panitia sebelum
+                    peluncuran publik.
                   </p>
                   <div className="note">
                     Mode 1 · Persistent Alumni World. Gerakan pemain berjalan di perangkatnya
@@ -494,22 +493,17 @@ export default function App() {
                 <div className="dialog-actions">
                   <button
                     className="text-button"
-                    onClick={async () => {
-                      try {
-                        await api('/logout', { method: 'POST' });
-                        setProfile(null);
-                        setModal(null);
-                      } catch (e) {
-                        setToast((e as Error).message);
-                      }
+                    onClick={() => {
+                      setEntered(false);
+                      setModal(null);
                     }}
                   >
-                    <LogOut size={16} /> Keluar
+                    <LogOut size={16} /> Kembali ke menu
                   </button>
                   <button
                     className="primary"
                     onClick={() => {
-                      download('xelograph-reunion-pass.svg', passSvg(profile), 'image/svg+xml');
+                      download('xylograph-reunion-pass.svg', passSvg(profile), 'image/svg+xml');
                       setToast('Reunion pass berhasil diunduh.');
                     }}
                   >
@@ -524,15 +518,7 @@ export default function App() {
     </div>
   );
 }
-function Join({
-  demo,
-  onDone,
-  onResume,
-}: {
-  demo: boolean;
-  onDone: (p: Profile) => void;
-  onResume: () => void;
-}) {
+function Join({ onDone, onResume }: { onDone: (p: Profile) => void; onResume: () => void }) {
   const [avatar, setAvatar] = useState<AvatarConfig>(DEFAULT_AVATAR),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
@@ -559,7 +545,6 @@ function Join({
                   fullName: f.get('fullName'),
                   nickname: f.get('nickname'),
                   whatsapp: f.get('whatsapp'),
-                  invitation: f.get('invitation'),
                   avatar,
                   consentData: f.has('consentData'),
                   consentPublic: f.has('consentPublic'),
@@ -580,6 +565,33 @@ function Join({
               <span>YOUR LITTLE SELF</span>
             </div>
             <div className="avatar-options">
+              <label>Pilih karakter</label>
+              <div className="character-options" role="group" aria-label="Pilihan karakter">
+                {(['male', 'female'] as const).map((character) => (
+                  <button
+                    type="button"
+                    key={character}
+                    aria-pressed={(avatar.character || 'male') === character}
+                    className={(avatar.character || 'male') === character ? 'selected' : ''}
+                    onClick={() =>
+                      setAvatar({
+                        ...avatar,
+                        character,
+                        hair: character === 'female' ? 'long' : 'short',
+                      })
+                    }
+                  >
+                    <AvatarPortrait
+                      config={{
+                        ...avatar,
+                        character,
+                        hair: character === 'female' ? 'long' : 'short',
+                      }}
+                    />
+                    <span>{character === 'female' ? 'Perempuan' : 'Laki-laki'}</span>
+                  </button>
+                ))}
+              </div>
               <label>Warna pakaian</label>
               <div className="swatches">
                 {(['sage', 'clay', 'navy', 'cream'] as const).map((v) => (
@@ -614,7 +626,7 @@ function Join({
               </div>
               <label>Gaya rambut</label>
               <div className="hair-options">
-                {(['short', 'bob', 'cap'] as const).map((v) => (
+                {(['short', 'bob', 'cap', 'long'] as const).map((v) => (
                   <button
                     type="button"
                     key={v}
@@ -622,7 +634,7 @@ function Join({
                     className={avatar.hair === v ? 'selected' : ''}
                     onClick={() => setAvatar({ ...avatar, hair: v })}
                   >
-                    {{ short: 'Pendek', bob: 'Bob', cap: 'Topi' }[v]}
+                    {{ short: 'Pendek', bob: 'Bob', cap: 'Topi', long: 'Panjang' }[v]}
                   </button>
                 ))}
               </div>
@@ -660,23 +672,13 @@ function Join({
               />
               <small>Hanya terlihat oleh panitia. Tidak tampil di dunia.</small>
             </label>
-            <label className="field">
-              Kode undangan
-              <input
-                name="invitation"
-                autoComplete="off"
-                required
-                placeholder={demo ? 'Uji lokal: XEL-DEMO' : 'Kode pribadi dari panitia'}
-              />
-              <small>
-                {demo
-                  ? 'Kode demo hanya untuk uji di perangkat ini.'
-                  : 'Simpan kode ini untuk masuk kembali di perangkat lain.'}
-              </small>
-            </label>
+            <p className="helper">
+              Progres tersimpan otomatis setelah kamu menyimpan jawaban. Gunakan browser yang sama
+              untuk melanjutkan.
+            </p>
             <label className="checkbox">
               <input name="consentData" type="checkbox" required />
-              Saya setuju data digunakan panitia untuk perencanaan reuni Xelograph.
+              Saya setuju data digunakan panitia untuk perencanaan reuni Xylograph.
             </label>
             <label className="checkbox">
               <input name="consentPublic" type="checkbox" />
@@ -703,8 +705,7 @@ function Join({
   );
 }
 function Resume({ onDone, onJoin }: { onDone: (p: Profile) => void; onJoin: () => void }) {
-  const [code, setCode] = useState(''),
-    [error, setError] = useState(''),
+  const [error, setError] = useState(''),
     [busy, setBusy] = useState(false);
   return (
     <>
@@ -717,16 +718,14 @@ function Resume({ onDone, onJoin }: { onDone: (p: Profile) => void; onJoin: () =
         kembali.
       </h2>
       <p className="dialog-description">
-        Masukkan kode undangan pribadi yang kamu pakai saat pertama masuk.
+        Lanjutkan petualangan dari browser yang kamu gunakan saat membuat karakter.
       </p>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
           try {
-            onDone(
-              await api('/resume', { method: 'POST', body: JSON.stringify({ invitation: code }) }),
-            );
+            onDone(await api('/me'));
           } catch (err) {
             setError((err as Error).message);
           } finally {
@@ -734,19 +733,9 @@ function Resume({ onDone, onJoin }: { onDone: (p: Profile) => void; onJoin: () =
           }
         }}
       >
-        <label className="field">
-          Kode undangan
-          <input
-            required
-            autoComplete="off"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="XEL-…"
-          />
-        </label>
         <p className="helper">
-          Kode demo tidak mendukung pemulihan lintas perangkat. Gunakan sesi browser yang sama, atau
-          minta kode pribadi dari panitia.
+          Progres tersimpan di server dan dikenali melalui sesi browser ini. Jika sesi sudah hilang
+          atau kamu berpindah perangkat, hubungi panitia untuk bantuan.
         </p>
         {error && (
           <p className="error" role="alert">
@@ -772,5 +761,5 @@ function passSvg(p: Profile) {
       /[&<>"']/g,
       (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[c]!,
     );
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="720" height="960" viewBox="0 0 720 960"><rect width="720" height="960" rx="32" fill="#f4f1e7"/><rect x="28" y="28" width="664" height="904" rx="20" fill="none" stroke="#314b40"/><text x="60" y="98" font-family="sans-serif" font-size="26" fill="#314b40">xelograph / REUNION 2027</text><circle cx="360" cy="310" r="120" fill="${COLORS[p.avatar.outfit]}"/><text x="360" y="342" text-anchor="middle" font-size="90" font-family="sans-serif" fill="#fff">${esc(p.nickname[0].toUpperCase())}</text><text x="360" y="510" text-anchor="middle" font-size="44" font-family="sans-serif" fill="#314b40">${esc(p.nickname)}</text><text x="360" y="570" text-anchor="middle" font-size="20" font-family="sans-serif" fill="#314b40">${esc(LABELS[p.answers.concept as string] || 'Cerita sedang dimulai')}</text><path d="M60 630H660" stroke="#c4cbb9"/><text x="360" y="710" text-anchor="middle" font-size="20" font-family="sans-serif" fill="#314b40">${p.completedAt ? 'JOURNEY COMPLETE' : 'JOURNEY IN PROGRESS'} · ${p.progress.length}/7</text><text x="360" y="820" text-anchor="middle" font-size="19" font-family="sans-serif" fill="#314b40">Tempat lama. Cerita baru.</text><text x="360" y="865" text-anchor="middle" font-size="14" font-family="sans-serif" fill="#6b7568">Pass survei aspirasi · Bukan tiket acara</text></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="720" height="960" viewBox="0 0 720 960"><rect width="720" height="960" rx="32" fill="#f4f1e7"/><rect x="28" y="28" width="664" height="904" rx="20" fill="none" stroke="#314b40"/><text x="60" y="98" font-family="sans-serif" font-size="26" fill="#314b40">xylograph / REUNION 2027</text><circle cx="360" cy="310" r="120" fill="${COLORS[p.avatar.outfit]}"/><text x="360" y="342" text-anchor="middle" font-size="90" font-family="sans-serif" fill="#fff">${esc(p.nickname[0].toUpperCase())}</text><text x="360" y="510" text-anchor="middle" font-size="44" font-family="sans-serif" fill="#314b40">${esc(p.nickname)}</text><text x="360" y="570" text-anchor="middle" font-size="20" font-family="sans-serif" fill="#314b40">${esc(LABELS[p.answers.concept as string] || 'Cerita sedang dimulai')}</text><path d="M60 630H660" stroke="#c4cbb9"/><text x="360" y="710" text-anchor="middle" font-size="20" font-family="sans-serif" fill="#314b40">${p.completedAt ? 'JOURNEY COMPLETE' : 'JOURNEY IN PROGRESS'} · ${p.progress.length}/7</text><text x="360" y="820" text-anchor="middle" font-size="19" font-family="sans-serif" fill="#314b40">Tempat lama. Cerita baru.</text><text x="360" y="865" text-anchor="middle" font-size="14" font-family="sans-serif" fill="#6b7568">Pass survei aspirasi · Bukan tiket acara</text></svg>`;
 }

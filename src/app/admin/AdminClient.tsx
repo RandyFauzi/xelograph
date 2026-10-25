@@ -9,7 +9,7 @@ export default function AdminClient() {
     <div className="admin-shell">
       <header className="admin-header">
         <a href="/">← Kembali ke permainan</a>
-        <span>Xelograph / Ruang panitia</span>
+        <span>Xylograph / Ruang panitia</span>
       </header>
       <AdminPanel />
     </div>

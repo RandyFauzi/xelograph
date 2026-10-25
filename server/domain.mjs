@@ -29,11 +29,12 @@ export function validateAvatar(a) {
   if (
     !a ||
     !['sage', 'clay', 'navy', 'cream'].includes(a.outfit) ||
-    !['short', 'bob', 'cap'].includes(a.hair) ||
+    !['short', 'bob', 'cap', 'long'].includes(a.hair) ||
+    (a.character !== undefined && !['male', 'female'].includes(a.character)) ||
     !['light', 'warm', 'deep'].includes(a.skin)
   )
     throw new Error('Pilihan avatar tidak valid.');
-  return { outfit: a.outfit, hair: a.hair, skin: a.skin };
+  return { outfit: a.outfit, hair: a.hair, skin: a.skin, character: a.character || 'male' };
 }
 export function validateAnswer(index, value) {
   if (

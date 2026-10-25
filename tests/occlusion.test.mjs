@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { BoxGeometry, Mesh, MeshStandardMaterial, Vector3 } from 'three';
+import { BoxGeometry, Mesh, MeshStandardMaterial, Vector3, Texture } from 'three';
 import { createOcclusionController, collectOccluderMeshes } from '../src/game/occlusion.mjs';
 import { readFileSync } from 'node:fs';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -18,6 +18,10 @@ test('Actual exported trees and buildings retain grouped occlusion meshes after 
   const bytes = readFileSync(new URL('../public/models/world.glb', import.meta.url));
   const { scene } = await new GLTFLoader()
     .setMeshoptDecoder(MeshoptDecoder)
+    .register(() => ({
+      name: 'geometry-test-textures',
+      loadTexture: () => Promise.resolve(new Texture()),
+    }))
     .parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
   const meshes = collectOccluderMeshes(scene),
     groups = new Map();

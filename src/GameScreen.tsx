@@ -85,7 +85,7 @@ export function GameScreen({
         {light ? (
           <div className="light-game">
             <Leaf size={36} />
-            <h2>Perjalanan Xelograph</h2>
+            <h2>Perjalanan Xylograph</h2>
             <p>Pilih misi untuk melanjutkan cerita.</p>
             <div>
               {CHECKPOINTS.map((c, i) => (
@@ -136,7 +136,7 @@ export function GameScreen({
           <div className="title-shade" />
           <header className="title-header">
             <span className="game-logo">
-              xelograph<span>REUNION WORLD</span>
+              xylograph<span>REUNION WORLD</span>
             </span>
             <span className="game-edition">A WORLD THAT REMEMBERS YOU</span>
             <button
@@ -198,7 +198,7 @@ export function GameScreen({
           <div className="title-world-caption">
             <span className="caption-rule" />
             <small>SEKOLAH LAMA, KENANGAN YANG SAMA.</small>
-            <b>Xelograph Reunion World</b>
+            <b>Xylograph Reunion World</b>
             <span>Taman sekolah · Edisi 2027</span>
           </div>
           <div className="title-bottom">
@@ -224,7 +224,7 @@ export function GameScreen({
                   {profile?.completedAt
                     ? 'Alumni · cerita tersimpan'
                     : profile
-                      ? 'Alumni Xelograph'
+                      ? 'Alumni Xylograph'
                       : 'Buat karakter untuk menyimpan cerita'}
                 </em>
               </span>
@@ -236,7 +236,7 @@ export function GameScreen({
             <div className="game-location">
               <Compass size={17} />
               <span>
-                Xelograph<small>SCHOOL & GARDENS</small>
+                Xylograph<small>SCHOOL & GARDENS</small>
               </span>
             </div>
             <nav className="hud-actions" aria-label="Menu permainan">
@@ -337,7 +337,7 @@ export function GameScreen({
           )}
         </>
       )}
-      {demo && <span className="game-demo">LOCAL DEMO{!entered ? ' · XEL-DEMO' : ''}</span>}
+      {demo && <span className="game-demo">MODE UJI</span>}
     </div>
   );
 }

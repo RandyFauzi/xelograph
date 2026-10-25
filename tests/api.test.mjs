@@ -15,12 +15,15 @@ const answers = [
   { contribution: 'depends', sponsor: 'donor' },
   { message: 'Sampai bertemu!' },
 ];
-async function fixture(t, { demo = false, publicOrigins = [] } = {}) {
+async function fixture(t, { demo = false, publicOrigins = [], registrationOpen = false } = {}) {
   const db = openDb(':memory:');
-  const server = createApp({ db, demo, publicOrigins, adminToken: 'test-secret-token' }).listen(
-    0,
-    '127.0.0.1',
-  );
+  const server = createApp({
+    db,
+    demo,
+    publicOrigins,
+    registrationOpen,
+    adminToken: 'test-secret-token',
+  }).listen(0, '127.0.0.1');
   await once(server, 'listening');
   t.after(() => {
     server.closeAllConnections();
@@ -79,6 +82,30 @@ test('Phone normalization and independent participation semantics', () => {
     committee: 'participant',
     department: [],
   });
+});
+
+test('Public alumni can create a female character and finish without any invitation code; phone alone cannot resume someone else', async (t) => {
+  const { request, join } = await fixture(t, { registrationOpen: true });
+  assert.equal((await request('/config')).body.registrationOpen, true);
+  const joined = await join({
+    invitation: undefined,
+    avatar: { ...avatar, hair: 'long', character: 'female' },
+  });
+  assert.equal(joined.status, 201);
+  const cookie = joined.cookie;
+  assert.equal(joined.body.avatar.character, 'female');
+  for (let i = 0; i < answers.length; i++)
+    assert.equal(
+      (await request('/answers/' + i, { method: 'PUT', cookie, body: answers[i] })).status,
+      200,
+    );
+  assert.equal((await request('/complete', { method: 'POST', cookie })).status, 200);
+  assert.equal((await request('/me', { cookie })).body.progress.length, 7);
+  const duplicate = await join({ invitation: undefined });
+  assert.equal(duplicate.status, 409);
+  assert.equal(duplicate.cookie, undefined);
+  assert.equal((await request('/me')).status, 401);
+  assert.equal((await request('/world')).body[0].avatar.character, 'female');
 });
 test('Next.js proxy accepts only explicitly configured frontend origins from loopback', async (t) => {
   const { request } = await fixture(t, { publicOrigins: ['http://127.0.0.1:3001'] });
@@ -199,14 +226,9 @@ test('Demo is explicit and can be disabled', async (t) => {
   assert.equal((await local.request('/config')).body.demo, true);
 });
 test('Fifty alumni on one shared IP can register and complete the whole journey', async (t) => {
-  const { db, request } = await fixture(t);
+  const { request } = await fixture(t, { registrationOpen: true });
   const people = await Promise.all(
     Array.from({ length: 50 }, async (_, i) => {
-      const invitation = 'XEL-CAPACITY-' + i;
-      db.prepare('INSERT INTO invitations(code_hash,label) VALUES(?,?)').run(
-        hash(invitation),
-        'Capacity test ' + i,
-      );
       const joined = await request('/join', {
         method: 'POST',
         body: {
@@ -216,7 +238,6 @@ test('Fifty alumni on one shared IP can register and complete the whole journey'
           avatar,
           consentData: true,
           consentPublic: true,
-          invitation,
         },
       });
       assert.equal(joined.status, 201);

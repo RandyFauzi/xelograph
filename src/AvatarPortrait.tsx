@@ -21,6 +21,13 @@ export default function AvatarPortrait({ config }: { config: AvatarConfig }) {
       <circle cx="78" cy="150" r="8" fill={skin} />
       <circle cx="142" cy="150" r="8" fill={skin} />
       <rect x="82" y="101" width="56" height="51" rx="13" fill={shirt} />
+      {config.character === 'female' && <path d="M87 129H133L147 162H73Z" fill={shirt} />}
+      {config.hair === 'long' && (
+        <path
+          d="M73 76Q70 36 110 36Q150 36 148 76L150 126L134 131L130 91H90L86 131L70 125Z"
+          fill="#342a22"
+        />
+      )}
       {config.hair === 'bob' && (
         <rect x="76" y="44" width="68" height="65" rx="28" fill="#342a22" />
       )}
@@ -28,7 +35,7 @@ export default function AvatarPortrait({ config }: { config: AvatarConfig }) {
       {config.hair === 'short' && (
         <path d="M79 72Q72 39 104 38Q143 34 141 70L130 62L120 54L103 60L86 59Z" fill="#342a22" />
       )}
-      {config.hair === 'bob' && (
+      {(config.hair === 'bob' || config.hair === 'long') && (
         <path d="M78 72Q78 37 110 39Q145 39 142 75L129 54Q108 70 78 72Z" fill="#342a22" />
       )}
       {config.hair === 'cap' && (

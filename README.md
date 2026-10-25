@@ -1,4 +1,4 @@
-# Xelograph — Persistent Alumni World
+# Xylograph — Persistent Alumni World
 
 Sebuah game reuni layar penuh di browser dan HP, dengan menu awal, HUD, joystick analog, kamera mengikuti pemain, dan dunia sekolah yang dapat dijelajahi. Tidak ada sidebar atau halaman dashboard dalam pengalaman alumni.
 
@@ -20,21 +20,17 @@ Buka `http://127.0.0.1:3001`. Untuk pengembangan, `npm run dev` memakai alamat y
 
 File `.env` lokal sudah disiapkan dengan token admin acak. Jangan commit atau bagikan file tersebut. Untuk instalasi baru, salin `.env.example` ke `.env` dan isi `ADMIN_TOKEN` dengan secret acak yang panjang.
 
-- Uji lokal: kode **XEL-DEMO** dengan nomor WhatsApp yang belum terdaftar. Tidak ada pesan WhatsApp yang dikirim.
+- Pendaftaran langsung tanpa kode: isi nama, WhatsApp, pilih karakter, dan beri persetujuan. PUBLIC_REGISTRATION=true (default) membuka pendaftaran alumni. Tidak ada pesan WhatsApp yang dikirim.
 - Ruang panitia terpisah di `http://127.0.0.1:3001/admin`: gunakan nilai `ADMIN_TOKEN` dari `.env`. Token hanya berada di memori halaman selama dashboard dibuka.
 - Data disimpan di `data/xelograph.sqlite`, bukan localStorage. Refresh atau restart server tetap mempertahankan jawaban.
 - Mode demo harus dimatikan sebelum dibuka kepada alumni sungguhan: `DEMO_MODE=false`.
-- Cookie sesi bertahan 30 hari. Kode demo hanya dapat melanjutkan melalui sesi browser yang sama, sedangkan kode pribadi dapat digunakan lintas perangkat.
+- Cookie sesi bertahan 30 hari. Gunakan browser yang sama untuk melanjutkan; kembali ke menu mempertahankan sesi. Jika sesi hilang atau ingin pindah perangkat, hubungi panitia. Nomor WhatsApp saja tidak bisa dipakai mengambil alih profil.
 
-## Kode pribadi alumni
+## Pendaftaran dan sesi
 
-```powershell
-npm run db:invite -- "Nama Alumni"
-```
+Alumni tidak perlu kode undangan. Konfigurasi avatar, jawaban, dan progres disimpan dalam database; cookie HttpOnly mengenali profil di browser yang sama. Nama dan nomor tidak menjadi bukti identitas atau kredensial masuk. Profil dengan nomor yang sudah terdaftar ditolak tanpa membuka data orang tersebut.
 
-Perintah menghasilkan satu kode acak berentropi tinggi. Bagikan secara pribadi kepada alumni tersebut. Database hanya menyimpan hash kode. Pendaftaran pertama mengikat kode ke satu profil. Masuk kembali dengan kode yang sama mengembalikan profil tersebut. Nama label undangan adalah catatan panitia, bukan pemeriksaan identitas otomatis.
-
-Kode ini adalah kredensial pembawa: siapa pun yang memilikinya dapat mengakses profil terkait. Jangan menaruh kode di URL, tangkapan layar publik, atau direktori. Kode yang hilang perlu ditangani panitia; belum tersedia pengiriman kode atau OTP otomatis. Nomor WhatsApp dinormalisasi dan unik, tetapi belum diverifikasi kepemilikannya.
+Mekanisme undangan lama tetap didukung backend untuk kompatibilitas, tetapi kolom kode tidak muncul dalam pengalaman pengguna. PUBLIC_REGISTRATION=false dapat menutup pendaftaran langsung bila diperlukan panitia. Belum ada pemulihan lintas perangkat atau OTP otomatis.
 
 ## Pengalaman yang tersedia
 
@@ -44,7 +40,7 @@ Kode ini adalah kredensial pembawa: siapa pun yang memilikinya dapat mengakses p
 - Pilih **Jelajahi dulu** untuk langsung berjalan tanpa registrasi. Buat karakter saat ingin menyimpan jawaban.
 - Area misi terbuka berurutan. Pertanyaan muncul otomatis saat pemain mencapai area aktif. Setelah menyimpan, pemain kembali ke dunia dan area selanjutnya terbuka. Jurnal tidak membuka semua pertanyaan sekaligus.
 - Tombol **Tunjukkan jalan** menjalankan pencarian jalur menghindari bangunan, air, dan area misi yang terkunci. Input joystick atau keyboard membatalkan perjalanan otomatis.
-- Character creator: tiga rambut / topi, tiga warna kulit, empat pakaian, preview karakter GLB.
+- Character creator: pilihan laki-laki/perempuan, empat gaya rambut termasuk panjang, tiga warna kulit, empat warna pakaian, dan preview karakter GLB. Pilihan yang sama tampil pada pemain serta avatar alumni; profil lama tetap kompatibel.
 - Ketujuh checkpoint, validasi server, pilihan majemuk, bidang panitia bersyarat, usulan venue, pesan opsional.
 - Jawaban disimpan setelah menekan **Simpan & lanjut**; indikator tersimpan hanya muncul setelah server berhasil menyimpan. Jawaban yang sedang diketik belum menjadi draf server.
 - Progres dapat dilanjutkan, jawaban dapat diperbarui, satu respons per alumni.
@@ -75,7 +71,7 @@ data/                 Database runtime (diabaikan Git)
 
 ## Aset Blender
 
-Keduanya model asli yang dibuat secara prosedural untuk proyek ini, tanpa unduhan aset pihak ketiga. Arah eksplorasi dan warna terinspirasi [Zesiger](https://zesiger.net/): rumput hijau cerah, air biru, gedung putih, atap gelap, dan penanda biru. Materi serta urutan tujuh pertanyaan dipertahankan. Generator dipisah menjadi modul geometri, kampus, dan karakter. GLB memakai kompresi Meshopt dengan decoder lokal; world sekitar 1,17 MB dan avatar 204 KB.
+Model dibuat secara prosedural untuk proyek ini. Logo asli dari pemilik dipasang di gerbang dan Reunion Commons, dengan tekstur tertanam dalam GLB. Sumber logo tersedia di public/branding/xylograph-logo.jpg. Arah eksplorasi dan warna terinspirasi [Zesiger](https://zesiger.net/): rumput hijau cerah, air biru, gedung putih, atap gelap, dan penanda biru. Materi serta urutan tujuh pertanyaan dipertahankan. Generator dipisah menjadi modul geometri, kampus, dan karakter. GLB memakai kompresi Meshopt dengan decoder lokal; world sekitar 1,24 MB dan avatar 251 KB untuk kedua pilihan karakter.
 
 ```powershell
 & 'C:\Program Files\Blender Foundation\Blender 5.2\blender.exe' --background --python assets/blender/build_campus.py
@@ -92,7 +88,7 @@ npm test
 npm run build
 ```
 
-Pengujian juga mensimulasikan gerakan frame demi frame menuju semua misi, arah input relatif kamera, collision, dan penguncian area. Pengujian mencakup alur dari undangan sampai dunia publik, resume, logout, constraint nomor unik, validasi payload, larangan penyelesaian prematur, penarikan persetujuan, data privat, kontrol admin, penghapusan, serta struktur GLB. Browser sengaja tidak dibuka sesuai permintaan; kontrol, responsivitas, dan performa perangkat nyata masih perlu diperiksa langsung oleh pemilik.
+Pengujian juga mensimulasikan gerakan frame demi frame menuju semua misi, arah input relatif kamera, collision, dan penguncian area. Pengujian mencakup pendaftaran tanpa kode sampai dunia publik, resume, logout, constraint nomor unik, validasi payload, larangan penyelesaian prematur, penarikan persetujuan, data privat, kontrol admin, penghapusan, serta struktur GLB. Browser sengaja tidak dibuka sesuai permintaan; kontrol, responsivitas, dan performa perangkat nyata masih perlu diperiksa langsung oleh pemilik.
 
 ## Sebelum peluncuran publik
 

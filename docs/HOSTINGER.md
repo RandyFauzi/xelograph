@@ -13,7 +13,8 @@ HOST=0.0.0.0
 PUBLIC_ORIGIN=https://xelograph.appku.site
 DATABASE_PATH=/home/u361393239/xelograph-data/xelograph.sqlite
 PERSISTENT_DATABASE_REQUIRED=true
-DEMO_MODE=true
+DEMO_MODE=false
+PUBLIC_REGISTRATION=true
 ADMIN_TOKEN=ISI_DENGAN_SECRET_ASLI
 ```
 

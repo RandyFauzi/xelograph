@@ -4,6 +4,11 @@ from campus_primitives import *
 def create_avatar():
  skin=material('AvatarSkin','#c78e65');shirt=material('AvatarShirt','#367fcb');pants=material('AvatarPants','#344859');hair=material('AvatarHair','#49362b');shoe=material('AvatarShoe','#f6f3e7');ink=material('AvatarEyes','#253644');hat=material('AvatarCap','#f0b168')
  cube('Torso',(0,0,.87),(.5,.31,.51),shirt,.095)
+ cube('Body_female_Torso',(0,0,.88),(.43,.30,.49),shirt,.09)
+ bpy.ops.mesh.primitive_cone_add(vertices=16,radius1=.36,radius2=.225,depth=.34,location=(0,0,.63))
+ skirt=bpy.context.object;skirt.name='Body_female_Skirt';skirt.scale.y=.68;skirt.data.materials.append(shirt)
+ skirt.modifiers.new('Soft hem','BEVEL').width=.018
+ skirt.modifiers.new('Hem normals','WEIGHTED_NORMAL')
  cube('Collar',(0,-.012,1.105),(.24,.28,.05),shoe,.025)
  for side,x in [('L',-.145),('R',.145)]:
   before=set(bpy.context.scene.objects)
@@ -28,6 +33,9 @@ def create_avatar():
  for x in [-.278,.278]:ico('Ear',(x,.015,1.39),(.045,.055,.075),skin,2)
  ico('Hair_short',(0,.015,1.59),(.3,.27,.18),hair,2)
  ico('Hair_bob',(0,.09,1.43),(.325,.235,.34),hair,2)
+ ico('Hair_long_back',(0,.135,1.33),(.325,.205,.44),hair,2)
+ ico('Hair_long_crown',(0,.02,1.61),(.31,.275,.17),hair,2)
+ for x in [-.265,.265]:ico('Hair_long_side',(x,-.025,1.32),(.075,.19,.35),hair,2)
  cylinder('Hair_cap',(0,.015,1.64),.3,.12,hat,16)
  cube('Cap_brim',(0,-.22,1.64),(.38,.27,.04),hat,.035)
  for x in [-.1,.1]:

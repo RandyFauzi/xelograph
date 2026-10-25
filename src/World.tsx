@@ -20,6 +20,7 @@ import {
 import * as THREE from 'three';
 import { findPath, MISSION_ZONES } from './game/navigation.mjs';
 import { createStaticAvatar } from './game/staticAvatar.mjs';
+import { avatarPartVisible } from './game/avatarParts.mjs';
 import { createOcclusionController, collectOccluderMeshes } from './game/occlusion.mjs';
 import { usePlayerMotion, CameraFollow, type PathPoint } from './game/PlayerController';
 import Joystick from './game/Joystick';
@@ -71,6 +72,7 @@ function Character({
     if (!moving)
       return createStaticAvatar(scene, {
         hair: config.hair,
+        character: config.character,
         outfitColor: COLORS[config.outfit],
         skinColor: COLORS[config.skin],
       });
@@ -78,8 +80,7 @@ function Character({
     copy.traverse((o) => {
       if (o instanceof THREE.Mesh) {
         o.castShadow = true;
-        if (o.name.startsWith('Hair_')) o.visible = o.name.startsWith('Hair_' + config.hair);
-        if (o.name.startsWith('Cap_brim')) o.visible = config.hair === 'cap';
+        o.visible = avatarPartVisible(o.name, config);
         const m = (o.material as THREE.MeshStandardMaterial).clone();
         if (m.name === 'AvatarShirt') m.color.set(COLORS[config.outfit]);
         if (m.name === 'AvatarSkin') m.color.set(COLORS[config.skin]);
@@ -87,7 +88,7 @@ function Character({
       }
     });
     return copy;
-  }, [scene, config.outfit, config.skin, config.hair, moving]);
+  }, [scene, config.outfit, config.skin, config.hair, config.character, moving]);
   useEffect(
     () => () => {
       model.traverse((o) => {

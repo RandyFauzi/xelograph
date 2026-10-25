@@ -1,4 +1,4 @@
-/* Bright campus: original Xelograph styling inspired by the clarity of a miniature world. */
+/* Bright campus: original Xylograph styling inspired by the clarity of a miniature world. */
 .world-loading-overlay {
   position: absolute;
   inset: 0;
@@ -12,6 +12,40 @@
   --world-green: #78ad4e;
   --world-paper: #fbfcf8;
   --world-line: #dce5dc;
+}
+.character-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 8px 0 18px;
+}
+.character-options button {
+  min-height: 92px;
+  border: 1px solid var(--world-line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--world-navy);
+  padding: 8px;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+.character-options button.selected {
+  border-color: var(--world-blue);
+  background: #edf5fe;
+  box-shadow: inset 0 0 0 1px var(--world-blue);
+}
+.character-options svg {
+  width: 64px;
+  height: 58px;
+}
+.character-options span {
+  font-size: 13px;
+  font-weight: 600;
+}
+.hair-options {
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .boot-screen {
   position: fixed;

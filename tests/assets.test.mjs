@@ -29,10 +29,17 @@ test('World GLB contains seven checkpoints and an original complete environment'
   assert.ok(json.meshes.length > 30);
   for (const name of ['Basketball_court', 'Picnic_pavilion', 'Outer_lake'])
     assert.ok(names.includes(name) || names.includes(name.replaceAll('_', ' ')), name);
+  assert.ok(names.includes('Xylograph_logo_Entrance'));
+  assert.ok(names.includes('Xylograph_logo_Commons'));
+  assert.ok(
+    json.images?.length > 0 &&
+      json.images.every((image) => image.bufferView !== undefined && !image.uri),
+    'Original logo is embedded in GLB without a network dependency',
+  );
 });
 test('Modular avatar GLB contains all required parts and tintable materials', () => {
   const { json, size } = glb('avatar.glb');
-  assert.ok(size < 250000);
+  assert.ok(size < 350000, 'Both character variants share one compact avatar GLB');
   const names = json.nodes.map((n) => n.name);
   for (const name of [
     'Torso',
@@ -41,6 +48,9 @@ test('Modular avatar GLB contains all required parts and tintable materials', ()
     'Hair_bob',
     'Hair_cap',
     'Cap_brim',
+    'Body_female_Torso',
+    'Body_female_Skirt',
+    'Hair_long_back',
     'Arm_L',
     'Arm_R',
     'Leg_L',

@@ -188,7 +188,7 @@ export function Survey({
         )}
         {index === 6 && (
           <>
-            <h3>Satu pesan untuk Xelograph?</h3>
+            <h3>Satu pesan untuk Xylograph?</h3>
             <label className="field">
               Ide, harapan, atau kenangan kecil
               <textarea
@@ -203,7 +203,7 @@ export function Survey({
               Opsional · {String(a.message || '').length}/1.000 · Pesan hanya dibaca panitia.
             </p>
             <div className="note">
-              Setelah ini, jejakmu akan menjadi bagian dari dunia Xelograph. Kamu tetap bisa
+              Setelah ini, jejakmu akan menjadi bagian dari dunia Xylograph. Kamu tetap bisa
               memperbarui jawaban kapan saja.
             </div>
           </>

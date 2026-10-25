@@ -1,5 +1,5 @@
 """Vivid miniature campus: original assets inspired by the feel of an explorable diorama."""
-import bpy,math,random
+import bpy,math,random,os
 from campus_primitives import *
 random.seed(2027)
 
@@ -13,6 +13,19 @@ def create_world():
  'Glass':'#a8cdd5','Silver':'#b7c5c5','Solar panel':'#274e71','Stone':'#b5bba6',
  }.items()}
  M['Water blue']=material('Water blue','#4aa7d4',.27,.08)
+ logo_image=bpy.data.images.load(os.path.abspath(os.path.join(os.path.dirname(__file__),'../../public/branding/xylograph-logo.jpg')),check_existing=True)
+ logo_image.pack()
+ logo_material=bpy.data.materials.new('Xylograph original logo');logo_material.use_nodes=True
+ shader=logo_material.node_tree.nodes.get('Principled BSDF');shader.inputs['Roughness'].default_value=.85
+ texture=logo_material.node_tree.nodes.new('ShaderNodeTexImage');texture.image=logo_image
+ logo_material.node_tree.links.new(texture.outputs['Color'],shader.inputs['Base Color'])
+ def logo_plaque(name,x,y,z,size,front=-1):
+  cube('Logo frame',(x,y,z),(size+.18,.16,size+.18),M['Timber'],.07)
+  for dx in [-size*.36,size*.36]:cube('Logo support',(x+dx,y,.9),(.09,.13,1.7),M['Dark frame'],.015)
+  bpy.ops.mesh.primitive_plane_add(size=size,location=(x,y+front*.091,z),rotation=(math.pi/2 if front<0 else -math.pi/2,0,0))
+  face=bpy.context.object;face.name='Xylograph_logo_'+name;face.data.materials.append(logo_material)
+ logo_plaque('Entrance',4,-18,2.1,2.15)
+ logo_plaque('Commons',6.5,-32.8,2.1,2.25,1)
  def tree(x,y,scale=1,pine=False):
   before=set(bpy.context.scene.objects)
   cylinder('Tree trunk',(x,y,1.1*scale),.13*scale,2.1*scale,M['Bark'],7)
@@ -108,14 +121,14 @@ def create_world():
  cylinder('Fountain plinth',(0,1,.8),.2,.4,M['Path limestone'],12)
  cylinder('Fountain basin',(0,1,1.03),.55,.12,M['White plaster'],24)
  ico('Fountain jet',(0,1,1.26),(.07,.07,.24),M['Water blue'],2)
- building(-6,8.4,8,3.8,'XELOGRAPH / ALUMNI')
+ building(-6,8.4,8,3.8,'XYLOGRAPH / ALUMNI')
  building(5.4,8.4,6.5,3.8,'RUMAH CERITA','modern')
  building(19,12,4.5,3,'KOPI & KENANGAN','modern')
  # Entrance, courtyard flags and a welcome plaque.
  for y in [-18,-9]:
   for x in [-2.1,2.1]:cube('Entrance pillar',(x,y,1.75),(.38,.45,3.3),M['White plaster'],.05)
   cube('Entrance arch',(0,y,3.3),(4.7,.48,.58),M['Blue accent'],.08)
-  text('Entrance lettering','XELOGRAPH',(0,y-.25,3.3),.33,M['White plaster'])
+  text('Entrance lettering','XYLOGRAPH',(0,y-.25,3.3),.33,M['White plaster'])
  for x in [-3.2,3.2]:
   cylinder('Flagpole',(x,-9,2),.035,3.8,M['Silver'],8)
   cube('Welcome flag',(x+.33,-9,3.2),(.62,.035,.85),M['Blue accent'])
@@ -207,7 +220,7 @@ def create_world():
  cube('Commons stage backdrop',(0,-34.2,1.9),(10,.15,2.8),M['White plaster'],.08)
  cube('Commons stage stripe',(0,-34.3,1.1),(9.8,.03,.28),M['Blue accent'])
  text('Reunion stage lettering','SAMPAI BERTEMU KEMBALI',(0,-34.31,2.4),.37,M['Blue accent'])
- text('Reunion stage subtitle','XELOGRAPH / REUNION 2027',(0,-34.32,1.75),.24,M['Dark frame'])
+ text('Reunion stage subtitle','XYLOGRAPH / REUNION 2027',(0,-34.32,1.75),.24,M['Dark frame'])
  for x in [-4.3,4.3]:cube('Commons speaker',(x,-33,1.05),(.55,.55,1),M['Dark frame'],.05)
  join_objects('Reunion_stage',new_objects(before),True)
  for x in [-12,12]:
@@ -219,7 +232,7 @@ def create_world():
  protected={'Central plaza','Basketball court','Picnic pavilion','Outer lake','Reunion Commons'}
  groups={}
  for o in list(bpy.context.scene.objects):
-  if o.type=='MESH' and not o.get('camera_occluder',False) and o.name not in protected and not o.name.startswith('Checkpoint_'):
+  if o.type=='MESH' and not o.get('camera_occluder',False) and o.name not in protected and not o.name.startswith(('Checkpoint_','Xylograph_logo_')):
    groups.setdefault(o.data.materials[0].name,[]).append(o)
  for name,objects in groups.items():
   if len(objects)>1:join_objects('Scenery_'+name.replace(' ','_'),objects)

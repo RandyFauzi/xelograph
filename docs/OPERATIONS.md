@@ -13,7 +13,7 @@ Jangan menjalankan dua runtime pada port yang sama. Sebelum restart lokal, jalan
 3. Letakkan reverse proxy HTTPS di depan Next.js port 3001. Set PUBLIC_ORIGIN=https://domain-reuni-anda (tanpa trailing slash); situs dan API memakai origin yang sama.
 4. Gunakan satu instance server dan volume disk persisten untuk `DATABASE_PATH`. Perubahan ke multi-instance memerlukan migrasi ke database server seperti PostgreSQL dan limiter bersama.
 5. Tambahkan rate limit login pada proxy. Banyak alumni di satu jaringan berbagi IP; jangan menetapkan batas seluruh situs terlalu rendah.
-6. Buat undangan per alumni. Jangan memakai kode demo bersama untuk data sebenarnya.
+6. Set PUBLIC_REGISTRATION=true untuk pendaftaran langsung tanpa kode. Gunakan browser yang sama untuk melanjutkan; pemulihan lintas perangkat perlu bantuan panitia.
 7. Isi nama pengelola, kontak panitia, dan retensi data pada pemberitahuan privasi sebelum membuka undangan.
 8. Periksa UI dan gerak di perangkat nyata; belum ada pengujian browser otomatis pada pengerjaan ini.
 

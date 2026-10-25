@@ -59,6 +59,7 @@ export function createApiHandler({
   demo = process.env.DEMO_MODE === 'true' ||
     (process.env.NODE_ENV !== 'production' && process.env.DEMO_MODE !== 'false'),
   adminToken = process.env.ADMIN_TOKEN,
+  registrationOpen = process.env.PUBLIC_REGISTRATION !== 'false',
   publicOrigins = String(process.env.PUBLIC_ORIGIN || '')
     .split(',')
     .map((s) => s.trim())
@@ -130,7 +131,7 @@ export function createApiHandler({
       if (buckets.size > 10000)
         for (const [key, value] of buckets) if (value.until < now) buckets.delete(key);
       if (method === 'GET' && path === '/api/config')
-        return json({ demo, mode: 'persistent', checkpoints: 7 });
+        return json({ demo, registrationOpen, mode: 'persistent', checkpoints: 7 });
       const body = !['GET', 'HEAD', 'OPTIONS'].includes(method) ? await readJson(request) : {};
       if (method === 'POST' && path === '/api/join') {
         const { fullName, nickname, whatsapp, avatar, consentPublic, consentData, invitation } =
@@ -139,7 +140,7 @@ export function createApiHandler({
           .trim()
           .toUpperCase();
         const inv = db.prepare('SELECT * FROM invitations WHERE code_hash=?').get(hash(code));
-        if (!inv && !(demo && code === 'XEL-DEMO'))
+        if (!registrationOpen && !inv && !(demo && code === 'XEL-DEMO'))
           throw new HttpError(
             403,
             'Kode undangan tidak valid. Hubungi panitia untuk mendapatkan kode.',
@@ -160,7 +161,7 @@ export function createApiHandler({
         if (db.prepare('SELECT id FROM alumni WHERE whatsapp=?').get(phone))
           throw new HttpError(
             409,
-            'Nomor sudah terdaftar. Gunakan kode undangan asli untuk melanjutkan; hubungi panitia jika hilang.',
+            'Nomor sudah terdaftar. Lanjutkan melalui browser saat membuat karakter, atau hubungi panitia.',
           );
         const id = randomUUID();
         transaction(() => {
@@ -280,7 +281,10 @@ export function createApiHandler({
             .prepare('SELECT alumni_id FROM sessions WHERE token_hash=? AND expires_at>?')
             .get(hash(token), Date.now());
         if (!session)
-          throw new HttpError(401, 'Sesi berakhir. Masuk kembali dengan kode undanganmu.');
+          throw new HttpError(
+            401,
+            'Sesi belum tersedia. Gunakan browser tempat membuat karakter atau hubungi panitia.',
+          );
         const id = session.alumni_id;
         if (method === 'GET' && path === '/api/me') return json(profile(id));
         if (method === 'PUT' && answerMatch) {

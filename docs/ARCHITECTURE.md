@@ -72,8 +72,8 @@ Status hadir tidak menyatakan kesediaan membantu. Panitia aktif yang tidak bisa 
 
 ## Alur penyimpanan
 
-1. Kode undangan diperiksa; kode terikat memulihkan profil yang sama.
-2. Pendaftaran baru memvalidasi nama, WhatsApp, avatar, dan izin data; insert profil + respons + ikatan undangan dalam transaksi.
+1. Pendaftaran alumni terbuka tanpa kode. Undangan lama hanya jalur kompatibilitas opsional; nomor WhatsApp saja tidak memulihkan sesi.
+2. Pendaftaran baru memvalidasi nama, WhatsApp, avatar, dan izin data; insert profil + respons dalam transaksi. Undangan opsional diikat jika ada.
 3. Server membuat token sesi acak 256-bit di cookie HttpOnly, SameSite=Lax, Secure pada produksi. Hanya hash token disimpan.
 4. PUT checkpoint memvalidasi hanya kunci checkpoint terkait, menolak lompatan ke checkpoint masa depan, merge jawaban, lalu update progres dalam transaksi. Pertanyaan berikutnya tidak dibuka langsung; client kembali ke dunia dan membuka area baru.
 5. POST complete hanya berhasil jika ketujuh checkpoint ada. Waktu selesai pertama dipertahankan saat memperbarui jawaban.
@@ -106,4 +106,4 @@ Web Audio menghasilkan BGM dan efek original tanpa file jaringan. AudioContext d
 
 ## Batas cakupan
 
-Belum ada pemulihan undangan otomatis, verifikasi WhatsApp, dashboard multi-peran, audit trail admin, sinkronisasi gerak, atau deployment. Identitas berbasis kepemilikan kode undangan, bukan bukti kepemilikan nomor WhatsApp. Seluruh akses profil bergantung pada kode atau cookie sesi. Perubahan identitas dilakukan panitia lewat proses terkontrol di luar UI; penghapusan sudah tersedia.
+Belum ada pemulihan undangan otomatis, verifikasi WhatsApp, dashboard multi-peran, audit trail admin, sinkronisasi gerak, atau deployment. Pendaftaran langsung tidak memverifikasi kepemilikan nomor WhatsApp. Akses profil berjalan melalui cookie sesi; jalur kode lama hanya untuk kompatibilitas. Seluruh akses profil bergantung pada kode atau cookie sesi. Perubahan identitas dilakukan panitia lewat proses terkontrol di luar UI; penghapusan sudah tersedia.

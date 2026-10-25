@@ -1,6 +1,6 @@
 # Arah desain
 
-**Tempat lama. Cerita baru.** Game reuni layar penuh dengan kampus cerah dan mudah dijelajahi. Referensi suasana eksplorasi: https://zesiger.net/. Seluruh model Blender dibuat khusus untuk Xelograph; aset referensi tidak disalin. Materi kuesioner dan konsep alumni persisten dipertahankan.
+**Tempat lama. Cerita baru.** Game reuni layar penuh dengan kampus cerah dan mudah dijelajahi. Referensi suasana eksplorasi: https://zesiger.net/. Seluruh model Blender dibuat khusus untuk Xylograph; aset referensi tidak disalin. Materi kuesioner dan konsep alumni persisten dipertahankan.
 
 ## Dunia dan warna
 
@@ -20,7 +20,7 @@ Mode ringan menyediakan misi satu per satu tanpa navigasi 3D. Dialog menangkap f
 
 Kamera mengikuti tubuh karakter; overview memperlihatkan kampus dan Commons. Raycast ke kepala dan tubuh mendeteksi pohon/bangunan penghalang, lalu memudarkan seluruh kelompok material ke opacity 0,16. Objek kembali normal setelah pandangan terbuka. Metadata camera_occluder di GLB menjaga dekorasi lain tetap dibatch.
 
-Avatar chibi dengan tiga gaya rambut, empat pilihan pakaian, dan tiga warna kulit independen. Wajah menghadap +Z; tangan/kaki memiliki pivot lokal untuk langkah. Pemain memiliki animasi langkah dan loncat; avatar alumni persisten memakai geometri bersama dan instancing. Label tampil untuk maksimal 14 alumni dekat pemain. Tidak ada klaim status online atau live multiplayer.
+Avatar chibi dengan pilihan laki-laki/perempuan dan empat gaya rambut, empat pilihan pakaian, dan tiga warna kulit independen. Wajah menghadap +Z; tangan/kaki memiliki pivot lokal untuk langkah. Pemain memiliki animasi langkah dan loncat; avatar alumni persisten memakai geometri bersama dan instancing. Label tampil untuk maksimal 14 alumni dekat pemain. Tidak ada klaim status online atau live multiplayer.
 
 ## Audio dan data
 

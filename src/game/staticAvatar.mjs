@@ -1,24 +1,21 @@
 import { Group, Mesh } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { avatarPartVisible } from './avatarParts.mjs';
 const templates = new WeakMap();
 
 /** Share immutable geometry for the three hairstyles; stationary alumni use one draw per material. */
-export function createStaticAvatar(source, { hair, outfitColor, skinColor }) {
+export function createStaticAvatar(source, { hair, character = 'male', outfitColor, skinColor }) {
+  const key = character + ':' + hair;
   let styles = templates.get(source);
   if (!styles) {
     styles = new Map();
     templates.set(source, styles);
   }
-  if (!styles.has(hair)) {
+  if (!styles.has(key)) {
     source.updateMatrixWorld(true);
     const batches = new Map();
     source.traverse((object) => {
-      if (
-        !object.isMesh ||
-        (object.name.startsWith('Hair_') && !object.name.startsWith('Hair_' + hair)) ||
-        (object.name.startsWith('Cap_brim') && hair !== 'cap')
-      )
-        return;
+      if (!object.isMesh || !avatarPartVisible(object.name, { hair, character })) return;
       const material = object.material;
       if (Array.isArray(material)) throw new Error('Avatar primitives must have one material.');
       const geometry = object.geometry.clone().applyMatrix4(object.matrixWorld);
@@ -28,7 +25,7 @@ export function createStaticAvatar(source, { hair, outfitColor, skinColor }) {
       batches.get(material.name).geometries.push(geometry);
     });
     styles.set(
-      hair,
+      key,
       [...batches.values()].map(({ material, geometries }) => {
         const geometry = mergeGeometries(geometries);
         for (const part of geometries) part.dispose();
@@ -39,7 +36,7 @@ export function createStaticAvatar(source, { hair, outfitColor, skinColor }) {
   }
   const group = new Group();
   group.name = 'StaticAlumniAvatar';
-  for (const template of styles.get(hair)) {
+  for (const template of styles.get(key)) {
     const material = template.material.clone();
     if (material.name === 'AvatarShirt') material.color.set(outfitColor);
     if (material.name === 'AvatarSkin') material.color.set(skinColor);

@@ -45,7 +45,7 @@ export default function AdminPanel() {
         .replaceAll('"', '""') +
       '"';
     download(
-      'xelograph-alumni.csv',
+      'xylograph-alumni.csv',
       '\uFEFF' +
         [
           cols.map(quote).join(','),

@@ -5,7 +5,7 @@ import '../world-theme.css';
 import '../audio.css';
 
 export const metadata: Metadata = {
-  title: 'Xelograph — Kembali ke cerita kita',
+  title: 'Xylograph — Kembali ke cerita kita',
   description:
     'Jelajahi kampus kecil penuh kenangan. Temukan teman lama dan tentukan reuni berikutnya, satu cerita setiap langkah.',
 };
