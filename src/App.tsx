@@ -22,7 +22,7 @@ import {
 import { Survey } from './Survey';
 import { campusAudio, loadAudioPreferences, type AudioPreferences } from './game/audio';
 import { CREATOR_MONUMENT } from './game/creatorMonument.mjs';
-import { AVATAR_MODELS, selectAvatarCharacter } from './game/avatarCatalog.mjs';
+import AvatarOptions from './AvatarOptions';
 import { api, download } from './api';
 import {
   CHECKPOINTS,
@@ -52,6 +52,7 @@ type Modal =
   | 'alumni'
   | 'settings'
   | 'creator'
+  | 'avatar'
   | null;
 export default function App() {
   const [audioPrefs, setAudioPrefs] = useState<AudioPreferences>(loadAudioPreferences),
@@ -310,19 +311,21 @@ export default function App() {
           }}
         >
           <section
-            className={'modal ' + (modal === 'join' ? 'wide' : '')}
+            className={'modal ' + (modal === 'join' || modal === 'avatar' ? 'wide' : '')}
             role="dialog"
             aria-modal="true"
             aria-label={
-              modal === 'creator'
-                ? 'Dibuat oleh Randy Fauzi'
-                : modal === 'survey'
-                  ? CHECKPOINTS[index].name
-                  : modal === 'join'
-                    ? 'Buat karakter'
-                    : modal === 'pass'
-                      ? 'Reunion pass'
-                      : 'Xylograph'
+              modal === 'avatar'
+                ? 'Pengaturan karakter tersimpan'
+                : modal === 'creator'
+                  ? 'Dibuat oleh Randy Fauzi'
+                  : modal === 'survey'
+                    ? CHECKPOINTS[index].name
+                    : modal === 'join'
+                      ? 'Buat karakter'
+                      : modal === 'pass'
+                        ? 'Reunion pass'
+                        : 'Xylograph'
             }
           >
             <button
@@ -332,6 +335,20 @@ export default function App() {
             >
               <X size={20} />
             </button>
+            {modal === 'avatar' && profile && (
+              <AvatarSettings
+                key={profile.id + ':' + profile.avatarRevision}
+                profile={profile}
+                onSaved={(saved) => {
+                  setProfile(saved);
+                  void refresh();
+                  setModal('pass');
+                  setToast(
+                    'Karakter tersimpan. Preview, pemain, dan avatar alumni memakai pengaturan yang sama.',
+                  );
+                }}
+              />
+            )}
             {modal === 'creator' && (
               <div className="creator-credit">
                 <img
@@ -513,6 +530,20 @@ export default function App() {
                     <b>{profile.progress.length} / 7 CHECKPOINTS</b>
                   </div>
                 </div>
+                <button
+                  className="primary edit-avatar-button"
+                  onClick={async () => {
+                    try {
+                      const current = await api<Profile>('/me');
+                      setProfile(current);
+                      setModal('avatar');
+                    } catch (error) {
+                      setToast((error as Error).message);
+                    }
+                  }}
+                >
+                  Ubah karakter <ArrowRight size={17} />
+                </button>
                 <label className="checkbox">
                   <input
                     type="checkbox"
@@ -558,6 +589,73 @@ export default function App() {
         </div>
       )}
     </div>
+  );
+}
+function AvatarSettings({
+  profile,
+  onSaved,
+}: {
+  profile: Profile;
+  onSaved: (profile: Profile) => void;
+}) {
+  const [avatar, setAvatar] = useState<AvatarConfig>(profile.avatar);
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState('');
+  return (
+    <>
+      <div className="dialog-eyebrow">
+        <Leaf size={16} /> YOUR SAVED CHARACTER
+      </div>
+      <h2>Karakterku.</h2>
+      <p className="dialog-description">
+        Pilih model dan warna. Setelah disimpan, karakter ini dipakai saat bermain, kembali masuk,
+        dan muncul di dunia alumni.
+      </p>
+      <form
+        onSubmit={async (event) => {
+          event.preventDefault();
+          setBusy(true);
+          setError('');
+          try {
+            onSaved(
+              await api<Profile>('/avatar', {
+                method: 'PATCH',
+                body: JSON.stringify({ avatar, expectedRevision: profile.avatarRevision }),
+              }),
+            );
+          } catch (error) {
+            setError((error as Error).message);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        <fieldset className="avatar-editor-fields" disabled={busy}>
+          <div className="creator-grid avatar-editor-grid">
+            <div className="creator-avatar">
+              <Preview config={avatar} />
+              <span>PREVIEW KARAKTER</span>
+            </div>
+            <AvatarOptions avatar={avatar} setAvatar={setAvatar} />
+          </div>
+        </fieldset>
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
+        <p className="helper">
+          Tersimpan di database · versi {profile.avatarRevision}. Perubahan pada preview baru
+          disimpan setelah menekan tombol di bawah.
+        </p>
+        <div className="dialog-actions">
+          <button className="primary" disabled={busy}>
+            {busy ? 'Menyimpan…' : 'Simpan karakter'}
+            <Check size={17} />
+          </button>
+        </div>
+      </form>
+    </>
   );
 }
 function Join({ onDone, onResume }: { onDone: (p: Profile) => void; onResume: () => void }) {
@@ -606,84 +704,7 @@ function Join({ onDone, onResume }: { onDone: (p: Profile) => void; onResume: ()
               <Preview config={avatar} />
               <span>YOUR LITTLE SELF</span>
             </div>
-            <div className="avatar-options">
-              <label>Pilih karakter</label>
-              <div className="character-options" role="group" aria-label="Pilihan karakter">
-                {(['male', 'female'] as const).map((character) => (
-                  <button
-                    type="button"
-                    key={character}
-                    aria-pressed={(avatar.character || 'male') === character}
-                    className={(avatar.character || 'male') === character ? 'selected' : ''}
-                    onClick={() => setAvatar(selectAvatarCharacter(avatar, character))}
-                  >
-                    <AvatarPortrait
-                      config={{
-                        ...avatar,
-                        character,
-                        hair: character === 'female' ? 'long' : 'short',
-                      }}
-                    />
-                    <span>{character === 'female' ? 'Perempuan' : 'Laki-laki'}</span>
-                  </button>
-                ))}
-              </div>
-              <label>Model {avatar.character === 'female' ? 'perempuan' : 'pria'}</label>
-              <div
-                className="avatar-model-options"
-                role="group"
-                aria-label={
-                  avatar.character === 'female' ? 'Pilihan model perempuan' : 'Pilihan model pria'
-                }
-              >
-                {AVATAR_MODELS[avatar.character || 'male'].map((model) => (
-                  <button
-                    type="button"
-                    key={model.id}
-                    aria-pressed={avatar.hair === model.id}
-                    aria-label={`${model.label}: ${model.description}`}
-                    className={avatar.hair === model.id ? 'selected' : ''}
-                    onClick={() => setAvatar({ ...avatar, hair: model.id })}
-                  >
-                    <img src={model.preview} alt="" width="72" height="96" />
-                    <strong>{model.label}</strong>
-                    <small>{model.description}</small>
-                  </button>
-                ))}
-              </div>
-              <label>Warna pakaian</label>
-              <div className="swatches">
-                {(['sage', 'clay', 'navy', 'cream'] as const).map((v) => (
-                  <button
-                    type="button"
-                    key={v}
-                    aria-label={'Pakaian ' + v}
-                    aria-pressed={avatar.outfit === v}
-                    className={avatar.outfit === v ? 'chosen' : ''}
-                    style={{ background: COLORS[v] }}
-                    onClick={() => setAvatar({ ...avatar, outfit: v })}
-                  >
-                    {avatar.outfit === v && <Check size={15} />}
-                  </button>
-                ))}
-              </div>
-              <label>Warna kulit</label>
-              <div className="swatches">
-                {(['light', 'warm', 'deep'] as const).map((v) => (
-                  <button
-                    type="button"
-                    key={v}
-                    aria-label={'Warna kulit ' + v}
-                    aria-pressed={avatar.skin === v}
-                    className={avatar.skin === v ? 'chosen' : ''}
-                    style={{ background: COLORS[v] }}
-                    onClick={() => setAvatar({ ...avatar, skin: v })}
-                  >
-                    {avatar.skin === v && <Check size={15} />}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <AvatarOptions avatar={avatar} setAvatar={setAvatar} />
           </div>
           <div>
             <label className="field">

@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS alumni (
  nickname TEXT NOT NULL,
  whatsapp TEXT NOT NULL UNIQUE,
  avatar_json TEXT NOT NULL CHECK(json_valid(avatar_json)),
+ avatar_revision INTEGER NOT NULL DEFAULT 1 CHECK(avatar_revision > 0),
+ avatar_updated_at TEXT,
  consent_public INTEGER NOT NULL DEFAULT 0 CHECK(consent_public IN (0,1)),
  consent_at TEXT NOT NULL,
  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))

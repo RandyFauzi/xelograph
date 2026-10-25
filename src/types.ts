@@ -10,6 +10,8 @@ export type Profile = {
   fullName: string;
   nickname: string;
   avatar: AvatarConfig;
+  avatarRevision: number;
+  avatarUpdatedAt: string;
   consentPublic: boolean;
   answers: Answers;
   completedAt: string | null;

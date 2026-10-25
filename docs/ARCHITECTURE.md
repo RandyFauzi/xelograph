@@ -72,6 +72,10 @@ Status hadir tidak menyatakan kesediaan membantu. Panitia aktif yang tidak bisa 
 
 ## Alur penyimpanan
 
+Konfigurasi avatar memiliki satu sumber data di `alumni.avatar_json`, ditambah `avatar_revision` dan `avatar_updated_at`. GET /api/avatar memuat pengaturan milik sesi aktif; PATCH /api/avatar memvalidasi seluruh konfigurasi dan melakukan update atomik dengan expectedRevision. Versi lama menerima 409 dan harus memuat ulang. Endpoint /me dan /world menggunakan normalisasi avatar yang sama. Pembaruan avatar tidak mengubah jawaban, progres, identitas, atau izin tampil. UI profil/pass menyediakan Ubah karakter dan memperbarui pemain serta direktori setelah server mengonfirmasi penyimpanan.
+
+Migrasi kolom avatar bersifat aditif dan dijalankan dalam transaksi: JSON lama dipertahankan persis, versi diinisialisasi ke 1, timestamp awal mengikuti created_at. Tidak ada tabel avatar kedua atau penyimpanan konfigurasi di localStorage.
+
 1. Pendaftaran alumni terbuka tanpa kode. Undangan lama hanya jalur kompatibilitas opsional; nomor WhatsApp saja tidak memulihkan sesi.
 2. Pendaftaran baru memvalidasi nama, WhatsApp, avatar, dan izin data; insert profil + respons dalam transaksi. Undangan opsional diikat jika ada.
 3. Server membuat token sesi acak 256-bit di cookie HttpOnly, SameSite=Lax, Secure pada produksi. Hanya hash token disimpan.

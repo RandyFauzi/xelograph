@@ -74,7 +74,9 @@ export function createApiHandler({
       id: u.id,
       fullName: u.full_name,
       nickname: u.nickname,
-      avatar: JSON.parse(u.avatar_json),
+      avatar: validateAvatar(JSON.parse(u.avatar_json)),
+      avatarRevision: u.avatar_revision,
+      avatarUpdatedAt: u.avatar_updated_at || u.created_at,
       consentPublic: !!u.consent_public,
       answers: JSON.parse(r?.answers_json || '{}'),
       completedAt: r?.completed_at || null,
@@ -177,6 +179,7 @@ export function createApiHandler({
             new Date().toISOString(),
           );
           db.prepare('INSERT INTO responses(alumni_id) VALUES(?)').run(id);
+          db.prepare('UPDATE alumni SET avatar_updated_at=created_at WHERE id=?').run(id);
           if (inv)
             db.prepare('UPDATE invitations SET alumni_id=? WHERE code_hash=?').run(id, hash(code));
         });
@@ -210,7 +213,7 @@ export function createApiHandler({
             return {
               id: r.id,
               nickname: r.nickname,
-              avatar: JSON.parse(r.avatar_json),
+              avatar: validateAvatar(JSON.parse(r.avatar_json)),
               group: groupFor(answers),
               badges: badgesFor(answers),
             };
@@ -273,7 +276,10 @@ export function createApiHandler({
         }
       }
       const answerMatch = path.match(/^\/api\/answers\/([^/]+)$/);
-      if (['/api/me', '/api/complete', '/api/profile'].includes(path) || answerMatch) {
+      if (
+        ['/api/me', '/api/complete', '/api/profile', '/api/avatar'].includes(path) ||
+        answerMatch
+      ) {
         const token = sessionToken(request);
         const session =
           token &&
@@ -287,6 +293,30 @@ export function createApiHandler({
           );
         const id = session.alumni_id;
         if (method === 'GET' && path === '/api/me') return json(profile(id));
+        if (method === 'GET' && path === '/api/avatar') {
+          const current = profile(id);
+          return json({
+            avatar: current.avatar,
+            revision: current.avatarRevision,
+            updatedAt: current.avatarUpdatedAt,
+          });
+        }
+        if (method === 'PATCH' && path === '/api/avatar') {
+          const avatar = validateAvatar(body.avatar);
+          if (!Number.isSafeInteger(body.expectedRevision) || body.expectedRevision < 1)
+            throw new HttpError(400, 'Versi karakter tidak valid. Muat ulang pengaturan.');
+          const updated = db
+            .prepare(
+              'UPDATE alumni SET avatar_json=?, avatar_revision=avatar_revision+1, avatar_updated_at=? WHERE id=? AND avatar_revision=?',
+            )
+            .run(JSON.stringify(avatar), new Date().toISOString(), id, body.expectedRevision);
+          if (updated.changes !== 1)
+            throw new HttpError(
+              409,
+              'Karakter sudah berubah di sesi lain. Tutup lalu buka kembali pengaturan untuk memuat versi terbaru.',
+            );
+          return json(profile(id));
+        }
         if (method === 'PUT' && answerMatch) {
           const index = Number(answerMatch[1]),
             answer = validateAnswer(index, body),

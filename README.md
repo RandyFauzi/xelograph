@@ -42,6 +42,7 @@ Mekanisme undangan lama tetap didukung backend untuk kompatibilitas, tetapi kolo
 - Area misi terbuka berurutan. Pertanyaan muncul otomatis saat pemain mencapai area aktif. Setelah menyimpan, pemain kembali ke dunia dan area selanjutnya terbuka. Jurnal tidak membuka semua pertanyaan sekaligus.
 - Tombol **Tunjukkan jalan** menjalankan pencarian jalur menghindari bangunan, air, dan area misi yang terkunci. Input joystick atau keyboard membatalkan perjalanan otomatis.
 - Character creator: pilihan laki-laki/perempuan dengan tiga model 3D masing-masing (perempuan: Kasual, Sporty, Hijab; pria: Kasual, Jaket, Topi), tiga warna kulit, empat warna pakaian, dan preview karakter GLB. Pilihan yang sama tampil pada pemain serta avatar alumni; profil lama tetap kompatibel.
+- Profil/pass → **Ubah karakter** memuat konfigurasi dari database, lalu menyimpan model dan warna dengan nomor versi. `alumni.avatar_json` adalah sumber data tunggal untuk preview, pemain, `/api/me`, dan dunia publik; pengaturan lama dimigrasikan tanpa direset. Perubahan dari versi sesi yang tertinggal ditolak agar tidak menimpa versi terbaru.
 - Ketujuh checkpoint, validasi server, pilihan majemuk, bidang panitia bersyarat, usulan venue, pesan opsional.
 - Jawaban disimpan setelah menekan **Simpan & lanjut**; indikator tersimpan hanya muncul setelah server berhasil menyimpan. Jawaban yang sedang diketik belum menjadi draf server.
 - Progres dapat dilanjutkan, jawaban dapat diperbarui, satu respons per alumni.

@@ -35,5 +35,25 @@ export function openDb(path = process.env.DATABASE_PATH || './data/xelograph.sql
   if (path !== ':memory:' && process.platform !== 'win32') chmodSync(path, 0o600);
   db.exec('PRAGMA journal_mode = WAL; PRAGMA busy_timeout=5000; PRAGMA synchronous=FULL;');
   db.exec(readFileSync(resolve(process.cwd(), 'database/schema.sql'), 'utf8'));
+  // Additive, transactional migration: keep each existing avatar JSON and all survey data.
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const columns = db
+      .prepare('PRAGMA table_info(alumni)')
+      .all()
+      .map((column) => column.name);
+    if (!columns.includes('avatar_revision'))
+      db.exec(
+        'ALTER TABLE alumni ADD COLUMN avatar_revision INTEGER NOT NULL DEFAULT 1 CHECK(avatar_revision > 0)',
+      );
+    if (!columns.includes('avatar_updated_at'))
+      db.exec('ALTER TABLE alumni ADD COLUMN avatar_updated_at TEXT');
+    db.exec('UPDATE alumni SET avatar_updated_at=created_at WHERE avatar_updated_at IS NULL');
+    db.exec('COMMIT');
+  } catch (error) {
+    db.exec('ROLLBACK');
+    db.close();
+    throw error;
+  }
   return db;
 }
