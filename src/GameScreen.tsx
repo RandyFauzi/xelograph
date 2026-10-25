@@ -152,9 +152,9 @@ export function GameScreen({
               <span /> PULANG SEJENAK. BERTEMU KEMBALI.
             </span>
             <h1>
-              Masih ada
+              Say Haii
               <br />
-              cerita <em>kita.</em>
+              <em>Again.</em>
             </h1>
             <p>
               Jalan-jalan di sekolah lama, temukan teman,
