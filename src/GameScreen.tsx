@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
+import Link from 'next/link';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -179,12 +180,18 @@ export function GameScreen({
                 Jelajahi dulu
                 <Compass size={18} />
               </button>
-              {!profile && (
-                <button className="title-resume" onClick={onResume}>
-                  Sudah punya karakter? Lanjutkan cerita
-                  <ArrowUpRight size={14} />
-                </button>
-              )}
+              <div className="title-account-links">
+                {!profile && (
+                  <button className="title-resume" onClick={onResume}>
+                    Sudah punya karakter? Lanjutkan cerita
+                    <ArrowUpRight size={14} />
+                  </button>
+                )}
+                <Link className="title-admin-link" href="/admin" prefetch={false}>
+                  <Shield size={15} aria-hidden="true" />
+                  Dashboard admin
+                </Link>
+              </div>
             </div>
             <div className="title-footnote">
               <span>
@@ -504,6 +511,13 @@ export function GameSettings({
         <em>sebentar.</em>
       </h2>
       <div className="settings-list">
+        <Link className="settings-admin-link" href="/admin" prefetch={false}>
+          <Shield size={20} aria-hidden="true" />
+          <span>
+            Dashboard admin<small>Lihat hasil survei dengan kode akses.</small>
+          </span>
+          <ArrowRight size={17} aria-hidden="true" />
+        </Link>
         <button onClick={onFullscreen}>
           <Fullscreen size={20} />
           <span>

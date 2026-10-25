@@ -658,11 +658,11 @@
   background: #f1f6ea;
   border-color: #dce7d4;
 }
-.settings-list > button {
+.settings-list > :is(button, .settings-admin-link) {
   background: #f0f5e9;
   border-color: #dce7d4;
 }
-.settings-list > button > span {
+.settings-list > :is(button, .settings-admin-link) > span {
   color: #3d5d51;
 }
 @media (max-width: 1100px) {
@@ -1172,4 +1172,48 @@
   .overview-caption {
     bottom: 25px;
   }
+}
+
+.title-account-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.title-account-links .title-resume {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  line-height: 1.5;
+}
+.title-admin-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #205fa4;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.title-admin-link:hover {
+  background: #e5eef7;
+}
+.title-admin-link:focus-visible,
+.settings-admin-link:focus-visible {
+  outline: 2px solid #205fa4;
+  outline-offset: 3px;
+}
+.settings-admin-link {
+  text-decoration: none;
+  min-height: 44px;
+}
+.settings-admin-link:hover {
+  filter: brightness(0.97);
+}
+.settings-admin-link > svg {
+  flex-shrink: 0;
 }

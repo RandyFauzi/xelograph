@@ -1161,7 +1161,7 @@ body:has(.game-app) {
   gap: 10px;
   margin: 27px 0;
 }
-.settings-list > button {
+.settings-list > :is(button, .settings-admin-link) {
   display: flex;
   gap: 17px;
   align-items: center;
@@ -1172,7 +1172,7 @@ body:has(.game-app) {
   padding: 17px;
   color: #728b58;
 }
-.settings-list > button > span {
+.settings-list > :is(button, .settings-admin-link) > span {
   flex: 1;
   font-size: 13px;
   color: #3e5d41;
@@ -1712,10 +1712,10 @@ body:has(.game-app) {
   .quest-journal p {
     font-size: 11px;
   }
-  .settings-list > button {
+  .settings-list > :is(button, .settings-admin-link) {
     padding: 15px;
   }
-  .settings-list > button > span {
+  .settings-list > :is(button, .settings-admin-link) > span {
     font-size: 12px;
   }
   .settings-list small {
