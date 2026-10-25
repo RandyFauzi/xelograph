@@ -1,0 +1,61 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, statSync } from 'node:fs';
+import { KOLAM_BECABUR, kolamProximity } from '../src/game/kolamBecabur.mjs';
+import { findPath, isWalkable, MISSION_ZONES } from '../src/game/navigation.mjs';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+
+test('Kolam Becabur popup opens on approach once, stays dismissed nearby, and rearms after leaving', () => {
+  const point = KOLAM_BECABUR.walkTarget;
+  assert.equal(
+    kolamProximity(point, false, false).open,
+    false,
+    'Inactive game state cannot auto-open pond modal',
+  );
+  const entered = kolamProximity(point, false, true);
+  assert.equal(entered.near, true);
+  assert.equal(entered.open, true);
+  assert.equal(
+    kolamProximity(point, entered.latched, true).open,
+    false,
+    'Closing the modal must not immediately reopen it while standing by the pond',
+  );
+  const edge = kolamProximity({ x: KOLAM_BECABUR.x - 4.4, z: KOLAM_BECABUR.z }, true, true);
+  assert.equal(edge.latched, true, 'Small movement inside exitRadius keeps latch active');
+  const left = kolamProximity({ x: KOLAM_BECABUR.x - 6.0, z: KOLAM_BECABUR.z }, true, true);
+  assert.equal(left.latched, false, 'Walking past exitRadius rearms the pond trigger');
+  assert.equal(kolamProximity(point, left.latched, true).open, true);
+});
+
+test('Kolam Becabur dock is walkable from spawn and separated from all mission triggers', () => {
+  const target = KOLAM_BECABUR.walkTarget;
+  assert.equal(isWalkable(target.x, target.z, 0), true);
+  assert.ok(findPath({ x: 0, z: 14 }, target, 0).length > 0);
+  for (const [x, z] of MISSION_ZONES) {
+    assert.ok(
+      Math.hypot(x - KOLAM_BECABUR.x, z - KOLAM_BECABUR.z) > KOLAM_BECABUR.radius + 2.5,
+    );
+  }
+});
+
+test('Kolam Becabur 3D model, preview image, and MP4 video are bundled locally and optimized', async () => {
+  const previewBytes = readFileSync(new URL('../public' + KOLAM_BECABUR.preview, import.meta.url));
+  assert.equal(previewBytes.toString('ascii', 1, 4), 'PNG');
+
+  const videoStat = statSync(new URL('../public' + KOLAM_BECABUR.video, import.meta.url));
+  assert.ok(videoStat.size > 100000, 'Video file is present and non-empty');
+
+  const glbBytes = readFileSync(new URL('../public' + KOLAM_BECABUR.model, import.meta.url));
+  assert.ok(glbBytes.length < 500000, 'Meshopt-compressed Kolam Becabur GLB stays lightweight');
+  const gltf = await new GLTFLoader()
+    .setMeshoptDecoder(MeshoptDecoder)
+    .parseAsync(
+      glbBytes.buffer.slice(glbBytes.byteOffset, glbBytes.byteOffset + glbBytes.byteLength),
+      '',
+    );
+  for (const name of ['Pond_Water', 'Sailboat', 'Sign_KolamBecabur', 'Wooden_Dock']) {
+    assert.ok(gltf.scene.getObjectByName(name), `Missing expected node: ${name}`);
+  }
+  assert.ok(gltf.animations.length >= 4, 'Water and floating prop animations are preserved');
+});

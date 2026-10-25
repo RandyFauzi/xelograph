@@ -26,6 +26,7 @@ import { usePlayerMotion, CameraFollow, type PathPoint } from './game/PlayerCont
 import Joystick from './game/Joystick';
 import AlumniCrowd from './game/AlumniCrowd';
 import CreatorMonument from './game/CreatorMonument';
+import KolamBecabur from './game/KolamBecabur';
 import { layoutAlumni } from './game/alumniLayout.mjs';
 import type { TravelRequest } from './GameScreen';
 import { Lock, Navigation, RotateCcw, Footprints, ArrowUp } from 'lucide-react';
@@ -259,6 +260,7 @@ export default function World({
   onNavigate,
   onOverview,
   onCreator,
+  onKolam,
 }: {
   avatar: AvatarConfig;
   alumni: Alumnus[];
@@ -274,6 +276,7 @@ export default function World({
   onNavigate: (i: number) => void;
   onOverview: () => void;
   onCreator: () => void;
+  onKolam: () => void;
 }) {
   const keys = useRef(new Set<string>()),
     stick = useRef({ x: 0, y: 0 }),
@@ -286,6 +289,7 @@ export default function World({
   const loading = useProgress((state) => state.active);
   const [near, setNear] = useState(-1),
     [nearCreator, setNearCreator] = useState(false),
+    [nearKolam, setNearKolam] = useState(false),
     [failed, setFailed] = useState(false),
     [navigation, setNavigation] = useState(false);
   const next = CHECKPOINTS.findIndex((_, i) => !progress.includes(i)),
@@ -303,6 +307,11 @@ export default function World({
     setNavigation(false);
     onCreator();
   }, [onCreator]);
+  const openKolam = useCallback(() => {
+    path.current = [];
+    setNavigation(false);
+    onKolam();
+  }, [onKolam]);
   const lastTravel = useRef<number | null>(null),
     lastFocus = useRef<string | null>(null);
   useEffect(() => {
@@ -369,6 +378,7 @@ export default function World({
         setNavigation(false);
       }
       if (k === 'e' && nearCreator) openCreator();
+      else if (k === 'e' && nearKolam) openKolam();
       else if (k === 'e' && near >= 0) onCheckpoint(near);
     };
     const up = (e: KeyboardEvent) => keys.current.delete(e.key.toLowerCase());
@@ -386,7 +396,7 @@ export default function World({
       window.removeEventListener('keyup', up);
       window.removeEventListener('blur', clear);
     };
-  }, [active, near, nearCreator, openCreator, onCheckpoint]);
+  }, [active, near, nearCreator, nearKolam, openCreator, openKolam, onCheckpoint]);
   const fallback = (
     <div className="world-fallback">
       <h3>Perjalanan tetap berlanjut.</h3>
@@ -438,6 +448,15 @@ export default function World({
                 onNear={setNearCreator}
                 onOpen={openCreator}
                 onWalk={navigate}
+              />
+            </Suspense>
+            <Suspense fallback={null}>
+              <KolamBecabur
+                player={position}
+                active={active}
+                playing={playing}
+                onNear={setNearKolam}
+                onOpen={openKolam}
               />
             </Suspense>
             {playing && <RouteTrail path={path} />}
@@ -663,7 +682,16 @@ export default function World({
                     <Navigation size={18} />
                   </button>
                 )}
-                {near >= 0 && !nearCreator && (
+                {nearKolam && !nearCreator && (
+                  <button className="interact" onClick={openKolam}>
+                    <span className="interact-key">E</span>
+                    <span>
+                      Kenangan Kolam Becabur<small>Putar video</small>
+                    </span>
+                    <Navigation size={18} />
+                  </button>
+                )}
+                {near >= 0 && !nearCreator && !nearKolam && (
                   <button className="interact" onClick={() => onCheckpoint(near)}>
                     <span className="interact-key">E</span>
                     <span>

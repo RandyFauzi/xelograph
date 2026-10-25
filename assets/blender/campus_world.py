@@ -174,18 +174,13 @@ def create_world():
   cylinder('Cafe table',(x,y,.85),.65,.1,M['Timber'],16)
   cylinder('Cafe table stem',(x,y,.49),.06,.65,M['Dark frame'],8)
   for dx in [-.9,.9]:bench(x+dx,y+.7)
- for x,y,r in [(10,-6,1.85),(18,-12,2.4)]:
+ for x,y,r in [(10,-6,1.85)]:
   cylinder('Lake bank',(x,y,.24),r+.25,.15,M['Path limestone'],48)
-  cylinder('Outer lake' if x==18 else 'Supporter pond',(x,y,.33),r,.07,M['Water blue'],48)
+  cylinder('Supporter pond',(x,y,.33),r,.07,M['Water blue'],48)
   for dx,dy in [(.7,.6),(-.8,-.6),(.9,-1)]:cylinder('Lily pad',(x+dx,y+dy,.38),.2,.015,M['Leaf green'],10)
   for n in range(12):
    a=n*math.tau/12;ico('Shore stone',(x+math.cos(a)*(r+.15),y+math.sin(a)*(r+.15),.4),(.17,.23,.13),M['Stone'],1)
- cube('Lake deck',(14.5,-12,.35),(2,3.7,.25),M['Timber'],.05)
- for y in [-13.6,-13,-12.4,-11.8,-11.2,-10.6]:cube('Deck plank trim',(14.5,y,.49),(1.95,.035,.01),M['Path limestone'])
- # Original little sailboat in the lake, outside the walking surface.
- ico('Toy boat hull',(18,-12.3,.46),(.45,.18,.12),M['Timber'],1)
- cylinder('Boat mast',(18,-12.3,.85),.018,.8,M['White plaster'],8)
- mesh=bpy.data.meshes.new('Sail mesh');mesh.from_pydata([(18,-12.3,1.22),(18,-12.3,.6),(18.42,-12.3,.62)],[],[(0,1,2)]);mesh.materials.append(M['White plaster']);sail=bpy.data.objects.new('Toy sail',mesh);bpy.context.collection.objects.link(sail)
+ cylinder('Outer lake',(18,-12,.08),2.1,.02,M['Earth edge'],32)
  # Landscape: a mix of broadleaf trees and conifers, leaving the central routes open.
  locations=[(-12,-8),(-11,7),(-12,1),(-4,-8),(4,-8),(12,8),(12,-9),(-2,11),(2,11),(-12,-2),(12,5),(-5,4),(5,-4),(-23,-17),(-21,-16),(-18,-18),(-12,-18),(-8,-19),(8,-19),(12,-18),(22,-17),(23,-8),(23,-3),(23,3),(23,7),(-23,-8),(-23,7),(-22,12),(-22,17),(-17,18),(-12,18),(-6,18),(0,18),(6,18),(12,18),(23,18),(-7,-12),(7,-12),(-19,-10),(-17,-11),(12,13),(20,17),(17,18),(-10,17),(8,17),(-23,-1),(23,-19)]
  for i,(x,y) in enumerate(locations):tree(x,y,random.uniform(.8,1.15),i%5==0)

@@ -22,6 +22,7 @@ import {
 import { Survey } from './Survey';
 import { campusAudio, loadAudioPreferences, type AudioPreferences } from './game/audio';
 import { CREATOR_MONUMENT } from './game/creatorMonument.mjs';
+import { KOLAM_BECABUR } from './game/kolamBecabur.mjs';
 import AvatarOptions from './AvatarOptions';
 import { api, download } from './api';
 import {
@@ -52,6 +53,7 @@ type Modal =
   | 'alumni'
   | 'settings'
   | 'creator'
+  | 'kolam'
   | 'avatar'
   | null;
 export default function App() {
@@ -173,6 +175,7 @@ export default function App() {
       clearTimeout(t);
       document.body.style.overflow = '';
       document.removeEventListener('keydown', handler);
+      campusAudio.visibility(document.hidden);
       old?.focus();
     };
   }, [modal]);
@@ -311,7 +314,9 @@ export default function App() {
           }}
         >
           <section
-            className={'modal ' + (modal === 'join' || modal === 'avatar' ? 'wide' : '')}
+            className={
+              'modal ' + (modal === 'join' || modal === 'avatar' || modal === 'kolam' ? 'wide' : '')
+            }
             role="dialog"
             aria-modal="true"
             aria-label={
@@ -319,13 +324,15 @@ export default function App() {
                 ? 'Pengaturan karakter tersimpan'
                 : modal === 'creator'
                   ? 'Dibuat oleh Randy Fauzi'
-                  : modal === 'survey'
-                    ? CHECKPOINTS[index].name
-                    : modal === 'join'
-                      ? 'Buat karakter'
-                      : modal === 'pass'
-                        ? 'Reunion pass'
-                        : 'Xylograph'
+                  : modal === 'kolam'
+                    ? 'Kenangan Kolam Becabur'
+                    : modal === 'survey'
+                      ? CHECKPOINTS[index].name
+                      : modal === 'join'
+                        ? 'Buat karakter'
+                        : modal === 'pass'
+                          ? 'Reunion pass'
+                          : 'Xylograph'
             }
           >
             <button
@@ -376,6 +383,57 @@ export default function App() {
                   Mau buat seperti ini juga? <ArrowRight size={17} />
                 </a>
                 <small>Portofolio Randy · terbuka di tab baru</small>
+              </div>
+            )}
+            {modal === 'kolam' && (
+              <div className="kolam-showcase">
+                <div className="kolam-showcase-header">
+                  <img
+                    src={KOLAM_BECABUR.preview}
+                    alt="Miniatur 3D Kolam Becabur"
+                    width="72"
+                    height="72"
+                  />
+                  <div>
+                    <div className="dialog-eyebrow">SPOT KENANGAN · KOLAM SEBELAH KANAN</div>
+                    <h2>
+                      Kolam
+                      <br />
+                      <em>Becabur.</em>
+                    </h2>
+                  </div>
+                </div>
+                <p className="dialog-description">
+                  Salah satu sudut paling ikonik yang penuh tawa dan cerita tak terlupakan. Putar
+                  kembali momen seru cebur kolam bersama teman-teman.
+                </p>
+                <div className="kolam-video-frame">
+                  <video
+                    src={KOLAM_BECABUR.video}
+                    poster={KOLAM_BECABUR.preview}
+                    controls
+                    autoPlay
+                    playsInline
+                    preload="metadata"
+                    onPlay={() => campusAudio.visibility(true)}
+                    onPause={() => campusAudio.visibility(document.hidden)}
+                    onEnded={() => campusAudio.visibility(document.hidden)}
+                  >
+                    Browser kamu belum mendukung pemutar video langsung.
+                  </video>
+                </div>
+                <div className="kolam-showcase-actions">
+                  <button
+                    type="button"
+                    className="primary"
+                    onClick={() => {
+                      campusAudio.visibility(document.hidden);
+                      setModal(null);
+                    }}
+                  >
+                    Lanjutkan menjelajah <ArrowRight size={17} />
+                  </button>
+                </div>
               </div>
             )}
             {modal === 'quests' && (
