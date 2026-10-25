@@ -9,6 +9,7 @@ export const KOLAM_BECABUR: {
   model: string;
   preview: string;
   video: string;
+  driveUrl: string;
   title: string;
 };
 export function kolamProximity(

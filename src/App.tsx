@@ -538,17 +538,31 @@ export default function App() {
                     Browser kamu belum mendukung pemutar video langsung.
                   </video>
                 </div>
-                <div className="kolam-showcase-actions">
-                  <button
-                    type="button"
-                    className="primary"
-                    onClick={() => {
-                      campusAudio.visibility(document.hidden);
-                      setModal(null);
-                    }}
-                  >
-                    Lanjutkan menjelajah <ArrowRight size={17} />
-                  </button>
+                <div className="kolam-drive-cta">
+                  <p>
+                    Teman-teman yang masih punya video lama yang lucu-lucu bisa langsung kirim &amp;
+                    upload sendiri ke sini ya!
+                  </p>
+                  <div className="kolam-showcase-actions">
+                    <a
+                      className="kolam-drive-button"
+                      href={KOLAM_BECABUR.driveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Upload Video ke Google Drive <ArrowRight size={16} />
+                    </a>
+                    <button
+                      type="button"
+                      className="primary"
+                      onClick={() => {
+                        campusAudio.visibility(document.hidden);
+                        setModal(null);
+                      }}
+                    >
+                      Lanjutkan menjelajah <ArrowRight size={17} />
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

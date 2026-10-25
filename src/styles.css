@@ -2489,9 +2489,47 @@ td b {
   object-fit: contain;
   background: #0f172a;
 }
+.kolam-drive-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(54, 127, 203, 0.18);
+}
+.kolam-drive-cta p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #334e68;
+}
 .kolam-showcase-actions {
   display: flex;
-  justify-content: flex-end;
-  padding-top: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.kolam-drive-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1d5fa3;
+  border: 1.5px solid #2b74c2;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+  box-shadow: 0 2px 8px rgba(29, 95, 163, 0.1);
+}
+.kolam-drive-button:hover {
+  background: #edf5fd;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(29, 95, 163, 0.18);
 }
 

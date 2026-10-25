@@ -10,6 +10,8 @@ export const KOLAM_BECABUR = {
   model: '/models/kolam_becabur.glb',
   preview: '/branding/kolam-becabur-preview.png',
   video: '/videos/kolam-becabur.mp4',
+  driveUrl:
+    'https://drive.google.com/drive/folders/1ppKqf6hUb-9wD-gvKZlzVK7wrXCkSBh_?usp=sharing',
   title: 'Kolam Becabur',
 };
 
