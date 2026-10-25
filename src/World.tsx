@@ -658,7 +658,7 @@ export default function World({
                   <button className="interact" onClick={openCreator}>
                     <span className="interact-key">E</span>
                     <span>
-                      Kenalan dengan pembuatnya<small>Randy Developher</small>
+                      Kenalan dengan pembuatnya<small>Randy Fauzi</small>
                     </span>
                     <Navigation size={18} />
                   </button>

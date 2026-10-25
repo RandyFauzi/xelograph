@@ -314,7 +314,7 @@ export default function App() {
             aria-modal="true"
             aria-label={
               modal === 'creator'
-                ? 'Dibuat oleh Randy Developher'
+                ? 'Dibuat oleh Randy Fauzi'
                 : modal === 'survey'
                   ? CHECKPOINTS[index].name
                   : modal === 'join'
@@ -343,7 +343,7 @@ export default function App() {
                 <h2>
                   Dibuat oleh
                   <br />
-                  Randy Developher.
+                  Randy Fauzi.
                 </h2>
                 <p>
                   Dunia kecil ini dibuat dengan ide, kode, dan sedikit nostalgia. Punya ide dunia
