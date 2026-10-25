@@ -1,7 +1,7 @@
 export type AvatarConfig = {
   character?: 'male' | 'female';
   outfit: 'sage' | 'clay' | 'navy' | 'cream';
-  hair: 'short' | 'bob' | 'cap' | 'long';
+  hair: 'short' | 'bob' | 'cap' | 'long' | 'ponytail' | 'hijab' | 'quiff';
   skin: 'light' | 'warm' | 'deep';
 };
 export type Answers = Record<string, string | string[]>;

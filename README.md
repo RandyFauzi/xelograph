@@ -41,7 +41,7 @@ Mekanisme undangan lama tetap didukung backend untuk kompatibilitas, tetapi kolo
 - Pilih **Jelajahi dulu** untuk langsung berjalan tanpa registrasi. Buat karakter saat ingin menyimpan jawaban.
 - Area misi terbuka berurutan. Pertanyaan muncul otomatis saat pemain mencapai area aktif. Setelah menyimpan, pemain kembali ke dunia dan area selanjutnya terbuka. Jurnal tidak membuka semua pertanyaan sekaligus.
 - Tombol **Tunjukkan jalan** menjalankan pencarian jalur menghindari bangunan, air, dan area misi yang terkunci. Input joystick atau keyboard membatalkan perjalanan otomatis.
-- Character creator: pilihan laki-laki/perempuan, empat gaya rambut termasuk panjang, tiga warna kulit, empat warna pakaian, dan preview karakter GLB. Pilihan yang sama tampil pada pemain serta avatar alumni; profil lama tetap kompatibel.
+- Character creator: pilihan laki-laki/perempuan dengan tiga model 3D masing-masing (perempuan: Kasual, Sporty, Hijab; pria: Kasual, Jaket, Topi), tiga warna kulit, empat warna pakaian, dan preview karakter GLB. Pilihan yang sama tampil pada pemain serta avatar alumni; profil lama tetap kompatibel.
 - Ketujuh checkpoint, validasi server, pilihan majemuk, bidang panitia bersyarat, usulan venue, pesan opsional.
 - Jawaban disimpan setelah menekan **Simpan & lanjut**; indikator tersimpan hanya muncul setelah server berhasil menyimpan. Jawaban yang sedang diketik belum menjadi draf server.
 - Progres dapat dilanjutkan, jawaban dapat diperbarui, satu respons per alumni.
@@ -72,12 +72,14 @@ data/                 Database runtime (diabaikan Git)
 
 ## Aset Blender
 
-Model dibuat secara prosedural untuk proyek ini. Logo asli dari pemilik dipasang di gerbang dan Reunion Commons, dengan tekstur tertanam dalam GLB. Sumber logo tersedia di public/branding/xylograph-logo.jpg. Arah eksplorasi dan warna terinspirasi [Zesiger](https://zesiger.net/): rumput hijau cerah, air biru, gedung putih, atap gelap, dan penanda biru. Materi serta urutan tujuh pertanyaan dipertahankan. Generator dipisah menjadi modul geometri, kampus, dan karakter. GLB memakai kompresi Meshopt dengan decoder lokal; world sekitar 1,24 MB dan avatar 251 KB untuk kedua pilihan karakter.
+Model dibuat secara prosedural untuk proyek ini. Logo asli dari pemilik dipasang di gerbang dan Reunion Commons, dengan tekstur tertanam dalam GLB. Sumber logo tersedia di public/branding/xylograph-logo.jpg. Arah eksplorasi dan warna terinspirasi [Zesiger](https://zesiger.net/): rumput hijau cerah, air biru, gedung putih, atap gelap, dan penanda biru. Materi serta urutan tujuh pertanyaan dipertahankan. Generator dipisah menjadi modul geometri, kampus, dan karakter. GLB memakai kompresi Meshopt dengan decoder lokal; world sekitar 1,24 MB dan avatar sekitar 147 KB untuk enam model serta kompatibilitas model lama.
 
 ```powershell
 & 'C:\Program Files\Blender Foundation\Blender 5.2\blender.exe' --background --python assets/blender/build_campus.py
 npm run models:optimize
 & 'C:\Program Files\Blender Foundation\Blender 5.2\blender.exe' --background --python assets/blender/render_preview.py
+& 'C:\Program Files\Blender Foundation\Blender 5.2\blender.exe' --background --python assets/blender/build_avatar_variants.py
+npm run models:optimize -- public/models/avatar.glb
 & 'C:\Program Files\Blender Foundation\Blender 5.2\blender.exe' --background --python assets/blender/build_creator_relic.py
 npm run models:optimize -- public/models/creator-relic.glb
 ```

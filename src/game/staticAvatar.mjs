@@ -1,4 +1,4 @@
-import { Group, Mesh } from 'three';
+import { Group, Mesh, Float32BufferAttribute } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { avatarPartVisible } from './avatarParts.mjs';
 const templates = new WeakMap();
@@ -18,7 +18,21 @@ export function createStaticAvatar(source, { hair, character = 'male', outfitCol
       if (!object.isMesh || !avatarPartVisible(object.name, { hair, character })) return;
       const material = object.material;
       if (Array.isArray(material)) throw new Error('Avatar primitives must have one material.');
-      const geometry = object.geometry.clone().applyMatrix4(object.matrixWorld);
+      const geometry = object.geometry.clone();
+      // Meshopt quantization stores normalized integer attributes. Transform into float buffers
+      // before baking node matrices so coordinates above one do not wrap or get clamped.
+      for (const name of ['position', 'normal']) {
+        const attribute = geometry.getAttribute(name);
+        if (!attribute) continue;
+        const values = new Float32Array(attribute.count * 3);
+        for (let i = 0; i < attribute.count; i++) {
+          values[i * 3] = attribute.getX(i);
+          values[i * 3 + 1] = attribute.getY(i);
+          values[i * 3 + 2] = attribute.getZ(i);
+        }
+        geometry.setAttribute(name, new Float32BufferAttribute(values, 3));
+      }
+      geometry.applyMatrix4(object.matrixWorld);
       for (const key of Object.keys(geometry.attributes))
         if (!['position', 'normal'].includes(key)) geometry.deleteAttribute(key);
       if (!batches.has(material.name)) batches.set(material.name, { material, geometries: [] });

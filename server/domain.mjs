@@ -1,3 +1,4 @@
+import { AVATAR_HAIRS } from '../src/game/avatarCatalog.mjs';
 export const CHOICES = {
   concept: ['fun', 'bukber', 'both', 'unsure'],
   attendance: ['yes', 'maybe', 'no'],
@@ -29,7 +30,9 @@ export function validateAvatar(a) {
   if (
     !a ||
     !['sage', 'clay', 'navy', 'cream'].includes(a.outfit) ||
-    !['short', 'bob', 'cap', 'long'].includes(a.hair) ||
+    !AVATAR_HAIRS.includes(a.hair) ||
+    (['ponytail', 'hijab'].includes(a.hair) && a.character !== 'female') ||
+    (a.hair === 'quiff' && a.character === 'female') ||
     (a.character !== undefined && !['male', 'female'].includes(a.character)) ||
     !['light', 'warm', 'deep'].includes(a.skin)
   )

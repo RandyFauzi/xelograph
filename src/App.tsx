@@ -22,6 +22,7 @@ import {
 import { Survey } from './Survey';
 import { campusAudio, loadAudioPreferences, type AudioPreferences } from './game/audio';
 import { CREATOR_MONUMENT } from './game/creatorMonument.mjs';
+import { AVATAR_MODELS, selectAvatarCharacter } from './game/avatarCatalog.mjs';
 import { api, download } from './api';
 import {
   CHECKPOINTS,
@@ -614,13 +615,7 @@ function Join({ onDone, onResume }: { onDone: (p: Profile) => void; onResume: ()
                     key={character}
                     aria-pressed={(avatar.character || 'male') === character}
                     className={(avatar.character || 'male') === character ? 'selected' : ''}
-                    onClick={() =>
-                      setAvatar({
-                        ...avatar,
-                        character,
-                        hair: character === 'female' ? 'long' : 'short',
-                      })
-                    }
+                    onClick={() => setAvatar(selectAvatarCharacter(avatar, character))}
                   >
                     <AvatarPortrait
                       config={{
@@ -630,6 +625,29 @@ function Join({ onDone, onResume }: { onDone: (p: Profile) => void; onResume: ()
                       }}
                     />
                     <span>{character === 'female' ? 'Perempuan' : 'Laki-laki'}</span>
+                  </button>
+                ))}
+              </div>
+              <label>Model {avatar.character === 'female' ? 'perempuan' : 'pria'}</label>
+              <div
+                className="avatar-model-options"
+                role="group"
+                aria-label={
+                  avatar.character === 'female' ? 'Pilihan model perempuan' : 'Pilihan model pria'
+                }
+              >
+                {AVATAR_MODELS[avatar.character || 'male'].map((model) => (
+                  <button
+                    type="button"
+                    key={model.id}
+                    aria-pressed={avatar.hair === model.id}
+                    aria-label={`${model.label}: ${model.description}`}
+                    className={avatar.hair === model.id ? 'selected' : ''}
+                    onClick={() => setAvatar({ ...avatar, hair: model.id })}
+                  >
+                    <img src={model.preview} alt="" width="72" height="96" />
+                    <strong>{model.label}</strong>
+                    <small>{model.description}</small>
                   </button>
                 ))}
               </div>
@@ -662,20 +680,6 @@ function Join({ onDone, onResume }: { onDone: (p: Profile) => void; onResume: ()
                     onClick={() => setAvatar({ ...avatar, skin: v })}
                   >
                     {avatar.skin === v && <Check size={15} />}
-                  </button>
-                ))}
-              </div>
-              <label>Gaya rambut</label>
-              <div className="hair-options">
-                {(['short', 'bob', 'cap', 'long'] as const).map((v) => (
-                  <button
-                    type="button"
-                    key={v}
-                    aria-pressed={avatar.hair === v}
-                    className={avatar.hair === v ? 'selected' : ''}
-                    onClick={() => setAvatar({ ...avatar, hair: v })}
-                  >
-                    {{ short: 'Pendek', bob: 'Bob', cap: 'Topi', long: 'Panjang' }[v]}
                   </button>
                 ))}
               </div>

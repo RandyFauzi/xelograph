@@ -22,6 +22,7 @@ def render(asset,name,location,target,scale,character='male'):
    if o.name.startswith('Cap_brim'):o.hide_render=True
    if o.name=='Torso':o.hide_render=character=='female'
    if o.name.startswith('Body_female_'):o.hide_render=character!='female'
+   if o.name.startswith('Look_'):o.hide_render=True
  bpy.ops.render.render(write_still=True)
 render('xelograph-world.blend','world.png',(45,-57,50),(0,-6,0),78)
 render('xelograph-avatar.blend','avatar.png',(2,-4,2.1),(0,0,.9),2.3)

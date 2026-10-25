@@ -36,9 +36,49 @@ def create_avatar():
  ico('Hair_long_back',(0,.135,1.33),(.325,.205,.44),hair,2)
  ico('Hair_long_crown',(0,.02,1.61),(.31,.275,.17),hair,2)
  for x in [-.265,.265]:ico('Hair_long_side',(x,-.025,1.32),(.075,.19,.35),hair,2)
- cylinder('Hair_cap',(0,.015,1.64),.3,.12,hat,16)
+ ico('Hair_cap',(0,.015,1.62),(.305,.275,.145),hat,2)
  cube('Cap_brim',(0,-.22,1.64),(.38,.27,.04),hat,.035)
  for x in [-.1,.1]:
   ico('Eye',(x,-.25,1.42),(.024,.016,.03),ink,2)
   cube('Brow',(x,-.247,1.49),(.06,.015,.012),hair,.004)
  cube('Smile',(0,-.26,1.29),(.065,.012,.012),hair,.005)
+ # Additional full looks: hairstyles and garments are authored together, not just relabelled.
+ scarf=material('AvatarScarf','#d9c9ab')
+ ico('Hair_quiff_base',(0,.015,1.59),(.30,.27,.17),hair,2)
+ sweep=ico('Hair_quiff_sweep',(-.055,-.13,1.70),(.25,.16,.135),hair,2);sweep.rotation_euler.y=-.22
+ ico('Hair_ponytail_crown',(0,.035,1.59),(.30,.27,.18),hair,2)
+ fringe=ico('Hair_ponytail_fringe',(-.09,-.17,1.585),(.19,.13,.12),hair,2);fringe.rotation_euler.y=-.2
+ ico('Hair_ponytail_tie',(.22,.19,1.49),(.12,.13,.115),hair,2)
+ tail=ico('Hair_ponytail_tail',(.34,.22,1.27),(.12,.125,.25),hair,2);tail.rotation_euler.y=-.18
+ cube('Hair_ponytail_band',(.23,.19,1.47),(.17,.075,.05),shirt,.018)
+ ico('Hair_hijab_back',(0,.115,1.42),(.33,.24,.35),scarf,2)
+ ico('Hair_hijab_crown',(0,.012,1.59),(.316,.278,.18),scarf,2)
+ for x in [-.263,.263]:
+  fold=ico('Hair_hijab_side',(x,-.04,1.34),(.077,.205,.30),scarf,2);fold.rotation_euler.y=.12 if x<0 else -.12
+ ico('Hair_hijab_neck',(0,.015,1.125),(.27,.24,.12),scarf,2)
+ # Sporty female: ponytail, hoodie, front pocket, and trousers with no dress layer.
+ cube('Look_female_ponytail_Torso',(0,0,.87),(.47,.32,.52),shirt,.085)
+ ico('Look_female_ponytail_Hood',(0,.08,1.075),(.255,.20,.10),shirt,2)
+ cube('Look_female_ponytail_Pocket',(0,-.174,.76),(.25,.025,.11),shirt,.025)
+ for x in [-.075,.075]:cube('Look_female_ponytail_Drawstring',(x,-.178,1.01),(.014,.015,.15),shoe,.005)
+ cube('Look_female_ponytail_Hem',(0,0,.625),(.445,.315,.055),pants,.018)
+ # Hijab female: long tunic, long skirt, and arm-attached long sleeves.
+ cube('Look_female_hijab_Tunic',(0,0,.83),(.45,.32,.56),shirt,.07)
+ bpy.ops.mesh.primitive_cone_add(vertices=16,radius1=.35,radius2=.22,depth=.56,location=(0,0,.48))
+ long_skirt=bpy.context.object;long_skirt.name='Look_female_hijab_Long_skirt';long_skirt.scale.y=.68;long_skirt.data.materials.append(shirt)
+ long_skirt.modifiers.new('Soft long hem','BEVEL').width=.018
+ for side,x in [('L',-.34),('R',.34)]:
+  sleeve=cube('Look_female_hijab_Sleeve_'+side,(x,0,.79),(.17,.245,.49),shirt,.055)
+  bpy.context.view_layer.update();matrix=sleeve.matrix_world.copy();sleeve.parent=bpy.data.objects['Arm_'+side];sleeve.matrix_world=matrix
+ # Male jacket: sculpted quiff, contrasting tee, zipper and lapels.
+ cube('Look_male_quiff_Jacket',(0,0,.87),(.515,.33,.53),shirt,.075)
+ cube('Look_male_quiff_Tee',(0,-.178,.9),(.17,.025,.38),shoe,.025)
+ for x in [-.12,.12]:
+  lapel=cube('Look_male_quiff_Lapel',(x,-.196,1.005),(.095,.035,.20),shirt,.015);lapel.rotation_euler.y=.30 if x<0 else -.30
+ cube('Look_male_quiff_Zipper',(0,-.194,.73),(.014,.014,.20),pants,.004)
+ cube('Look_male_quiff_Hem',(0,0,.625),(.50,.325,.045),pants,.014)
+ # Male cap: separate relaxed hoodie geometry, keeping the same neutral sneakers.
+ cube('Look_male_cap_Hoodie',(0,0,.87),(.53,.34,.54),shirt,.085)
+ ico('Look_male_cap_Hood',(0,.085,1.08),(.28,.21,.115),shirt,2)
+ cube('Look_male_cap_Pocket',(0,-.185,.76),(.28,.025,.13),shirt,.025)
+ for x in [-.08,.08]:cube('Look_male_cap_Drawstring',(x,-.18,1.01),(.014,.014,.16),shoe,.005)

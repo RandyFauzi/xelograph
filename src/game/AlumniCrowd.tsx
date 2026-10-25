@@ -19,10 +19,16 @@ export default function AlumniCrowd({
 }) {
   const { scene } = useGLTF('/models/avatar.glb', false, true),
     placements = useMemo(() => layoutAlumni(alumni), [alumni]);
+  const styleKeys = [
+    ...new Set(alumni.map((a) => `${a.avatar.character || 'male'}:${a.avatar.hair}`)),
+  ]
+    .sort()
+    .join('|');
   const templates = useMemo(
     () =>
-      ['male', 'female'].flatMap((character) =>
-        ['short', 'bob', 'cap', 'long'].map((hair) => ({
+      (styleKeys ? styleKeys.split('|') : []).map((key) => {
+        const [character, hair] = key.split(':');
+        return {
           hair,
           character,
           model: createStaticAvatar(scene, {
@@ -31,9 +37,9 @@ export default function AlumniCrowd({
             outfitColor: '#ffffff',
             skinColor: '#ffffff',
           }),
-        })),
-      ),
-    [scene],
+        };
+      }),
+    [scene, styleKeys],
   );
   useEffect(
     () => () => {

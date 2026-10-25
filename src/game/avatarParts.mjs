@@ -1,6 +1,14 @@
 /** The same selection rules drive animated players, previews, and instanced alumni. */
 export function avatarPartVisible(name, { hair, character = 'male' }) {
-  if (name === 'Torso' && character === 'female') return false;
+  const customBody =
+    (character === 'female' && ['ponytail', 'hijab'].includes(hair)) ||
+    (character === 'male' && ['quiff', 'cap'].includes(hair));
+  if (name.startsWith('Look_')) return name.startsWith(`Look_${character}_${hair}_`);
+  if (name === 'Torso' && (character === 'female' || customBody)) return false;
+  if (name.startsWith('Body_') && customBody) return false;
+  if (name === 'Collar' && (hair === 'hijab' || hair === 'cap' || hair === 'ponytail'))
+    return false;
+  if ((name.startsWith('Sleeve_') || name.startsWith('Forearm_')) && hair === 'hijab') return false;
   if (name.startsWith('Body_') && !name.startsWith('Body_' + character + '_')) return false;
   if (name.startsWith('Hair_') && !name.startsWith('Hair_' + hair)) return false;
   if (name.startsWith('Cap_brim') && hair !== 'cap') return false;

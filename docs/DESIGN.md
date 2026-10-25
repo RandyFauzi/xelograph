@@ -20,7 +20,7 @@ Mode ringan menyediakan misi satu per satu tanpa navigasi 3D. Dialog menangkap f
 
 Kamera mengikuti tubuh karakter; overview memperlihatkan kampus dan Commons. Raycast ke kepala dan tubuh mendeteksi pohon/bangunan penghalang, lalu memudarkan seluruh kelompok material ke opacity 0,16. Objek kembali normal setelah pandangan terbuka. Metadata camera_occluder di GLB menjaga dekorasi lain tetap dibatch.
 
-Avatar chibi dengan pilihan laki-laki/perempuan dan empat gaya rambut, empat pilihan pakaian, dan tiga warna kulit independen. Wajah menghadap +Z; tangan/kaki memiliki pivot lokal untuk langkah. Pemain memiliki animasi langkah dan loncat; avatar alumni persisten memakai geometri bersama dan instancing. Label tampil untuk maksimal 14 alumni dekat pemain. Tidak ada klaim status online atau live multiplayer.
+Avatar chibi dengan pilihan laki-laki/perempuan dan tiga model 3D per pilihan, empat warna pakaian, dan tiga warna kulit independen. Daftar model mengikuti pilihan karakter: Kasual/Sporty/Hijab untuk perempuan, Kasual/Jaket/Topi untuk pria. Thumbnail berasal dari render model yang sama, sementara preview utama tetap interaktif. Wajah menghadap +Z; tangan/kaki memiliki pivot lokal untuk langkah. Pemain memiliki animasi langkah dan loncat; avatar alumni persisten memakai geometri bersama dan instancing. Label tampil untuk maksimal 14 alumni dekat pemain. Tidak ada klaim status online atau live multiplayer.
 
 ## Audio dan data
 

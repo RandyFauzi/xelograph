@@ -2,14 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { Box3 } from 'three';
 import { createStaticAvatar } from '../src/game/staticAvatar.mjs';
 test('Stationary avatars share geometry, keep independent colors, and need fewer than ten draws', async () => {
   const bytes = readFileSync(new URL('../public/models/avatar.glb', import.meta.url));
-  const { scene } = await new GLTFLoader().parseAsync(
-    bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
-    '',
-  );
+  const { scene } = await new GLTFLoader()
+    .setMeshoptDecoder(MeshoptDecoder)
+    .parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
   const a = createStaticAvatar(scene, {
       hair: 'short',
       outfitColor: '#367fcb',
