@@ -13,18 +13,12 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
-  HelpCircle,
   X,
   ExternalLink,
   Copy,
   Check,
-  Filter,
   Users,
   Calendar,
-  MapPin,
-  Heart,
-  Sparkles,
-  MessageSquare,
   FileSpreadsheet,
   Gamepad2,
 } from 'lucide-react';
@@ -71,28 +65,27 @@ function formatValue(v: unknown): string {
 function attendanceBadge(v: unknown) {
   const val = String(v || '');
   if (val === 'yes') {
-    return <span className="badge badge-success">Ingin hadir</span>;
+    return <span className="adm-badge adm-badge-success">Ingin hadir</span>;
   }
   if (val === 'maybe') {
-    return <span className="badge badge-warning">Menyesuaikan</span>;
+    return <span className="adm-badge adm-badge-warning">Menyesuaikan</span>;
   }
   if (val === 'no') {
-    return <span className="badge badge-danger">Tidak hadir</span>;
+    return <span className="adm-badge adm-badge-danger">Tidak hadir</span>;
   }
-  return <span className="badge badge-neutral">Belum ada</span>;
+  return <span className="adm-badge adm-badge-neutral">Belum ada</span>;
 }
 
 function committeeBadge(v: unknown) {
   const val = String(v || '');
-  if (val === 'active') return <span className="badge badge-primary">Panitia aktif</span>;
-  if (val === 'occasional') return <span className="badge badge-info">Bantu sesekali</span>;
-  if (val === 'participant') return <span className="badge badge-neutral">Peserta saja</span>;
-  if (val === 'unavailable') return <span className="badge badge-muted">Belum bisa</span>;
-  return <span className="badge badge-neutral">{formatValue(v)}</span>;
+  if (val === 'active') return <span className="adm-badge adm-badge-blue">Panitia aktif</span>;
+  if (val === 'occasional') return <span className="adm-badge adm-badge-cyan">Bantu sesekali</span>;
+  if (val === 'participant') return <span className="adm-badge adm-badge-neutral">Peserta saja</span>;
+  if (val === 'unavailable') return <span className="adm-badge adm-badge-muted">Belum bisa</span>;
+  return <span className="adm-badge adm-badge-neutral">{formatValue(v)}</span>;
 }
 
 export default function AdminPanel() {
-  const [canManage, setCanManage] = useState(false);
   const [code, setCode] = useState(''),
     [rows, setRows] = useState<Row[] | null>(null),
     [busy, setBusy] = useState(false),
@@ -111,11 +104,7 @@ export default function AdminPanel() {
 
   const load = async () => {
     try {
-      const [data, session] = await Promise.all([
-        api<Row[]>('/admin'),
-        api<{ role: 'owner' | 'viewer' }>('/admin/session'),
-      ]);
-      setCanManage(session.role === 'owner');
+      const data = await api<Row[]>('/admin');
       setRows(data);
       setError('');
     } catch (e) {
@@ -128,7 +117,7 @@ export default function AdminPanel() {
     void load();
   }, []);
 
-  // Update selectedRow reference if rows change
+  // Sync selectedRow when rows update
   useEffect(() => {
     if (selectedRow && rows) {
       const updated = rows.find((r) => r.id === selectedRow.id);
@@ -136,7 +125,7 @@ export default function AdminPanel() {
     }
   }, [rows]);
 
-  // Keyboard navigation: Escape closes drawer & modal
+  // Escape to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -211,7 +200,6 @@ export default function AdminPanel() {
 
   // Toggle in-game visibility
   const toggleVisibility = async (row: Row) => {
-    if (!canManage) return;
     setTogglingId(row.id);
     setError('');
     const newStatus = !row.consent_public;
@@ -221,7 +209,9 @@ export default function AdminPanel() {
         body: JSON.stringify({ enabled: newStatus }),
       });
       setRows((prev) =>
-        prev ? prev.map((r) => (r.id === row.id ? { ...r, consent_public: newStatus } : r)) : null,
+        prev
+          ? prev.map((r) => (r.id === row.id ? { ...r, consent_public: newStatus } : r))
+          : null,
       );
       setFeedback(
         `Avatar ${row.nickname || row.full_name} berhasil ${newStatus ? 'diaktifkan (tampil di game)' : 'dinonaktifkan (disembunyikan)'}.`,
@@ -236,7 +226,7 @@ export default function AdminPanel() {
 
   // Delete respondent
   const confirmDelete = async () => {
-    if (!canManage || !deleteTarget) return;
+    if (!deleteTarget) return;
     setDeletingId(deleteTarget.id);
     setError('');
     try {
@@ -262,7 +252,6 @@ export default function AdminPanel() {
   };
 
   const exported = () => {
-    if (!canManage) return;
     const columns = [
       'Nama',
       'Panggilan',
@@ -308,24 +297,11 @@ export default function AdminPanel() {
   };
 
   return (
-    <div className="respondent-page">
-      <header className="page-header">
-        <div className="eyebrow">
-          <span>XYLOGRAPH</span>
-          <span className="divider">/</span>
-          <span>RUANG PANITIA</span>
-        </div>
-        <h1>Manajemen Responden & Dunia Game</h1>
-        <p>
-          Pantau hasil survei, verifikasi responden ganda, dan atur penampilan avatar di in-game
-          world secara langsung.
-        </p>
-      </header>
-
+    <div className="adm-container">
       {!rows ? (
-        <div className="login-wrapper">
+        <div className="adm-login-wrap">
           <form
-            className="admin-login-card"
+            className="adm-login-box"
             onSubmit={async (e) => {
               e.preventDefault();
               setBusy(true);
@@ -341,66 +317,61 @@ export default function AdminPanel() {
               }
             }}
           >
-            <div className="login-icon-box">
-              <Shield size={32} />
+            <div className="adm-login-icon">
+              <Shield size={28} />
             </div>
-            <h2>Akses Ruang Panitia</h2>
-            <p>Masukkan kode akses admin untuk membuka data responden dan kontrol in-game.</p>
-            <label className="field">
-              <span>Kode Akses Admin</span>
+            <h2 className="adm-login-title">Akses Ruang Panitia</h2>
+            <p className="adm-login-subtitle">
+              Masukkan kode akses admin untuk melihat data responden dan mengatur kontrol in-game.
+            </p>
+            <div className="adm-form-field">
+              <label htmlFor="admin-code-input">Kode Akses Admin</label>
               <input
+                id="admin-code-input"
                 type="password"
                 required
                 autoComplete="current-password"
-                placeholder="XYLO-XXXX-XXXX-XXXX"
+                placeholder="Masukkan kode admin…"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 maxLength={128}
               />
-            </label>
+            </div>
             {error && (
-              <div className="alert alert-error" role="alert">
-                <XCircle size={18} />
+              <div className="adm-alert adm-alert-error" role="alert">
+                <XCircle size={16} />
                 <span>{error}</span>
               </div>
             )}
-            <button className="primary" disabled={busy}>
-              {busy ? 'Memverifikasi…' : 'Buka Dashboard'}
-              <ArrowRight size={17} />
+            <button className="adm-btn adm-btn-primary adm-btn-full" disabled={busy}>
+              {busy ? 'Memverifikasi…' : 'Buka Ruang Panitia'}
+              <ArrowRight size={16} />
             </button>
           </form>
         </div>
       ) : (
         <>
-          {feedback && (
-            <div className="alert alert-success toast-feedback">
-              <CheckCircle2 size={18} />
-              <span>{feedback}</span>
+          {/* Header Title Section */}
+          <div className="adm-header-block">
+            <div className="adm-title-group">
+              <div className="adm-pill-badge">
+                <span className="adm-pill-dot" />
+                Panel Admin
+              </div>
+              <h1 className="adm-page-title">Manajemen Responden & In-Game</h1>
+              <p className="adm-page-desc">
+                Pantau jawaban survei, verifikasi data responden ganda, dan atur penampilan avatar
+                alumni di dunia game secara instan.
+              </p>
             </div>
-          )}
 
-          {error && (
-            <div className="alert alert-error" role="alert">
-              <XCircle size={18} />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <p className="helper" role="status">
-            {canManage
-              ? 'Admin pribadi · Akses penuh'
-              : 'Panitia · Hanya lihat, tanpa mengubah atau menghapus data'}
-          </p>
-          <div className="admin-toolbar">
-            <div className="toolbar-left">
-              {canManage && (
-                <button className="btn btn-primary" onClick={exported}>
-                  <Download size={16} />
-                  Ekspor CSV
-                </button>
-              )}
+            <div className="adm-header-actions">
+              <button className="adm-btn adm-btn-secondary" onClick={exported}>
+                <Download size={15} />
+                Ekspor CSV
+              </button>
               <button
-                className="btn btn-secondary"
+                className="adm-btn adm-btn-secondary"
                 disabled={busy}
                 onClick={async () => {
                   setBusy(true);
@@ -413,13 +384,11 @@ export default function AdminPanel() {
                   }
                 }}
               >
-                <RefreshCw size={16} className={busy ? 'spin' : ''} />
+                <RefreshCw size={15} className={busy ? 'adm-spin' : ''} />
                 Segarkan
               </button>
-            </div>
-            <div className="toolbar-right">
               <button
-                className="btn btn-ghost"
+                className="adm-btn adm-btn-ghost"
                 onClick={async () => {
                   try {
                     await api('/admin/session', { method: 'DELETE' });
@@ -436,126 +405,141 @@ export default function AdminPanel() {
             </div>
           </div>
 
-          <div className="admin-stats-grid">
-            <article className="stat-card">
-              <div className="stat-icon stat-blue">
-                <Users size={22} />
-              </div>
-              <div className="stat-info">
-                <span className="stat-label">Total Responden</span>
-                <b className="stat-value">{rows.length}</b>
-              </div>
-            </article>
+          {feedback && (
+            <div className="adm-alert adm-alert-success">
+              <CheckCircle2 size={16} />
+              <span>{feedback}</span>
+            </div>
+          )}
 
-            <article className="stat-card">
-              <div className="stat-icon stat-green">
-                <Eye size={22} />
-              </div>
-              <div className="stat-info">
-                <span className="stat-label">Tampil di In-Game</span>
-                <b className="stat-value">{rows.filter((r) => r.consent_public).length}</b>
-              </div>
-            </article>
+          {error && (
+            <div className="adm-alert adm-alert-error" role="alert">
+              <XCircle size={16} />
+              <span>{error}</span>
+            </div>
+          )}
 
-            <article className="stat-card">
-              <div className="stat-icon stat-purple">
-                <Calendar size={22} />
+          {/* Metrics Grid */}
+          <div className="adm-stats-row">
+            <div className="adm-stat-card">
+              <div className="adm-stat-icon-wrap adm-stat-blue">
+                <Users size={20} />
               </div>
-              <div className="stat-info">
-                <span className="stat-label">Ingin Hadir</span>
-                <b className="stat-value">
+              <div className="adm-stat-content">
+                <span className="adm-stat-label">Total Responden</span>
+                <span className="adm-stat-number">{rows.length}</span>
+              </div>
+            </div>
+
+            <div className="adm-stat-card">
+              <div className="adm-stat-icon-wrap adm-stat-green">
+                <Eye size={20} />
+              </div>
+              <div className="adm-stat-content">
+                <span className="adm-stat-label">Tampil di In-Game</span>
+                <span className="adm-stat-number">{rows.filter((r) => r.consent_public).length}</span>
+              </div>
+            </div>
+
+            <div className="adm-stat-card">
+              <div className="adm-stat-icon-wrap adm-stat-indigo">
+                <Calendar size={20} />
+              </div>
+              <div className="adm-stat-content">
+                <span className="adm-stat-label">Rencana Hadir</span>
+                <span className="adm-stat-number">
                   {rows.filter((r) => r.answers.attendance === 'yes').length}
-                </b>
+                </span>
               </div>
-            </article>
+            </div>
 
-            <article
-              className={`stat-card ${duplicateCount > 0 ? 'stat-warning-card' : ''}`}
+            <div
+              className={`adm-stat-card ${duplicateCount > 0 ? 'adm-stat-highlight-warn' : ''}`}
               onClick={() => duplicateCount > 0 && setOnlyDuplicates((prev) => !prev)}
               style={{ cursor: duplicateCount > 0 ? 'pointer' : 'default' }}
             >
-              <div className={`stat-icon ${duplicateCount > 0 ? 'stat-amber' : 'stat-neutral'}`}>
-                <AlertTriangle size={22} />
+              <div
+                className={`adm-stat-icon-wrap ${
+                  duplicateCount > 0 ? 'adm-stat-amber' : 'adm-stat-neutral'
+                }`}
+              >
+                <AlertTriangle size={20} />
               </div>
-              <div className="stat-info">
-                <span className="stat-label">
+              <div className="adm-stat-content">
+                <span className="adm-stat-label">
                   {duplicateCount > 0 ? '⚠️ Terindikasi Duplikat' : 'Data Ganda'}
                 </span>
-                <b className="stat-value">{duplicateCount}</b>
+                <span className="adm-stat-number">{duplicateCount}</span>
               </div>
               {duplicateCount > 0 && (
-                <span className="stat-action-hint">
+                <span className="adm-stat-badge-hint">
                   {onlyDuplicates ? 'Lihat semua' : 'Filter duplikat'}
                 </span>
               )}
-            </article>
+            </div>
           </div>
 
-          <div className="respondent-filter-bar">
-            <div className="search-box">
-              <Search size={18} />
+          {/* Filter Bar */}
+          <div className="adm-filter-bar">
+            <div className="adm-search-wrap">
+              <Search size={16} />
               <input
                 aria-label="Cari nama, panggilan, atau WhatsApp"
-                placeholder="Cari nama, panggilan, atau WhatsApp…"
+                placeholder="Cari nama, panggilan, atau nomor WhatsApp…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
               {search && (
                 <button
                   type="button"
-                  className="clear-search"
+                  className="adm-clear-btn"
                   onClick={() => setSearch('')}
                   aria-label="Hapus pencarian"
                 >
-                  <X size={15} />
+                  <X size={14} />
                 </button>
               )}
             </div>
 
-            <div className="filter-selects">
-              <div className="select-wrapper">
-                <select
-                  value={source}
-                  onChange={(e) => setSource(e.target.value)}
-                  aria-label="Filter sumber"
-                >
-                  <option value="all">Semua Sumber</option>
-                  <option value="legacy">Survei Lama (Excel)</option>
-                  <option value="game">Pendaftaran Game</option>
-                </select>
-              </div>
+            <div className="adm-select-group">
+              <select
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                aria-label="Filter sumber"
+              >
+                <option value="all">Semua Sumber</option>
+                <option value="legacy">Survei Lama (Excel)</option>
+                <option value="game">Pendaftaran Game</option>
+              </select>
 
-              <div className="select-wrapper">
-                <select
-                  value={visibilityFilter}
-                  onChange={(e) => setVisibilityFilter(e.target.value)}
-                  aria-label="Filter status game"
-                >
-                  <option value="all">Semua Status Game</option>
-                  <option value="visible">Tampil di Game</option>
-                  <option value="hidden">Disembunyikan</option>
-                </select>
-              </div>
+              <select
+                value={visibilityFilter}
+                onChange={(e) => setVisibilityFilter(e.target.value)}
+                aria-label="Filter status game"
+              >
+                <option value="all">Semua Status Game</option>
+                <option value="visible">Hanya yang Tampil di Game</option>
+                <option value="hidden">Hanya yang Disembunyikan</option>
+              </select>
 
               <button
                 type="button"
-                className={`btn btn-toggle-filter ${onlyDuplicates ? 'active' : ''}`}
+                className={`adm-pill-filter ${onlyDuplicates ? 'active' : ''}`}
                 onClick={() => setOnlyDuplicates((prev) => !prev)}
-                title="Tampilkan hanya akun yang nomor HP atau namanya ganda"
+                title="Tampilkan hanya responden yang nomor atau namanya ganda"
               >
-                <AlertTriangle size={15} />
+                <AlertTriangle size={14} />
                 Hanya Duplikat ({duplicateCount})
               </button>
             </div>
 
-            <div className="filter-summary">
-              <span>{filtered.length} responden</span>
-            </div>
+            <div className="adm-filter-count">{filtered.length} responden ditampilkan</div>
           </div>
 
-          <div className="table-card">
-            <div className="table-responsive">
-              <table className="respondent-table">
+          {/* Clean White Modern Table */}
+          <div className="adm-card-table-wrap">
+            <div className="adm-table-scroll">
+              <table className="adm-table">
                 <thead>
                   <tr>
                     <th>Alumni</th>
@@ -564,34 +548,31 @@ export default function AdminPanel() {
                     <th>Kehadiran</th>
                     <th>Kepanitiaan</th>
                     <th>Status In-Game</th>
-                    <th className="th-actions">Aksi</th>
+                    <th className="adm-th-actions">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((row) => {
                     const isDup = duplicateMap.has(row.id);
                     return (
-                      <tr key={row.id} className={isDup ? 'row-duplicate' : ''}>
+                      <tr key={row.id} className={isDup ? 'adm-row-dup' : ''}>
                         <td>
-                          <div className="alumni-cell">
-                            <div className="avatar-mini">
+                          <div className="adm-alumni-cell">
+                            <div className="adm-avatar-circle">
                               {row.avatar ? (
                                 <AvatarPortrait config={row.avatar} />
                               ) : (
-                                <div className="avatar-placeholder">
+                                <div className="adm-avatar-initial">
                                   {row.nickname?.[0] || row.full_name?.[0] || 'A'}
                                 </div>
                               )}
                             </div>
-                            <div className="alumni-info">
-                              <span className="alumni-fullname">{row.full_name}</span>
-                              <div className="alumni-sub">
-                                <span className="alumni-nickname">{row.nickname}</span>
+                            <div className="adm-alumni-meta">
+                              <span className="adm-name">{row.full_name}</span>
+                              <div className="adm-name-sub">
+                                <span className="adm-nick">{row.nickname}</span>
                                 {isDup && (
-                                  <span
-                                    className="badge badge-warning badge-sm"
-                                    title="Nama atau nomor WhatsApp sama dengan akun lain"
-                                  >
+                                  <span className="adm-badge adm-badge-warning adm-badge-xs">
                                     Duplikat
                                   </span>
                                 )}
@@ -605,34 +586,34 @@ export default function AdminPanel() {
                               href={`https://wa.me/${row.whatsapp}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="whatsapp-link"
+                              className="adm-wa-link"
                               title="Buka chat WhatsApp"
                             >
                               <span>{row.whatsapp}</span>
-                              <ExternalLink size={13} />
+                              <ExternalLink size={12} />
                             </a>
                           ) : (
-                            <span className="text-muted">Tidak tersedia</span>
+                            <span className="adm-muted-text">Tidak tersedia</span>
                           )}
                         </td>
                         <td>
-                          <div className="source-cell">
+                          <div className="adm-source-meta">
                             <span
-                              className={`source-badge ${
+                              className={`adm-source-pill ${
                                 row.sourceType === 'legacy' ? 'source-legacy' : 'source-game'
                               }`}
                             >
                               {row.sourceType === 'legacy' ? (
                                 <>
-                                  <FileSpreadsheet size={13} /> Survei Lama
+                                  <FileSpreadsheet size={12} /> Survei Lama
                                 </>
                               ) : (
                                 <>
-                                  <Gamepad2 size={13} /> Game
+                                  <Gamepad2 size={12} /> Game
                                 </>
                               )}
                             </span>
-                            <span className="progress-status">
+                            <span className="adm-status-sub">
                               {row.completed_at ? '✓ Selesai' : '✎ Draf'}
                             </span>
                           </div>
@@ -642,51 +623,47 @@ export default function AdminPanel() {
                         <td>
                           <button
                             type="button"
-                            className={`visibility-pill ${
-                              row.consent_public ? 'vis-active' : 'vis-inactive'
+                            className={`adm-vis-pill ${
+                              row.consent_public ? 'vis-on' : 'vis-off'
                             }`}
-                            disabled={!canManage || togglingId === row.id}
+                            disabled={togglingId === row.id}
                             onClick={() => toggleVisibility(row)}
                             title={
                               row.consent_public
-                                ? 'Klik untuk sembunyikan avatar dari game'
-                                : 'Klik untuk tampilkan avatar di game'
+                                ? 'Klik untuk menyembunyikan avatar dari game'
+                                : 'Klik untuk menampilkan avatar di game'
                             }
                           >
                             {togglingId === row.id ? (
-                              <RefreshCw size={13} className="spin" />
+                              <RefreshCw size={12} className="adm-spin" />
                             ) : row.consent_public ? (
-                              <Eye size={13} />
+                              <Eye size={12} />
                             ) : (
-                              <EyeOff size={13} />
+                              <EyeOff size={12} />
                             )}
                             <span>{row.consent_public ? 'Tampil' : 'Sembunyi'}</span>
                           </button>
                         </td>
-                        <td className="td-actions">
+                        <td className="adm-td-actions">
                           <button
                             type="button"
-                            className="btn-action btn-detail"
+                            className="adm-btn adm-btn-secondary adm-btn-sm"
                             onClick={() => {
                               setSelectedRow(row);
                               setDetailTab('mapped');
                             }}
-                            title="Buka detail responden"
                           >
-                            <Eye size={15} />
+                            <Eye size={13} />
                             Detail
                           </button>
-                          {canManage && (
-                            <button
-                              type="button"
-
-                              className="btn-action btn-delete"
-                              onClick={() => setDeleteTarget(row)}
-                              title="Hapus responden"
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            className="adm-btn adm-btn-danger-icon"
+                            onClick={() => setDeleteTarget(row)}
+                            title="Hapus responden"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </td>
                       </tr>
                     );
@@ -695,11 +672,11 @@ export default function AdminPanel() {
               </table>
 
               {!filtered.length && (
-                <div className="empty-state-box">
-                  <p>Tidak ada responden yang sesuai kriteria pencarian atau filter.</p>
+                <div className="adm-empty-box">
+                  <p>Tidak ada responden yang sesuai pencarian atau filter.</p>
                   {(search || source !== 'all' || visibilityFilter !== 'all' || onlyDuplicates) && (
                     <button
-                      className="btn btn-secondary btn-sm"
+                      className="adm-btn adm-btn-secondary adm-btn-sm"
                       onClick={() => {
                         setSearch('');
                         setSource('all');
@@ -715,33 +692,36 @@ export default function AdminPanel() {
             </div>
           </div>
 
-          {/* DETAIL SLIDE-OVER DRAWER */}
+          {/* SLIDE-OVER DETAIL DRAWER */}
           {selectedRow && (
-            <div className="drawer-overlay" onClick={() => setSelectedRow(null)}>
-              <aside className="drawer-panel" onClick={(e) => e.stopPropagation()}>
-                <div className="drawer-header">
-                  <div className="drawer-profile">
-                    <div className="drawer-avatar">
+            <div className="adm-drawer-backdrop" onClick={() => setSelectedRow(null)}>
+              <aside className="adm-drawer" onClick={(e) => e.stopPropagation()}>
+                {/* Drawer Header */}
+                <div className="adm-drawer-head">
+                  <div className="adm-drawer-profile">
+                    <div className="adm-drawer-avatar">
                       {selectedRow.avatar ? (
                         <AvatarPortrait config={selectedRow.avatar} />
                       ) : (
-                        <div className="avatar-placeholder large">
+                        <div className="adm-avatar-initial large">
                           {selectedRow.nickname?.[0] || selectedRow.full_name?.[0] || 'A'}
                         </div>
                       )}
                     </div>
-                    <div className="drawer-profile-info">
-                      <h2>{selectedRow.full_name}</h2>
-                      <div className="drawer-tags">
-                        <span className="badge badge-primary">{selectedRow.nickname}</span>
+                    <div className="adm-drawer-name-block">
+                      <h2 className="adm-drawer-name">{selectedRow.full_name}</h2>
+                      <div className="adm-drawer-badges">
+                        <span className="adm-badge adm-badge-blue">{selectedRow.nickname}</span>
                         <span
-                          className={`source-badge ${
+                          className={`adm-source-pill ${
                             selectedRow.sourceType === 'legacy' ? 'source-legacy' : 'source-game'
                           }`}
                         >
-                          {selectedRow.sourceType === 'legacy' ? 'Survei Lama' : 'Pendaftaran Game'}
+                          {selectedRow.sourceType === 'legacy'
+                            ? 'Survei Lama'
+                            : 'Pendaftaran Game'}
                         </span>
-                        <span className="badge badge-neutral">
+                        <span className="adm-badge adm-badge-neutral">
                           {selectedRow.completed_at ? 'Sudah Selesai' : 'Draf'}
                         </span>
                       </div>
@@ -749,41 +729,41 @@ export default function AdminPanel() {
                   </div>
                   <button
                     type="button"
-                    className="drawer-close"
+                    className="adm-drawer-close"
                     onClick={() => setSelectedRow(null)}
                     aria-label="Tutup detail"
                   >
-                    <X size={20} />
+                    <X size={18} />
                   </button>
                 </div>
 
                 {/* IN-GAME VISIBILITY BANNER */}
                 <div
-                  className={`visibility-banner ${
-                    selectedRow.consent_public ? 'is-active' : 'is-inactive'
+                  className={`adm-vis-banner ${
+                    selectedRow.consent_public ? 'banner-on' : 'banner-off'
                   }`}
                 >
-                  <div className="vis-banner-content">
-                    <div className="vis-banner-icon">
-                      {selectedRow.consent_public ? <Eye size={22} /> : <EyeOff size={22} />}
+                  <div className="adm-vis-banner-info">
+                    <div className="adm-vis-banner-icon">
+                      {selectedRow.consent_public ? <Eye size={20} /> : <EyeOff size={20} />}
                     </div>
-                    <div className="vis-banner-text">
+                    <div className="adm-vis-banner-text">
                       <strong>
                         Status In-Game: {selectedRow.consent_public ? 'Tampil' : 'Disembunyikan'}
                       </strong>
                       <p>
                         {selectedRow.consent_public
-                          ? 'Avatar alumni ini saat ini aktif dan dapat dilihat oleh pemain lain di Reunion Commons.'
+                          ? 'Avatar alumni ini aktif dan terlihat oleh pemain lain di Reunion Commons.'
                           : 'Avatar saat ini disembunyikan dan tidak akan muncul di dunia game.'}
                       </p>
                     </div>
                   </div>
                   <button
                     type="button"
-                    className={`btn ${
-                      selectedRow.consent_public ? 'btn-vis-disable' : 'btn-vis-enable'
+                    className={`adm-btn ${
+                      selectedRow.consent_public ? 'adm-btn-danger-outline' : 'adm-btn-primary'
                     }`}
-                    disabled={!canManage || togglingId === selectedRow.id}
+                    disabled={togglingId === selectedRow.id}
                     onClick={() => toggleVisibility(selectedRow)}
                   >
                     {togglingId === selectedRow.id
@@ -794,14 +774,14 @@ export default function AdminPanel() {
                   </button>
                 </div>
 
-                {/* DUPLICATE WARNING IN DRAWER */}
+                {/* DUPLICATE ALERT IN DRAWER */}
                 {duplicateMap.has(selectedRow.id) && (
-                  <div className="drawer-dup-banner">
-                    <AlertTriangle size={20} />
-                    <div className="drawer-dup-text">
-                      <strong>⚠️ Terdeteksi Akun Ganda</strong>
-                      <p>Responden ini memiliki nomor WhatsApp atau nama yang sama dengan:</p>
-                      <ul className="dup-list">
+                  <div className="adm-dup-box">
+                    <AlertTriangle size={18} />
+                    <div className="adm-dup-box-content">
+                      <strong>⚠️ Terdeteksi Akun Ganda (Duplikat)</strong>
+                      <p>Memiliki nomor WhatsApp atau nama yang sama dengan akun lain:</p>
+                      <ul className="adm-dup-list">
                         {duplicateMap.get(selectedRow.id)!.map((otherId) => {
                           const other = rows.find((r) => r.id === otherId);
                           return other ? (
@@ -810,7 +790,7 @@ export default function AdminPanel() {
                               <span>{other.sourceType === 'legacy' ? 'Survei Lama' : 'Game'}</span>
                               <button
                                 type="button"
-                                className="link-button"
+                                className="adm-link-btn"
                                 onClick={() => setSelectedRow(other)}
                               >
                                 Lihat Akun &rarr;
@@ -819,39 +799,39 @@ export default function AdminPanel() {
                           ) : null;
                         })}
                       </ul>
-                      <p className="dup-advice">
-                        Anda dapat menghapus salah satu akun ganda dengan tombol &ldquo;Hapus
+                      <p className="adm-dup-tip">
+                        Anda dapat menghapus salah satu akun duplikat ini dengan tombol &ldquo;Hapus
                         Responden&rdquo; di bawah.
                       </p>
                     </div>
                   </div>
                 )}
 
-                {/* CONTACT QUICK BAR */}
-                <div className="drawer-contact-bar">
-                  <div className="contact-item">
-                    <span className="contact-label">WhatsApp</span>
-                    <span className="contact-value">
+                {/* CONTACT BAR */}
+                <div className="adm-contact-strip">
+                  <div className="adm-contact-meta">
+                    <span className="adm-contact-label">WhatsApp</span>
+                    <span className="adm-contact-val">
                       {selectedRow.whatsapp || 'Tidak tersedia'}
                     </span>
                   </div>
                   {selectedRow.whatsapp && (
-                    <div className="contact-actions">
+                    <div className="adm-contact-btns">
                       <button
                         type="button"
-                        className="btn btn-secondary btn-sm"
+                        className="adm-btn adm-btn-secondary adm-btn-xs"
                         onClick={() => copyText(selectedRow.whatsapp!)}
                       >
-                        {copied ? <Check size={14} /> : <Copy size={14} />}
+                        {copied ? <Check size={13} /> : <Copy size={13} />}
                         {copied ? 'Tersalin' : 'Salin'}
                       </button>
                       <a
                         href={`https://wa.me/${selectedRow.whatsapp}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="btn btn-primary btn-sm"
+                        className="adm-btn adm-btn-primary adm-btn-xs"
                       >
-                        <ExternalLink size={14} />
+                        <ExternalLink size={13} />
                         Chat WA
                       </a>
                     </div>
@@ -859,10 +839,10 @@ export default function AdminPanel() {
                 </div>
 
                 {/* DRAWER TABS */}
-                <nav className="drawer-tabs">
+                <nav className="adm-tabs-nav">
                   <button
                     type="button"
-                    className={`tab-btn ${detailTab === 'mapped' ? 'active' : ''}`}
+                    className={`adm-tab-link ${detailTab === 'mapped' ? 'active' : ''}`}
                     onClick={() => setDetailTab('mapped')}
                   >
                     Jawaban Game
@@ -870,7 +850,7 @@ export default function AdminPanel() {
                   {selectedRow.raw && (
                     <button
                       type="button"
-                      className={`tab-btn ${detailTab === 'raw' ? 'active' : ''}`}
+                      className={`adm-tab-link ${detailTab === 'raw' ? 'active' : ''}`}
                       onClick={() => setDetailTab('raw')}
                     >
                       Jawaban Asli Formulir ({Object.keys(selectedRow.raw).length})
@@ -878,20 +858,21 @@ export default function AdminPanel() {
                   )}
                   <button
                     type="button"
-                    className={`tab-btn ${detailTab === 'meta' ? 'active' : ''}`}
+                    className={`adm-tab-link ${detailTab === 'meta' ? 'active' : ''}`}
                     onClick={() => setDetailTab('meta')}
                   >
                     Info & Catatan
                   </button>
                 </nav>
 
-                <div className="drawer-body">
+                {/* DRAWER CONTENT */}
+                <div className="adm-drawer-body">
                   {detailTab === 'mapped' && (
-                    <div className="tab-pane mapped-answers-pane">
-                      <div className="cards-grid">
-                        <section className="answer-card">
+                    <div className="adm-pane-mapped">
+                      <div className="adm-cards-2col">
+                        <section className="adm-info-card">
                           <h3>Kehadiran & Konsep</h3>
-                          <dl className="qa-list">
+                          <dl className="adm-dl">
                             <div>
                               <dt>Rencana Kehadiran</dt>
                               <dd>{attendanceBadge(selectedRow.answers.attendance)}</dd>
@@ -903,9 +884,9 @@ export default function AdminPanel() {
                           </dl>
                         </section>
 
-                        <section className="answer-card">
+                        <section className="adm-info-card">
                           <h3>Kepanitiaan & Produksi</h3>
-                          <dl className="qa-list">
+                          <dl className="adm-dl">
                             <div>
                               <dt>Status Panitia</dt>
                               <dd>{committeeBadge(selectedRow.answers.committee)}</dd>
@@ -921,9 +902,9 @@ export default function AdminPanel() {
                           </dl>
                         </section>
 
-                        <section className="answer-card">
+                        <section className="adm-info-card">
                           <h3>Tempat Pertemuan</h3>
-                          <dl className="qa-list">
+                          <dl className="adm-dl">
                             <div>
                               <dt>Preferensi Lokasi</dt>
                               <dd>{formatValue(selectedRow.answers.venue)}</dd>
@@ -931,7 +912,7 @@ export default function AdminPanel() {
                             {selectedRow.answers.venueNote && (
                               <div>
                                 <dt>Catatan / Usulan Tempat</dt>
-                                <dd className="note-text">
+                                <dd className="adm-note-box">
                                   {String(selectedRow.answers.venueNote)}
                                 </dd>
                               </div>
@@ -939,9 +920,9 @@ export default function AdminPanel() {
                           </dl>
                         </section>
 
-                        <section className="answer-card">
+                        <section className="adm-info-card">
                           <h3>Dukungan & Iuran</h3>
-                          <dl className="qa-list">
+                          <dl className="adm-dl">
                             <div>
                               <dt>Kesediaan Iuran</dt>
                               <dd>{formatValue(selectedRow.answers.contribution)}</dd>
@@ -955,9 +936,9 @@ export default function AdminPanel() {
                       </div>
 
                       {selectedRow.answers.message && (
-                        <section className="answer-card message-card">
+                        <section className="adm-info-card adm-message-block">
                           <h3>Pesan Kenangan untuk Teman-teman</h3>
-                          <blockquote className="message-quote">
+                          <blockquote className="adm-quote">
                             &ldquo;{String(selectedRow.answers.message)}&rdquo;
                           </blockquote>
                         </section>
@@ -966,22 +947,22 @@ export default function AdminPanel() {
                   )}
 
                   {detailTab === 'raw' && selectedRow.raw && (
-                    <div className="tab-pane raw-answers-pane">
-                      <div className="raw-source-banner">
-                        <FileSpreadsheet size={16} />
+                    <div className="adm-pane-raw">
+                      <div className="adm-source-banner">
+                        <FileSpreadsheet size={15} />
                         <span>
-                          Sumber: <b>{selectedRow.sourceName || 'Formulir Survei'}</b> &middot;
+                          Sumber Dokumen: <b>{selectedRow.sourceName || 'Formulir Survei'}</b> &middot;
                           Baris Excel <b>{selectedRow.sourceRow || '—'}</b>
                         </span>
                       </div>
-                      <div className="raw-qa-list">
+                      <div className="adm-raw-list">
                         {Object.entries(selectedRow.raw).map(([question, answer], idx) => (
-                          <div key={question} className="raw-qa-item">
-                            <span className="raw-qa-num">Q{idx + 1}</span>
-                            <div className="raw-qa-content">
-                              <span className="raw-question">{question}</span>
+                          <div key={question} className="adm-raw-card">
+                            <span className="adm-raw-num">Q{idx + 1}</span>
+                            <div className="adm-raw-content">
+                              <span className="adm-raw-q">{question}</span>
                               <div
-                                className={`raw-answer ${!answer?.trim() ? 'empty-answer' : ''}`}
+                                className={`adm-raw-a ${!answer?.trim() ? 'empty' : ''}`}
                               >
                                 {answer?.trim() || 'Kosong di formulir sumber'}
                               </div>
@@ -993,8 +974,8 @@ export default function AdminPanel() {
                   )}
 
                   {detailTab === 'meta' && (
-                    <div className="tab-pane meta-pane">
-                      <dl className="meta-list">
+                    <div className="adm-pane-meta">
+                      <dl className="adm-meta-dl">
                         <div>
                           <dt>ID Responden</dt>
                           <dd>
@@ -1010,7 +991,7 @@ export default function AdminPanel() {
                           </dd>
                         </div>
                         <div>
-                          <dt>Waktu Pendaftaran / Submit</dt>
+                          <dt>Waktu Submit / Dibuat</dt>
                           <dd>
                             {selectedRow.completed_at
                               ? new Date(selectedRow.completed_at).toLocaleString('id-ID')
@@ -1030,9 +1011,9 @@ export default function AdminPanel() {
                       </dl>
 
                       {!!selectedRow.mappingNotes?.length && (
-                        <div className="mapping-notes-section">
+                        <div className="adm-notes-wrap">
                           <h4>Catatan Pemetaan Data</h4>
-                          <ul className="mapping-notes-list">
+                          <ul className="adm-notes-list">
                             {selectedRow.mappingNotes.map((note, i) => (
                               <li key={i}>{note}</li>
                             ))}
@@ -1043,21 +1024,19 @@ export default function AdminPanel() {
                   )}
                 </div>
 
-                <div className="drawer-footer">
-                  {canManage && (
-                    <button
-                      type="button"
-                      className="btn btn-danger-outline"
-
-                      onClick={() => setDeleteTarget(selectedRow)}
-                    >
-                      <Trash2 size={16} />
-                      Hapus Responden
-                    </button>
-                  )}
+                {/* Drawer Footer */}
+                <div className="adm-drawer-foot">
                   <button
                     type="button"
-                    className="btn btn-secondary"
+                    className="adm-btn adm-btn-danger-outline"
+                    onClick={() => setDeleteTarget(selectedRow)}
+                  >
+                    <Trash2 size={15} />
+                    Hapus Responden
+                  </button>
+                  <button
+                    type="button"
+                    className="adm-btn adm-btn-secondary"
                     onClick={() => setSelectedRow(null)}
                   >
                     Tutup
@@ -1069,28 +1048,28 @@ export default function AdminPanel() {
 
           {/* CONFIRM DELETE MODAL */}
           {deleteTarget && (
-            <div className="modal-backdrop" onClick={() => setDeleteTarget(null)}>
-              <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header">
-                  <div className="modal-danger-icon">
-                    <Trash2 size={24} />
+            <div className="adm-modal-backdrop" onClick={() => setDeleteTarget(null)}>
+              <div className="adm-modal-box" onClick={(e) => e.stopPropagation()}>
+                <div className="adm-modal-head">
+                  <div className="adm-modal-icon-danger">
+                    <Trash2 size={22} />
                   </div>
                   <h3>Hapus Responden?</h3>
                 </div>
-                <div className="modal-body">
+                <div className="adm-modal-body">
                   <p>
-                    Apakah Anda yakin ingin menghapus responden <b>{deleteTarget.full_name}</b> (
-                    {deleteTarget.nickname})?
+                    Apakah Anda yakin ingin menghapus data responden{' '}
+                    <b>{deleteTarget.full_name}</b> ({deleteTarget.nickname})?
                   </p>
-                  <p className="modal-subtext">
+                  <p className="adm-modal-hint">
                     Tindakan ini akan menghapus data jawaban, profil, dan avatarnya dari database.
-                    Jika responden ini duplikat, hanya akun ini yang dihapus.
+                    Jika responden ini duplikat, hanya akun ini yang akan dihapus.
                   </p>
                 </div>
-                <div className="modal-actions">
+                <div className="adm-modal-actions">
                   <button
                     type="button"
-                    className="btn btn-secondary"
+                    className="adm-btn adm-btn-secondary"
                     disabled={deletingId === deleteTarget.id}
                     onClick={() => setDeleteTarget(null)}
                   >
@@ -1098,7 +1077,7 @@ export default function AdminPanel() {
                   </button>
                   <button
                     type="button"
-                    className="btn btn-danger"
+                    className="adm-btn adm-btn-danger"
                     disabled={deletingId === deleteTarget.id}
                     onClick={confirmDelete}
                   >
