@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Billboard, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
@@ -18,6 +18,10 @@ export default function CreatorMonument({
   onWalk: (point: { x: number; z: number }) => void;
 }) {
   const texture = useTexture(CREATOR_MONUMENT.asset);
+  useLayoutEffect(() => {
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.needsUpdate = true;
+  }, [texture]);
   const latched = useRef(false),
     near = useRef(false),
     timer = useRef(0);
