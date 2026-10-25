@@ -22,6 +22,7 @@ import {
 import {
   CHECKPOINTS,
   DEFAULT_AVATAR,
+  type AvatarConfig,
   type Profile,
   type Alumnus,
   type OnlinePeer,
@@ -33,6 +34,8 @@ const World = lazy(() => import('./World'));
 export type TravelRequest = { index: number; nonce: number };
 export function GameScreen({
   profile,
+  guestNickname,
+  guestAvatar,
   alumni,
   onlineCount = 1,
   onlinePeers = [],
@@ -57,10 +60,18 @@ export function GameScreen({
   onError,
 }: {
   profile: Profile | null;
+  guestNickname?: string;
+  guestAvatar?: AvatarConfig;
   alumni: Alumnus[];
   onlineCount?: number;
   onlinePeers?: OnlinePeer[];
-  playerPositionRef?: React.RefObject<{ x: number; z: number }>;
+  playerPositionRef?: React.RefObject<{
+    x: number;
+    z: number;
+    vx?: number;
+    vz?: number;
+    moving?: boolean;
+  }>;
   demo: boolean;
   entered: boolean;
   paused: boolean;
@@ -126,7 +137,8 @@ export function GameScreen({
             }
           >
             <World
-              avatar={profile?.avatar || DEFAULT_AVATAR}
+              avatar={profile?.avatar || guestAvatar || DEFAULT_AVATAR}
+              nickname={profile?.nickname || guestNickname}
               alumni={alumni}
               onlinePeers={onlinePeers}
               playerPositionRef={playerPositionRef}
@@ -242,11 +254,11 @@ export function GameScreen({
               aria-label={profile ? 'Lihat profil dan reunion pass' : 'Buat karakter sendiri'}
             >
               <span className="hud-portrait">
-                <AvatarPortrait config={profile?.avatar || DEFAULT_AVATAR} />
+                <AvatarPortrait config={profile?.avatar || guestAvatar || DEFAULT_AVATAR} />
               </span>
               <span>
                 <small>{profile ? 'SELAMAT DATANG KEMBALI' : 'SEDANG MENJELAJAH'}</small>
-                <b>{profile?.nickname || 'Teman baru'}</b>
+                <b>{profile?.nickname || guestNickname || 'Teman baru'}</b>
                 <em>
                   {profile?.completedAt
                     ? 'Alumni · cerita tersimpan'

@@ -207,22 +207,32 @@ function MapModel({
 
 function Player({
   config,
+  nickname,
   path,
   keys,
   stick,
   active,
   unlocked,
   position,
+  playerPositionRef,
   onNear,
   mapDot,
 }: {
   config: AvatarConfig;
+  nickname?: string;
   path: React.RefObject<PathPoint[]>;
   keys: React.RefObject<Set<string>>;
   stick: React.RefObject<{ x: number; y: number }>;
   active: boolean;
   unlocked: number;
   position: React.RefObject<THREE.Vector3>;
+  playerPositionRef?: React.RefObject<{
+    x: number;
+    z: number;
+    vx?: number;
+    vz?: number;
+    moving?: boolean;
+  }>;
   onNear: (i: number) => void;
   mapDot: React.RefObject<SVGCircleElement | null>;
 }) {
@@ -238,6 +248,20 @@ function Player({
     onNear,
     mapDot,
   });
+  useFrame((_, dt) => {
+    if (!playerPositionRef) return;
+    const prevX = playerPositionRef.current.x;
+    const prevZ = playerPositionRef.current.z;
+    const curX = position.current.x;
+    const curZ = position.current.z;
+    const safeDt = Math.max(dt, 0.008);
+    playerPositionRef.current.vx = walking.current ? (curX - prevX) / safeDt : 0;
+    playerPositionRef.current.vz = walking.current ? (curZ - prevZ) / safeDt : 0;
+    playerPositionRef.current.x = curX;
+    playerPositionRef.current.z = curZ;
+    playerPositionRef.current.moving = walking.current;
+  });
+  const labelText = nickname && nickname !== 'Teman Alumni' ? nickname : 'Kamu';
   return (
     <group ref={group} position={[0, 0.28, 14]}>
       <group>
@@ -248,13 +272,14 @@ function Player({
         <meshBasicMaterial color="#fff6bf" transparent opacity={0.85} depthWrite={false} />
       </mesh>
       <Html position={[0, 1.95, 0]} center zIndexRange={[8, 0]}>
-        <span className="player-label">Kamu</span>
+        <span className="player-label">{labelText}</span>
       </Html>
     </group>
   );
 }
 export default function World({
   avatar,
+  nickname,
   alumni,
   onlinePeers = [],
   playerPositionRef,
@@ -273,9 +298,16 @@ export default function World({
   onKolam,
 }: {
   avatar: AvatarConfig;
+  nickname?: string;
   alumni: Alumnus[];
   onlinePeers?: OnlinePeer[];
-  playerPositionRef?: React.RefObject<{ x: number; z: number }>;
+  playerPositionRef?: React.RefObject<{
+    x: number;
+    z: number;
+    vx?: number;
+    vz?: number;
+    moving?: boolean;
+  }>;
   progress: number[];
   onCheckpoint: (i: number) => void;
   active: boolean;
@@ -311,14 +343,6 @@ export default function World({
     return liveIds.size > 0 ? alumni.filter((a) => !liveIds.has(a.id)) : alumni;
   }, [alumni, onlinePeers]);
   const placements = useMemo(() => layoutAlumni(alumni), [alumni]);
-  useEffect(() => {
-    if (!playerPositionRef) return;
-    const id = setInterval(() => {
-      playerPositionRef.current.x = position.current.x;
-      playerPositionRef.current.z = position.current.z;
-    }, 500);
-    return () => clearInterval(id);
-  }, [playerPositionRef]);
   const navigate = useCallback(
     (target: PathPoint) => {
       path.current = findPath(position.current, target, unlocked);
@@ -581,12 +605,14 @@ export default function World({
               ))}
             <Player
               config={avatar}
+              nickname={nickname}
               path={path}
               keys={keys}
               stick={stick}
               active={active}
               unlocked={unlocked}
               position={position}
+              playerPositionRef={playerPositionRef}
               onNear={setNear}
               mapDot={mapDot}
             />

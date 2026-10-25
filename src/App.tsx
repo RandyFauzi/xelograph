@@ -64,10 +64,29 @@ export default function App() {
     [travel, setTravel] = useState<TravelRequest | null>(null),
     [modal, setModal] = useState<Modal>(null),
     [profile, setProfile] = useState<Profile | null>(null),
+    [guestIdentity, setGuestIdentity] = useState<{ nickname: string; avatar: AvatarConfig }>(() => {
+      try {
+        const raw = localStorage.getItem('xel-guest-identity');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return {
+            nickname: typeof parsed?.nickname === 'string' ? parsed.nickname.slice(0, 24) : '',
+            avatar: parsed?.avatar ? { ...DEFAULT_AVATAR, ...parsed.avatar } : DEFAULT_AVATAR,
+          };
+        }
+      } catch {}
+      return { nickname: '', avatar: DEFAULT_AVATAR };
+    }),
     [alumni, setAlumni] = useState<Alumnus[]>([]),
     [onlineCount, setOnlineCount] = useState(1),
     [onlinePeers, setOnlinePeers] = useState<OnlinePeer[]>([]),
-    playerPositionRef = useRef({ x: 0, z: 14 }),
+    playerPositionRef = useRef<{
+      x: number;
+      z: number;
+      vx?: number;
+      vz?: number;
+      moving?: boolean;
+    }>({ x: 0, z: 14, vx: 0, vz: 0, moving: false }),
     presenceMetaRef = useRef({
       nickname: 'Teman Alumni',
       avatar: DEFAULT_AVATAR,
@@ -146,16 +165,26 @@ export default function App() {
     const id = setInterval(refresh, 60000);
     return () => clearInterval(id);
   }, [refresh]);
+  const updateGuestIdentity = useCallback(
+    (next: { nickname: string; avatar: AvatarConfig }) => {
+      setGuestIdentity(next);
+      try {
+        localStorage.setItem('xel-guest-identity', JSON.stringify(next));
+      } catch {}
+    },
+    [],
+  );
   useEffect(() => {
     presenceMetaRef.current = {
-      nickname: profile?.nickname || 'Teman Alumni',
-      avatar: profile?.avatar || DEFAULT_AVATAR,
+      nickname: profile?.nickname || guestIdentity.nickname.trim() || 'Teman Alumni',
+      avatar: profile?.avatar || guestIdentity.avatar || DEFAULT_AVATAR,
       alumniId: profile?.id || null,
       entered,
     };
-  }, [profile, entered]);
+  }, [profile, guestIdentity, entered]);
   useEffect(() => {
     let alive = true;
+    let inFlight = false;
     let vid = '';
     try {
       vid = sessionStorage.getItem('xel-visitor-id') || '';
@@ -170,7 +199,8 @@ export default function App() {
       vid = 'anon-' + Math.random().toString(36).slice(2);
     }
     const ping = async () => {
-      if (document.hidden) return;
+      if (document.hidden || inFlight) return;
+      inFlight = true;
       try {
         const res = await api<{ online: number; peers?: OnlinePeer[] }>('/presence', {
           method: 'POST',
@@ -182,15 +212,21 @@ export default function App() {
             playing: presenceMetaRef.current.entered,
             x: playerPositionRef.current.x,
             z: playerPositionRef.current.z,
+            vx: playerPositionRef.current.vx || 0,
+            vz: playerPositionRef.current.vz || 0,
+            moving: Boolean(playerPositionRef.current.moving),
           }),
         });
         if (!alive) return;
         if (typeof res?.online === 'number') setOnlineCount(Math.max(1, res.online));
         if (Array.isArray(res?.peers)) setOnlinePeers(res.peers.slice(0, 5));
-      } catch {}
+      } catch {
+      } finally {
+        inFlight = false;
+      }
     };
     void ping();
-    const interval = setInterval(ping, 2500);
+    const interval = setInterval(ping, 850);
     const onVisibility = () => {
       if (!document.hidden) void ping();
     };
@@ -334,6 +370,8 @@ export default function App() {
     <div className="game-app">
       <GameScreen
         profile={profile}
+        guestNickname={guestIdentity.nickname.trim() || undefined}
+        guestAvatar={guestIdentity.avatar}
         alumni={alumni}
         onlineCount={onlineCount}
         onlinePeers={onlinePeers}
@@ -550,8 +588,11 @@ export default function App() {
             )}
             {modal === 'join' && (
               <Join
+                initialIdentity={guestIdentity}
+                onDraftIdentity={updateGuestIdentity}
                 onDone={(p) => {
                   setProfile(p);
+                  updateGuestIdentity({ nickname: p.nickname, avatar: p.avatar });
                   setEntered(true);
                   setModal(null);
                   setToast('Selamat datang! Geser joystick atau gunakan WASD untuk berjalan.');
@@ -801,18 +842,27 @@ function AvatarSettings({
   );
 }
 function Join({
+  initialIdentity,
+  onDraftIdentity,
   onDone,
   onResume,
   onExplore,
 }: {
+  initialIdentity: { nickname: string; avatar: AvatarConfig };
+  onDraftIdentity: (identity: { nickname: string; avatar: AvatarConfig }) => void;
   onDone: (p: Profile) => void;
   onResume: () => void;
   onExplore: () => void;
 }) {
-  const [avatar, setAvatar] = useState<AvatarConfig>(DEFAULT_AVATAR),
+  const [avatar, setAvatar] = useState<AvatarConfig>(initialIdentity.avatar || DEFAULT_AVATAR),
+    [nickname, setNickname] = useState(initialIdentity.nickname || ''),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [imported, setImported] = useState(false);
+  const handleAvatarChange = (nextAvatar: AvatarConfig) => {
+    setAvatar(nextAvatar);
+    onDraftIdentity({ nickname, avatar: nextAvatar });
+  };
   return (
     <>
       <div className="dialog-eyebrow">
@@ -828,6 +878,8 @@ function Join({
           setBusy(true);
           setError('');
           const f = new FormData(e.currentTarget);
+          const nick = String(f.get('nickname') || '').trim();
+          onDraftIdentity({ nickname: nick, avatar });
           setImported(false);
           try {
             onDone(
@@ -835,7 +887,7 @@ function Join({
                 method: 'POST',
                 body: JSON.stringify({
                   fullName: f.get('fullName'),
-                  nickname: f.get('nickname'),
+                  nickname: nick,
                   whatsapp: f.get('whatsapp'),
                   avatar,
                   consentData: f.has('consentData'),
@@ -859,7 +911,7 @@ function Join({
               <Preview config={avatar} />
               <span>YOUR LITTLE SELF</span>
             </div>
-            <AvatarOptions avatar={avatar} setAvatar={setAvatar} />
+            <AvatarOptions avatar={avatar} setAvatar={handleAvatarChange} />
           </div>
           <div>
             <label className="field">
@@ -879,6 +931,12 @@ function Join({
                 name="nickname"
                 required
                 maxLength={24}
+                value={nickname}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setNickname(val);
+                  onDraftIdentity({ nickname: val, avatar });
+                }}
                 placeholder="Teman-teman memanggilmu…"
               />
             </label>

@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { Html, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { avatarPartVisible } from './avatarParts.mjs';
-import { headingForMovement } from './navigation.mjs';
+import { headingForMovement, isWalkable } from './navigation.mjs';
 import { COLORS, DEFAULT_AVATAR, type OnlinePeer } from '../types';
 
 const reduceMotion =
@@ -53,9 +53,17 @@ function OnlinePeerCharacter({
   );
 
   const group = useRef<THREE.Group>(null);
-  const target = useRef({ x: peer.x, z: peer.z });
+  const netState = useRef({
+    x: peer.x,
+    z: peer.z,
+    vx: peer.vx || 0,
+    vz: peer.vz || 0,
+    moving: !!peer.moving,
+    sincePacket: 0,
+  });
   const initialized = useRef(false);
   const moving = useRef(false);
+  const moveHold = useRef(0);
   const swing = useMemo(() => new THREE.Quaternion(), []);
   const phase = useMemo(
     () =>
@@ -64,50 +72,97 @@ function OnlinePeerCharacter({
   );
 
   useEffect(() => {
-    target.current = { x: peer.x, z: peer.z };
+    const prev = netState.current;
+    const dx = peer.x - prev.x;
+    const dz = peer.z - prev.z;
+    const dist = Math.hypot(dx, dz);
+    // Estimate velocity from position delta if server vx/vz wasn't non-zero
+    const inferredVx = dist > 0.04 && dist < 12 ? dx / 0.85 : 0;
+    const inferredVz = dist > 0.04 && dist < 12 ? dz / 0.85 : 0;
+    netState.current = {
+      x: peer.x,
+      z: peer.z,
+      vx: peer.vx || inferredVx,
+      vz: peer.vz || inferredVz,
+      moving: Boolean(peer.moving || dist > 0.05),
+      sincePacket: 0,
+    };
+    if (dist > 0.05 || peer.moving) {
+      moveHold.current = 0.45;
+    }
     if (group.current && !initialized.current) {
       group.current.position.set(peer.x, 0.28, peer.z);
       initialized.current = true;
     }
-  }, [peer.x, peer.z]);
+  }, [peer.x, peer.z, peer.vx, peer.vz, peer.moving]);
 
-  useFrame(({ clock }, dt) => {
+  useFrame(({ clock }, rawDt) => {
     const g = group.current;
     if (!g) return;
-    const dx = target.current.x - g.position.x;
-    const dz = target.current.z - g.position.z;
+    const dt = Math.min(rawDt, 0.1);
+    const net = netState.current;
+    net.sincePacket += dt;
+
+    // Gentle dead-reckoning extrapolation up to 0.55s when actively moving
+    const lead = net.moving ? Math.min(net.sincePacket, 0.55) * 0.55 : 0;
+    let targetX = net.x + net.vx * lead;
+    let targetZ = net.z + net.vz * lead;
+    if (!isWalkable(targetX, targetZ, 6)) {
+      targetX = net.x;
+      targetZ = net.z;
+    }
+
+    const dx = targetX - g.position.x;
+    const dz = targetZ - g.position.z;
     const dist = Math.hypot(dx, dz);
 
-    if (dist > 14) {
-      g.position.set(target.current.x, 0.28, target.current.z);
+    if (dist > 15) {
+      g.position.set(net.x, 0.28, net.z);
+      moveHold.current = 0;
       moving.current = false;
-    } else if (dist > 0.04) {
-      moving.current = true;
-      const step = Math.min(dist, dt * 3.8);
-      g.position.x += (dx / dist) * step;
-      g.position.z += (dz / dist) * step;
-      g.position.y = 0.28;
-      const desiredYaw = headingForMovement(dx, dz);
-      const diff = Math.atan2(
-        Math.sin(desiredYaw - g.rotation.y),
-        Math.cos(desiredYaw - g.rotation.y),
+    } else if (dist > 0.025) {
+      moveHold.current = Math.max(moveHold.current, 0.32);
+      // Smooth adaptive speed: glides steadily without stopping between 800ms packets
+      const speed = THREE.MathUtils.clamp(dist * 3.4 + 1.8, 2.4, 7.8);
+      const step = Math.min(dist, speed * dt);
+      g.position.x = THREE.MathUtils.damp(
+        g.position.x,
+        g.position.x + (dx / dist) * step,
+        18,
+        dt,
       );
-      g.rotation.y += diff * Math.min(1, dt * 10);
+      g.position.z = THREE.MathUtils.damp(
+        g.position.z,
+        g.position.z + (dz / dist) * step,
+        18,
+        dt,
+      );
+      g.position.y = 0.28;
+      if (dist > 0.04) {
+        const desiredYaw = headingForMovement(dx, dz);
+        const diff = Math.atan2(
+          Math.sin(desiredYaw - g.rotation.y),
+          Math.cos(desiredYaw - g.rotation.y),
+        );
+        g.rotation.y += diff * Math.min(1, dt * 12);
+      }
     } else {
-      moving.current = false;
-      if (!reduceMotion) {
+      moveHold.current = Math.max(0, moveHold.current - dt);
+      if (moveHold.current <= 0 && !reduceMotion) {
         g.position.y = 0.28 + Math.sin(clock.elapsedTime * 2.2 + phase) * 0.008;
       }
     }
 
+    moving.current = moveHold.current > 0;
+
     if (!reduceMotion) {
-      const t = clock.elapsedTime * 10 + phase;
+      const t = clock.elapsedTime * 10.5 + phase;
       limbs.forEach((limb, i) => {
         if (!limb) return;
         const limbTarget = moving.current
-          ? Math.sin(t + (i === 0 || i === 3 ? Math.PI : 0)) * 0.42
+          ? Math.sin(t + (i === 0 || i === 3 ? Math.PI : 0)) * 0.44
           : 0;
-        limb.angle = THREE.MathUtils.lerp(limb.angle, limbTarget, Math.min(dt * 16, 1));
+        limb.angle = THREE.MathUtils.lerp(limb.angle, limbTarget, Math.min(dt * 14, 1));
         swing.setFromAxisAngle(new THREE.Vector3(1, 0, 0), limb.angle);
         limb.object.quaternion.copy(limb.rest).multiply(swing);
       });
@@ -125,7 +180,7 @@ function OnlinePeerCharacter({
         <Html position={[0, 1.98, 0]} center zIndexRange={[8, 0]}>
           <span className="online-peer-label">
             <i />
-            <b>{peer.nickname}</b>
+            <b>{peer.nickname || 'Teman Alumni'}</b>
             <small>ONLINE</small>
           </span>
         </Html>

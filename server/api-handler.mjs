@@ -322,12 +322,31 @@ export function createApiHandler({
           return json({ online: presence.size, peers: [] });
         }
         const prev = presence.get(visitorKey);
-        let safeAvatar = prev?.avatar || {
-          character: 'male',
-          hair: 'short',
-          outfit: 'navy',
-          skin: 'warm',
-        };
+        let sessionUser = null;
+        const tok = sessionToken(request);
+        if (tok) {
+          try {
+            const s = db
+              .prepare(
+                'SELECT a.id,a.nickname,a.avatar_json FROM sessions s JOIN alumni a ON a.id=s.alumni_id WHERE s.token_hash=? AND s.expires_at>?',
+              )
+              .get(hash(tok), now);
+            if (s) {
+              sessionUser = {
+                id: s.id,
+                nickname: s.nickname,
+                avatar: validateAvatar(JSON.parse(s.avatar_json)),
+              };
+            }
+          } catch {}
+        }
+        let safeAvatar = sessionUser?.avatar ||
+          prev?.avatar || {
+            character: 'male',
+            hair: 'short',
+            outfit: 'navy',
+            skin: 'warm',
+          };
         if (body?.avatar && typeof body.avatar === 'object') {
           try {
             safeAvatar = validateAvatar(body.avatar);
@@ -335,19 +354,28 @@ export function createApiHandler({
         }
         const rawNick =
           typeof body?.nickname === 'string' ? body.nickname.trim().slice(0, 24) : '';
-        const safeNickname = rawNick || prev?.nickname || 'Teman Alumni';
+        const customNick = rawNick && rawNick !== 'Teman Alumni' ? rawNick : '';
+        const safeNickname =
+          customNick ||
+          sessionUser?.nickname ||
+          (prev?.nickname && prev.nickname !== 'Teman Alumni' ? prev.nickname : '') ||
+          rawNick ||
+          'Teman Alumni';
         const clamp = (val, min, max, fallback) =>
           typeof val === 'number' && Number.isFinite(val)
-            ? Math.max(min, Math.min(max, Math.round(val * 100) / 100))
+            ? Math.max(min, Math.min(max, Math.round(val * 1000) / 1000))
             : fallback;
         const safeX = clamp(body?.x, -24, 24, prev?.x ?? 0);
         const safeZ = clamp(body?.z, -20, 34, prev?.z ?? 14);
+        const safeVx = clamp(body?.vx, -12, 12, 0);
+        const safeVz = clamp(body?.vz, -12, 12, 0);
+        const safeMoving = Boolean(body?.moving);
         const safePlaying =
           typeof body?.playing === 'boolean' ? body.playing : (prev?.playing ?? true);
         const safeAlumniId =
           typeof body?.alumniId === 'string' && body.alumniId
             ? body.alumniId.slice(0, 64)
-            : (prev?.alumniId ?? null);
+            : (sessionUser?.id ?? prev?.alumniId ?? null);
 
         if (presence.size < 5000 || presence.has(visitorKey)) {
           presence.set(visitorKey, {
@@ -357,6 +385,9 @@ export function createApiHandler({
             avatar: safeAvatar,
             x: safeX,
             z: safeZ,
+            vx: safeVx,
+            vz: safeVz,
+            moving: safeMoving,
             playing: safePlaying,
             alumniId: safeAlumniId,
           });
@@ -376,6 +407,9 @@ export function createApiHandler({
           avatar: p.avatar,
           x: p.x,
           z: p.z,
+          vx: p.vx || 0,
+          vz: p.vz || 0,
+          moving: !!p.moving,
           alumniId: p.alumniId,
         }));
         return json({ online: Math.max(1, presence.size), peers: topPeers });

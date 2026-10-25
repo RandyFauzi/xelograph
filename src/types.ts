@@ -30,6 +30,9 @@ export type OnlinePeer = {
   avatar: AvatarConfig;
   x: number;
   z: number;
+  vx?: number;
+  vz?: number;
+  moving?: boolean;
   alumniId?: string | null;
 };
 export const DEFAULT_AVATAR: AvatarConfig = { outfit: 'navy', hair: 'short', skin: 'warm' };
