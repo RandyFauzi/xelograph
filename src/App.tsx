@@ -23,6 +23,13 @@ import { Survey } from './Survey';
 import { campusAudio, loadAudioPreferences, type AudioPreferences } from './game/audio';
 import { CREATOR_MONUMENT } from './game/creatorMonument.mjs';
 import { KOLAM_BECABUR } from './game/kolamBecabur.mjs';
+import {
+  GEROBAK_PENTOL,
+  PENTOL_PORTIONS,
+  PENTOL_TOPPINGS,
+  PENTOL_SAUCES,
+  MASBRO_QUOTES,
+} from './game/gerobakPentol.mjs';
 import AvatarOptions from './AvatarOptions';
 import { api, download } from './api';
 import {
@@ -55,6 +62,7 @@ type Modal =
   | 'settings'
   | 'creator'
   | 'kolam'
+  | 'pentol'
   | 'avatar'
   | null;
 export default function App() {
@@ -431,7 +439,10 @@ export default function App() {
         >
           <section
             className={
-              'modal ' + (modal === 'join' || modal === 'avatar' || modal === 'kolam' ? 'wide' : '')
+              'modal ' +
+              (modal === 'join' || modal === 'avatar' || modal === 'kolam' || modal === 'pentol'
+                ? 'wide'
+                : '')
             }
             role="dialog"
             aria-modal="true"
@@ -442,7 +453,9 @@ export default function App() {
                   ? 'Dibuat oleh Randy Fauzi'
                   : modal === 'kolam'
                     ? 'Kenangan Kolam Becabur'
-                    : modal === 'survey'
+                    : modal === 'pentol'
+                      ? 'Gerobak Pentol Mas Bro'
+                      : modal === 'survey'
                       ? CHECKPOINTS[index].name
                       : modal === 'join'
                         ? 'Buat karakter'
@@ -565,6 +578,16 @@ export default function App() {
                   </div>
                 </div>
               </div>
+            )}
+            {modal === 'pentol' && (
+              <PentolShowcase
+                nickname={profile?.nickname || guestIdentity.nickname || 'Teman Alumni'}
+                onServed={(summary) => {
+                  campusAudio.play('success');
+                  setToast(summary);
+                }}
+                onClose={() => setModal(null)}
+              />
             )}
             {modal === 'quests' && (
               <QuestJournal profile={profile} onCheckpoint={openCheckpoint} onTravel={goTo} />
@@ -1056,6 +1079,166 @@ function Resume({ onDone, onJoin }: { onDone: (p: Profile) => void; onJoin: () =
     </>
   );
 }
+function PentolShowcase({
+  nickname,
+  onServed,
+  onClose,
+}: {
+  nickname: string;
+  onServed: (summary: string) => void;
+  onClose: () => void;
+}) {
+  const [portion, setPortion] = useState(PENTOL_PORTIONS[1].id);
+  const [toppings, setToppings] = useState<string[]>(['urat', 'puyuh', 'tahu']);
+  const [sauces, setSauces] = useState<string[]>(['kacang', 'sambal', 'kuah']);
+  const [servedOrder, setServedOrder] = useState<{
+    portionLabel: string;
+    toppingLabels: string[];
+    sauceLabels: string[];
+    quote: string;
+  } | null>(null);
+  const [quoteIdx, setQuoteIdx] = useState(0);
+
+  const toggleItem = (list: string[], id: string, setter: (next: string[]) => void) => {
+    if (list.includes(id)) {
+      if (list.length > 1) setter(list.filter((item) => item !== id));
+    } else {
+      setter([...list, id]);
+    }
+  };
+
+  const selectedPortion =
+    PENTOL_PORTIONS.find((p) => p.id === portion) || PENTOL_PORTIONS[1];
+
+  const handleOrder = () => {
+    const toppingLabels = PENTOL_TOPPINGS.filter((t) => toppings.includes(t.id)).map(
+      (t) => `${t.emoji} ${t.label}`,
+    );
+    const sauceLabels = PENTOL_SAUCES.filter((s) => sauces.includes(s.id)).map((s) => s.label);
+    const quote = MASBRO_QUOTES[quoteIdx % MASBRO_QUOTES.length];
+    setQuoteIdx((i) => i + 1);
+    setServedOrder({
+      portionLabel: selectedPortion.label,
+      toppingLabels,
+      sauceLabels,
+      quote,
+    });
+    onServed(`Pesanan ${selectedPortion.label} buat ${nickname} siap disantap! 🍢`);
+  };
+
+  return (
+    <div className="pentol-showcase">
+      <div className="pentol-showcase-hero">
+        <img
+          src={GEROBAK_PENTOL.preview}
+          alt="Gerobak Pentol Mas Bro 3D"
+          width="112"
+          height="112"
+        />
+        <div>
+          <div className="dialog-eyebrow">JAJANAN LEGENDARIS · DEPAN GERBANG SEKOLAH</div>
+          <h2>
+            Gerobak Pentol
+            <br />
+            <em>Mas Bro.</em>
+          </h2>
+          <p className="dialog-description">
+            Belum lengkap rasanya pulang ke sekolah kalau belum mampir ke gerobak biru payung
+            pelangi Mas Bro. Kuah kaldu masih mengepul—yuk racik porsi kenanganmu!
+          </p>
+        </div>
+      </div>
+
+      <div className="pentol-builder">
+        <div className="pentol-section">
+          <span className="pentol-step-label">1. PILIH PORSI LANGGANAN</span>
+          <div className="pentol-portion-grid">
+            {PENTOL_PORTIONS.map((item) => {
+              const active = portion === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={'pentol-portion-card' + (active ? ' is-selected' : '')}
+                  onClick={() => setPortion(item.id)}
+                  aria-pressed={active}
+                >
+                  <small>{item.badge}</small>
+                  <strong>{item.label}</strong>
+                  <span>{item.desc}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="pentol-section">
+          <span className="pentol-step-label">2. PILIH ISIAN DANDANG</span>
+          <div className="pentol-chip-row">
+            {PENTOL_TOPPINGS.map((item) => {
+              const active = toppings.includes(item.id);
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={'pentol-chip' + (active ? ' is-selected' : '')}
+                  onClick={() => toggleItem(toppings, item.id, setToppings)}
+                  aria-pressed={active}
+                >
+                  <span>{item.emoji}</span> {item.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="pentol-section">
+          <span className="pentol-step-label">3. RACIKAN BUMBU &amp; SAMBAL</span>
+          <div className="pentol-chip-row">
+            {PENTOL_SAUCES.map((item) => {
+              const active = sauces.includes(item.id);
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={'pentol-chip' + (active ? ' is-selected' : '')}
+                  onClick={() => toggleItem(sauces, item.id, setSauces)}
+                  aria-pressed={active}
+                >
+                  {active ? <Check size={14} /> : null}
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {servedOrder && (
+        <div className="pentol-served-card" role="status">
+          <div className="pentol-served-badge">PESANAN SIAP DISAJIKAN UNTUK {nickname.toUpperCase()}</div>
+          <strong>{servedOrder.portionLabel}</strong>
+          <p className="pentol-served-items">
+            Isian: {servedOrder.toppingLabels.join(' · ')}
+            <br />
+            Bumbu: {servedOrder.sauceLabels.join(' + ')}
+          </p>
+          <blockquote>{servedOrder.quote}</blockquote>
+        </div>
+      )}
+
+      <div className="pentol-showcase-actions">
+        <button type="button" className="pentol-order-button" onClick={handleOrder}>
+          {servedOrder ? 'Racik Tambah Porsi Lagi! 🍢' : 'Bungkus, Mas Bro! 🍢'}
+        </button>
+        <button type="button" className="primary" onClick={onClose}>
+          Lanjutkan menjelajah <ArrowRight size={17} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function passSvg(p: Profile) {
   const esc = (s: string) =>
     s.replace(

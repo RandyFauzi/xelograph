@@ -2,6 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, statSync } from 'node:fs';
 import { KOLAM_BECABUR, kolamProximity } from '../src/game/kolamBecabur.mjs';
+import {
+  GEROBAK_PENTOL,
+  PENTOL_PORTIONS,
+  PENTOL_TOPPINGS,
+  PENTOL_SAUCES,
+  pentolProximity,
+} from '../src/game/gerobakPentol.mjs';
 import { findPath, isWalkable, MISSION_ZONES } from '../src/game/navigation.mjs';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
@@ -124,5 +131,51 @@ test('Online presence endpoint tracks active visitors and handles leave notifica
     assert.equal(data.peers[0].avatar.hair, 'hijab');
   } finally {
     db.close();
+  }
+});
+
+test('Gerobak Pentol Mas Bro proximity hysteresis, walkability, and optimized GLB integrity', () => {
+  // Spawn point (0, 14) must not auto-trigger the pentol modal immediately on enter
+  const atSpawn = pentolProximity({ x: 0, z: 14 }, false, true);
+  assert.equal(atSpawn.near, false);
+  assert.equal(atSpawn.open, false);
+
+  const target = GEROBAK_PENTOL.walkTarget;
+  assert.equal(isWalkable(target.x, target.z, 0), true);
+  assert.ok(findPath({ x: 0, z: 14 }, target, 0).length > 0);
+
+  const approached = pentolProximity(target, false, true);
+  assert.equal(approached.near, true);
+  assert.equal(approached.open, true);
+  assert.equal(
+    pentolProximity(target, approached.latched, true).open,
+    false,
+    'Latch keeps modal from reopening while standing beside the cart',
+  );
+
+  const steppedAway = pentolProximity({ x: GEROBAK_PENTOL.x - 4.2, z: GEROBAK_PENTOL.z }, true, true);
+  assert.equal(steppedAway.latched, false);
+
+  assert.ok(PENTOL_PORTIONS.length >= 3);
+  assert.ok(PENTOL_TOPPINGS.length >= 5);
+  assert.ok(PENTOL_SAUCES.length >= 4);
+
+  const previewBytes = readFileSync(new URL('../public' + GEROBAK_PENTOL.preview, import.meta.url));
+  assert.equal(previewBytes.toString('ascii', 1, 4), 'PNG');
+
+  const glbBytes = readFileSync(new URL('../public' + GEROBAK_PENTOL.model, import.meta.url));
+  assert.ok(glbBytes.length < 500000, 'Meshopt-compressed Gerobak Pentol GLB is lightweight');
+  const jsonLength = glbBytes.readUInt32LE(12);
+  const gltfJson = JSON.parse(glbBytes.subarray(20, 20 + jsonLength).toString('utf8'));
+  const nodeNames = new Set((gltfJson.nodes || []).map((n) => n.name));
+  for (const requiredNode of [
+    'Cart_Body',
+    'Front_Signboard',
+    'Dandang_Body',
+    'Char_Head',
+    'Char_Face_Decal',
+    'Pentol_0',
+  ]) {
+    assert.ok(nodeNames.has(requiredNode), `Missing expected node ${requiredNode} in gerobak GLB`);
   }
 });
