@@ -28,6 +28,7 @@ export type TravelRequest = { index: number; nonce: number };
 export function GameScreen({
   profile,
   alumni,
+  onlineCount = 1,
   demo,
   entered,
   paused,
@@ -49,6 +50,7 @@ export function GameScreen({
 }: {
   profile: Profile | null;
   alumni: Alumnus[];
+  onlineCount?: number;
   demo: boolean;
   entered: boolean;
   paused: boolean;
@@ -202,6 +204,10 @@ export function GameScreen({
               <span>
                 <Users size={14} /> Teman yang menetap
               </span>
+              <i />
+              <span className="title-online-tag" role="status">
+                <b className="hud-online-dot" /> {onlineCount} sedang online
+              </span>
             </div>
           </section>
           <div className="title-world-caption">
@@ -249,6 +255,17 @@ export function GameScreen({
               </span>
             </div>
             <nav className="hud-actions" aria-label="Menu permainan">
+              <button
+                type="button"
+                className="hud-online-pill"
+                aria-label={`${onlineCount} orang sedang online sekarang`}
+                title={`${onlineCount} orang sedang online sekarang`}
+                onClick={() => onPanel('alumni')}
+              >
+                <span className="hud-online-dot" />
+                <b>{onlineCount}</b>
+                <span>online</span>
+              </button>
               <button
                 className="game-icon"
                 aria-label="Temukan teman alumni"
@@ -328,6 +345,8 @@ export function GameScreen({
           <div className="game-bottom-center">
             <span className="world-presence">
               <i />
+              <b>{onlineCount} sedang online</b>
+              <span>·</span>
               {alumni.length
                 ? `${alumni.length} jejak alumni tersimpan`
                 : 'Dunia kecil. Cerita yang menunggu.'}
@@ -423,9 +442,11 @@ export function QuestJournal({
 }
 export function AlumniDirectory({
   alumni,
+  onlineCount = 1,
   onFind,
 }: {
   alumni: Alumnus[];
+  onlineCount?: number;
   onFind: (a: Alumnus) => void;
 }) {
   const [search, setSearch] = useState('');
@@ -440,6 +461,13 @@ export function AlumniDirectory({
         <br />
         <em>Cerita yang baru.</em>
       </h2>
+      <div className="alumni-online-banner" role="status">
+        <span className="alumni-online-badge">
+          <span className="hud-online-dot" />
+          <b>{onlineCount} orang sedang online sekarang</b>
+        </span>
+        <small>{alumni.length} jejak alumni di dunia ini</small>
+      </div>
       <label className="game-search">
         <Search size={17} />
         <input

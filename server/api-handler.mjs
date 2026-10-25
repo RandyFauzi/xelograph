@@ -73,6 +73,13 @@ export function createApiHandler({
 } = {}) {
   const buckets = new Map();
   const loginBuckets = new Map();
+  const presence = new Map();
+  const PRESENCE_TTL = 45000;
+  const prunePresence = (now) => {
+    for (const [k, lastSeen] of presence) {
+      if (now - lastSeen > PRESENCE_TTL) presence.delete(k);
+    }
+  };
   const adminTokenFromCookie = (request) =>
     request.headers
       .get('cookie')
@@ -298,6 +305,22 @@ export function createApiHandler({
         const token = sessionToken(request);
         if (token) db.prepare('DELETE FROM sessions WHERE token_hash=?').run(hash(token));
         return json({ ok: true }, 200, 'xel_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+      }
+      if (path === '/api/presence' && (method === 'GET' || method === 'POST')) {
+        prunePresence(now);
+        const rawKey = String(
+          body?.visitorId ||
+            url.searchParams.get('vid') ||
+            sessionToken(request) ||
+            ip + ':' + (request.headers.get('user-agent') || ''),
+        ).slice(0, 128);
+        const visitorKey = hash('presence:' + rawKey);
+        if (method === 'POST' && body?.leave === true) {
+          presence.delete(visitorKey);
+          return json({ online: presence.size });
+        }
+        if (presence.size < 5000) presence.set(visitorKey, now);
+        return json({ online: Math.max(1, presence.size) });
       }
       if (method === 'GET' && path === '/api/world') {
         const rows = db

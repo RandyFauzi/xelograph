@@ -64,6 +64,7 @@ export default function App() {
     [modal, setModal] = useState<Modal>(null),
     [profile, setProfile] = useState<Profile | null>(null),
     [alumni, setAlumni] = useState<Alumnus[]>([]),
+    [onlineCount, setOnlineCount] = useState(1),
     [demo, setDemo] = useState(false),
     [index, setIndex] = useState(0),
     [focusId, setFocusId] = useState<string | null>(null),
@@ -136,6 +137,53 @@ export default function App() {
     const id = setInterval(refresh, 60000);
     return () => clearInterval(id);
   }, [refresh]);
+  useEffect(() => {
+    let alive = true;
+    let vid = '';
+    try {
+      vid = sessionStorage.getItem('xel-visitor-id') || '';
+      if (!vid) {
+        vid =
+          typeof crypto !== 'undefined' && crypto.randomUUID
+            ? crypto.randomUUID()
+            : Math.random().toString(36).slice(2) + Date.now().toString(36);
+        sessionStorage.setItem('xel-visitor-id', vid);
+      }
+    } catch {
+      vid = 'anon-' + Math.random().toString(36).slice(2);
+    }
+    const ping = async () => {
+      if (document.hidden) return;
+      try {
+        const res = await api<{ online: number }>('/presence', {
+          method: 'POST',
+          body: JSON.stringify({ visitorId: vid }),
+        });
+        if (alive && typeof res?.online === 'number') setOnlineCount(Math.max(1, res.online));
+      } catch {}
+    };
+    void ping();
+    const interval = setInterval(ping, 15000);
+    const onVisibility = () => {
+      if (!document.hidden) void ping();
+    };
+    const onLeave = () => {
+      try {
+        const blob = new Blob([JSON.stringify({ visitorId: vid, leave: true })], {
+          type: 'application/json',
+        });
+        navigator.sendBeacon?.('/api/presence', blob);
+      } catch {}
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', onLeave);
+    return () => {
+      alive = false;
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', onLeave);
+    };
+  }, []);
   useEffect(() => {
     if (toast) {
       const t = setTimeout(() => setToast(''), 5000);
@@ -260,6 +308,7 @@ export default function App() {
       <GameScreen
         profile={profile}
         alumni={alumni}
+        onlineCount={onlineCount}
         demo={demo}
         entered={entered}
         paused={!!modal}
@@ -442,6 +491,7 @@ export default function App() {
             {modal === 'alumni' && (
               <AlumniDirectory
                 alumni={alumni}
+                onlineCount={onlineCount}
                 onFind={(a) => {
                   setOverview(false);
                   setFocusId(a.id);

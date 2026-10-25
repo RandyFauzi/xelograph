@@ -5,6 +5,8 @@ import { KOLAM_BECABUR, kolamProximity } from '../src/game/kolamBecabur.mjs';
 import { findPath, isWalkable, MISSION_ZONES } from '../src/game/navigation.mjs';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { createApiHandler } from '../server/api-handler.mjs';
+import { openDb } from '../server/db.mjs';
 
 test('Kolam Becabur popup opens on approach once, stays dismissed nearby, and rearms after leaving', () => {
   const point = KOLAM_BECABUR.walkTarget;
@@ -58,4 +60,40 @@ test('Kolam Becabur 3D model, preview image, and MP4 video are bundled locally a
     assert.ok(gltf.scene.getObjectByName(name), `Missing expected node: ${name}`);
   }
   assert.ok(gltf.animations.length >= 4, 'Water and floating prop animations are preserved');
+});
+
+test('Online presence endpoint tracks active visitors and handles leave notifications', async () => {
+  const db = openDb(':memory:');
+  try {
+    const handle = createApiHandler({ db });
+    const r1 = await handle(
+      new Request('https://reunion.example/api/presence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ visitorId: 'visitor-a' }),
+      }),
+    );
+    assert.equal(r1.status, 200);
+    assert.equal((await r1.json()).online, 1);
+
+    const r2 = await handle(
+      new Request('https://reunion.example/api/presence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ visitorId: 'visitor-b' }),
+      }),
+    );
+    assert.equal((await r2.json()).online, 2);
+
+    const r3 = await handle(
+      new Request('https://reunion.example/api/presence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ visitorId: 'visitor-b', leave: true }),
+      }),
+    );
+    assert.equal((await r3.json()).online, 1);
+  } finally {
+    db.close();
+  }
 });
