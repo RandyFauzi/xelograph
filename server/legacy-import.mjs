@@ -292,11 +292,13 @@ export function adminRespondents(db) {
   });
   const current = db
     .prepare(
-      'SELECT a.id,a.full_name,a.nickname,a.whatsapp,a.consent_public,a.created_at,r.answers_json,r.completed_at,r.completion_basis FROM alumni a JOIN responses r ON r.alumni_id=a.id ORDER BY a.created_at DESC',
+      'SELECT a.id,a.full_name,a.nickname,a.whatsapp,a.consent_public,a.avatar_json,a.created_at,r.answers_json,r.completed_at,r.completion_basis FROM alumni a JOIN responses r ON r.alumni_id=a.id ORDER BY a.created_at DESC',
     )
     .all()
-    .map(({ answers_json, ...row }) => ({
+    .map(({ answers_json, avatar_json, ...row }) => ({
       ...row,
+      consent_public: Boolean(row.consent_public),
+      avatar: avatar_json ? JSON.parse(avatar_json) : null,
       answers: JSON.parse(answers_json),
       sourceType: row.completion_basis === 'legacy_import' ? 'legacy' : 'game',
       ...(linked.has(row.id) ? source(linked.get(row.id)) : {}),
@@ -314,7 +316,8 @@ export function adminRespondents(db) {
         completed_at: r.submitted_at || r.created_at,
         sourceType: 'legacy',
         completion_basis: 'legacy_import',
-        consent_public: r.published_by_admin,
+        consent_public: Boolean(r.published_by_admin),
+        avatar: r.avatar_json ? JSON.parse(r.avatar_json) : null,
         answers: JSON.parse(r.answers_json),
         ...source(r),
       })),

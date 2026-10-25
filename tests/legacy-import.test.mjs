@@ -190,3 +190,156 @@ test('Admin code login is rate limited and malformed source cannot partially imp
     db.close();
   }
 });
+test('Admin can toggle respondent visibility in world and delete duplicate respondents', async () => {
+  const db = openDb(':memory:');
+  try {
+    const request = client(createApiHandler({ db, adminToken }));
+    const p = payload([
+      raw('Alumni Ganda Satu', '081111111111'),
+      raw('Alumni Ganda Dua', '081111111111'),
+    ]);
+    importLegacySurvey(db, p, { publishAvatars: true });
+
+    let world = await (await request('/world')).json();
+    assert.equal(world.length, 2);
+
+    const adminList = await (await request('/admin', { token: adminToken })).json();
+    assert.equal(adminList.length, 2);
+    assert.equal(adminList[0].consent_public, true);
+    assert.ok(adminList[0].avatar);
+
+    const targetId = adminList[0].id;
+    // Toggle visibility to false
+    const toggleRes = await request(`/admin/alumni/${encodeURIComponent(targetId)}/visibility`, {
+      method: 'PATCH',
+      token: adminToken,
+      body: { enabled: false },
+    });
+    assert.equal(toggleRes.status, 200);
+
+    world = await (await request('/world')).json();
+    assert.equal(world.length, 1);
+    assert.ok(!world.some((w) => w.id === targetId));
+
+    // Toggle back to true
+    await request(`/admin/alumni/${encodeURIComponent(targetId)}/visibility`, {
+      method: 'PATCH',
+      token: adminToken,
+      body: { enabled: true },
+    });
+    world = await (await request('/world')).json();
+    assert.equal(world.length, 2);
+
+    // Delete duplicate respondent
+    const deleteRes = await request(`/admin/alumni/${encodeURIComponent(targetId)}`, {
+      method: 'DELETE',
+      token: adminToken,
+    });
+    assert.equal(deleteRes.status, 200);
+
+    const updatedAdmin = await (await request('/admin', { token: adminToken })).json();
+    assert.equal(updatedAdmin.length, 1);
+    assert.ok(!updatedAdmin.some((r) => r.id === targetId));
+
+    world = await (await request('/world')).json();
+    assert.equal(world.length, 1);
+  } finally {
+    db.close();
+  }
+});
+
+test('Simple owner and committee codes grant separate server-enforced roles', async () => {
+  const db = openDb(':memory:');
+  try {
+    const request = client(createApiHandler({ db, adminToken }));
+    const ownerCode = deriveAdminAccessCode(adminToken);
+    const viewerCode = deriveAdminAccessCode(adminToken, 'viewer');
+    assert.match(ownerCode, /^\d{8}$/);
+    assert.match(viewerCode, /^\d{8}$/);
+    assert.notEqual(ownerCode, viewerCode);
+    const cookies = {};
+    for (const [role, code] of [
+      ['owner', ownerCode],
+      ['viewer', viewerCode],
+    ]) {
+      const login = await request('/admin/session', {
+        method: 'POST',
+        body: { code, role: 'owner' },
+      });
+      assert.equal(login.status, 200);
+      assert.equal((await login.json()).role, role);
+      cookies[role] = login.headers.get('set-cookie').split(';')[0];
+      assert.equal((await request('/admin', { cookie: cookies[role] })).status, 200);
+      assert.equal(
+        (await (await request('/admin/session', { cookie: cookies[role] })).json()).role,
+        role,
+      );
+    }
+    const source = payload([raw('Role Test Alumni', 'Privasi')]);
+    const cookie = cookies.viewer;
+    for (const [path, method, body] of [
+      ['/admin/import', 'POST', { payload: source, publishAvatars: true }],
+      ['/admin/backup', 'POST', {}],
+      ['/admin/storage', 'GET', null],
+      ['/admin/alumni/legacy%3Amissing/visibility', 'PATCH', { enabled: false }],
+      ['/admin/alumni/legacy%3Amissing', 'DELETE', {}],
+      ['/admin/unknown', 'POST', {}],
+    ])
+      assert.equal(
+        (await request(path, { method, body: body || undefined, cookie })).status,
+        403,
+        path,
+      );
+    assert.equal(db.prepare('SELECT count(*) n FROM legacy_responses').get().n, 0);
+    assert.equal(
+      (
+        await request('/admin/import', {
+          method: 'POST',
+          body: { payload: source, publishAvatars: true },
+          cookie: cookies.owner,
+        })
+      ).status,
+      200,
+    );
+    const row = (await (await request('/admin', { cookie })).json())[0];
+    const item = '/admin/alumni/' + encodeURIComponent(row.id);
+    assert.equal(
+      (
+        await request(item + '/visibility', {
+          method: 'PATCH',
+          body: { enabled: false },
+          cookie: cookies.owner,
+        })
+      ).status,
+      200,
+    );
+    assert.equal((await request(item, { method: 'DELETE', cookie })).status, 403);
+    assert.equal((await request(item, { method: 'DELETE', cookie: cookies.owner })).status, 200);
+    const rotated = client(
+      createApiHandler({ db, adminToken, viewerCodeHash: hash('new-viewer-code') }),
+    );
+    assert.equal((await rotated('/admin', { cookie })).status, 403);
+    assert.equal((await rotated('/admin', { cookie: cookies.owner })).status, 200);
+    await request('/admin/session', { method: 'DELETE', cookie });
+    assert.equal((await request('/admin', { cookie })).status, 403);
+  } finally {
+    db.close();
+  }
+});
+
+test('Missing admin credentials cannot grant a role through an arbitrary cookie', async () => {
+  const db = openDb(':memory:');
+  try {
+    const request = client(
+      createApiHandler({
+        db,
+        adminToken: undefined,
+        adminCodeHash: undefined,
+        viewerCodeHash: undefined,
+      }),
+    );
+    assert.equal((await request('/admin', { cookie: 'xylo_admin=not-a-session' })).status, 403);
+  } finally {
+    db.close();
+  }
+});

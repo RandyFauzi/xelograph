@@ -1,11 +1,10 @@
 import { createHmac } from 'node:crypto';
-/** Stable private admin code derived from the existing random server credential. Never sent to clients. */
-export function deriveAdminAccessCode(secret) {
+/** Private eight-digit codes; role is resolved on the server, never supplied by clients. */
+export function deriveAdminAccessCode(secret, role = 'owner') {
   if (!secret) throw new Error('Admin credential unavailable');
-  const text = createHmac('sha256', secret)
-    .update('xylograph/admin/access/v1')
-    .digest('hex')
-    .slice(0, 16)
-    .toUpperCase();
-  return 'XYLO-' + text.match(/.{4}/g).join('-');
+  if (!['owner', 'viewer'].includes(role)) throw new Error('Invalid admin role');
+  const digest = createHmac('sha256', secret)
+    .update('xylograph/admin/access/v2/' + role)
+    .digest();
+  return String(10000000 + Number(digest.readBigUInt64BE() % 90000000n));
 }

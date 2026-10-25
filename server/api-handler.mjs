@@ -63,6 +63,8 @@ export function createApiHandler({
   adminToken = process.env.ADMIN_TOKEN,
   adminCodeHash = process.env.ADMIN_ACCESS_CODE_HASH ||
     (adminToken ? hash(deriveAdminAccessCode(adminToken)) : undefined),
+  viewerCodeHash = process.env.ADMIN_VIEWER_CODE_HASH ||
+    (adminToken ? hash(deriveAdminAccessCode(adminToken, 'viewer')) : undefined),
   registrationOpen = process.env.PUBLIC_REGISTRATION !== 'false',
   publicOrigins = String(process.env.PUBLIC_ORIGIN || '')
     .split(',')
@@ -78,25 +80,27 @@ export function createApiHandler({
       .map((v) => v.trim())
       .find((v) => v.startsWith('xylo_admin='))
       ?.slice(11);
-  const requireAdmin = (request) => {
+  const requireAdmin = (request, ownerOnly = false) => {
     const bearer = String(request.headers.get('authorization') || '').replace(/^Bearer /, '');
+    let role;
     if (
       adminToken &&
       bearer &&
       timingSafeEqual(Buffer.from(hash(bearer)), Buffer.from(hash(adminToken)))
     )
-      return;
+      role = 'owner';
     const cookie = adminTokenFromCookie(request);
-    if (
-      cookie &&
-      db
-        .prepare(
-          'SELECT token_hash FROM admin_sessions WHERE token_hash=? AND credential_hash=? AND expires_at>?',
-        )
-        .get(hash(cookie), adminCodeHash || '', Date.now())
-    )
-      return;
-    throw new HttpError(403, 'Masuk dengan kode admin untuk melihat hasil survei.');
+    if (!role && cookie) {
+      const session = db
+        .prepare('SELECT credential_hash FROM admin_sessions WHERE token_hash=? AND expires_at>?')
+        .get(hash(cookie), Date.now());
+      if (adminCodeHash && session?.credential_hash === adminCodeHash) role = 'owner';
+      else if (viewerCodeHash && session?.credential_hash === viewerCodeHash) role = 'viewer';
+    }
+    if (!role) throw new HttpError(403, 'Masuk dengan kode admin untuk melihat hasil survei.');
+    if (ownerOnly && role !== 'owner')
+      throw new HttpError(403, 'Akses panitia hanya untuk melihat hasil survei.');
+    return role;
   };
   const profile = (id) => {
     const u = db.prepare('SELECT * FROM alumni WHERE id=?').get(id);
@@ -168,7 +172,7 @@ export function createApiHandler({
       if (method === 'GET' && path === '/api/config')
         return json({ demo, registrationOpen, mode: 'persistent', checkpoints: 7 });
       const importing = method === 'POST' && path === '/api/admin/import';
-      if (importing) requireAdmin(request);
+      if (importing) requireAdmin(request, true);
       const body = !['GET', 'HEAD', 'OPTIONS'].includes(method)
         ? await readJson(request, importing ? 1048576 : 16384)
         : {};
@@ -184,22 +188,23 @@ export function createApiHandler({
         const code = String(body.code || '')
           .trim()
           .toUpperCase();
-        if (
-          !adminCodeHash ||
-          !/^[a-f0-9]{64}$/i.test(adminCodeHash) ||
-          !code ||
-          code.length > 128 ||
-          !timingSafeEqual(Buffer.from(hash(code), 'hex'), Buffer.from(adminCodeHash, 'hex'))
-        )
-          throw new HttpError(403, 'Kode admin tidak cocok.');
+        const matches = (candidate) =>
+          candidate &&
+          /^[a-f0-9]{64}$/i.test(candidate) &&
+          code &&
+          code.length <= 128 &&
+          timingSafeEqual(Buffer.from(hash(code), 'hex'), Buffer.from(candidate, 'hex'));
+        const role = matches(adminCodeHash) ? 'owner' : matches(viewerCodeHash) ? 'viewer' : null;
+        if (!role) throw new HttpError(403, 'Kode admin tidak cocok.');
+        const credentialHash = role === 'owner' ? adminCodeHash : viewerCodeHash;
         loginBuckets.delete(ip);
         db.prepare('DELETE FROM admin_sessions WHERE expires_at<?').run(time);
         const token = randomBytes(32).toString('hex');
         db.prepare(
           'INSERT INTO admin_sessions(token_hash,credential_hash,expires_at) VALUES(?,?,?)',
-        ).run(hash(token), adminCodeHash, time + 8 * 3600000);
+        ).run(hash(token), credentialHash, time + 8 * 3600000);
         return json(
-          { ok: true },
+          { ok: true, role },
           200,
           `xylo_admin=${token}; Path=/api/admin; HttpOnly; SameSite=Strict; Max-Age=28800${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`,
         );
@@ -315,7 +320,10 @@ export function createApiHandler({
         ]);
       }
       if (path === '/api/admin' || path.startsWith('/api/admin/')) {
-        requireAdmin(request);
+        const role = requireAdmin(request);
+        if (method === 'GET' && path === '/api/admin/session') return json({ role });
+        if (role === 'viewer' && !(method === 'GET' && path === '/api/admin'))
+          throw new HttpError(403, 'Akses panitia hanya untuk melihat hasil survei.');
         if (method === 'POST' && path === '/api/admin/import')
           return json(
             importLegacySurvey(db, body.payload, {
@@ -354,14 +362,43 @@ export function createApiHandler({
         if (method === 'GET' && path === '/api/admin') {
           return json(adminRespondents(db));
         }
+        const visibility = path.match(/^\/api\/admin\/alumni\/([^/]+)\/visibility$/);
+        if (method === 'PATCH' && visibility) {
+          const rawId = decodeURIComponent(visibility[1]);
+          const enabled = body.enabled ?? body.consentPublic;
+          if (typeof enabled !== 'boolean')
+            throw new HttpError(400, 'Status visibilitas tidak valid.');
+          const val = enabled ? 1 : 0;
+          transaction(() => {
+            if (rawId.startsWith('legacy:')) {
+              const legacyId = rawId.replace(/^legacy:/, '');
+              db.prepare('UPDATE legacy_responses SET published_by_admin=? WHERE id=?').run(
+                val,
+                legacyId,
+              );
+            } else {
+              db.prepare('UPDATE alumni SET consent_public=? WHERE id=?').run(val, rawId);
+            }
+          });
+          return json({ ok: true, id: rawId, consent_public: Boolean(val) });
+        }
         const deletion = path.match(/^\/api\/admin\/alumni\/([^/]+)$/);
         if (method === 'DELETE' && deletion) {
+          const rawId = decodeURIComponent(deletion[1]);
           transaction(() => {
-            db.prepare('DELETE FROM legacy_responses WHERE linked_alumni_id=?').run(deletion[1]);
-            db.prepare('DELETE FROM invitations WHERE alumni_id=?').run(deletion[1]);
-            db.prepare('DELETE FROM alumni WHERE id=?').run(deletion[1]);
+            if (rawId.startsWith('legacy:')) {
+              const legacyId = rawId.replace(/^legacy:/, '');
+              db.prepare('DELETE FROM legacy_responses WHERE id=?').run(legacyId);
+            } else {
+              db.prepare('DELETE FROM legacy_responses WHERE linked_alumni_id=?').run(rawId);
+              db.prepare('DELETE FROM checkpoint_progress WHERE alumni_id=?').run(rawId);
+              db.prepare('DELETE FROM responses WHERE alumni_id=?').run(rawId);
+              db.prepare('DELETE FROM sessions WHERE alumni_id=?').run(rawId);
+              db.prepare('DELETE FROM invitations WHERE alumni_id=?').run(rawId);
+              db.prepare('DELETE FROM alumni WHERE id=?').run(rawId);
+            }
           });
-          return json({ ok: true });
+          return json({ ok: true, id: rawId });
         }
       }
       const answerMatch = path.match(/^\/api\/answers\/([^/]+)$/);
