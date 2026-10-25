@@ -1,6 +1,7 @@
 import { Group, Mesh, Float32BufferAttribute } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { avatarPartVisible } from './avatarParts.mjs';
+import { avatarIdleJoint } from './crowdMotion.mjs';
 const templates = new WeakMap();
 
 /** Share immutable geometry for the three hairstyles; stationary alumni use one draw per material. */
@@ -33,8 +34,12 @@ export function createStaticAvatar(source, { hair, character = 'male', outfitCol
         geometry.setAttribute(name, new Float32BufferAttribute(values, 3));
       }
       geometry.applyMatrix4(object.matrixWorld);
+      const joint = avatarIdleJoint(object);
+      const joints = new Float32Array(geometry.getAttribute('position').count * 4);
+      for (let i = 0; i < joints.length; i += 4) joints.set(joint, i);
+      geometry.setAttribute('idleJoint', new Float32BufferAttribute(joints, 4));
       for (const key of Object.keys(geometry.attributes))
-        if (!['position', 'normal'].includes(key)) geometry.deleteAttribute(key);
+        if (!['position', 'normal', 'idleJoint'].includes(key)) geometry.deleteAttribute(key);
       if (!batches.has(material.name)) batches.set(material.name, { material, geometries: [] });
       batches.get(material.name).geometries.push(geometry);
     });
