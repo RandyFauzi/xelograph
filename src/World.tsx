@@ -27,10 +27,18 @@ import Joystick from './game/Joystick';
 import AlumniCrowd from './game/AlumniCrowd';
 import CreatorMonument from './game/CreatorMonument';
 import KolamBecabur from './game/KolamBecabur';
+import OnlinePeers from './game/OnlinePeers';
 import { layoutAlumni } from './game/alumniLayout.mjs';
 import type { TravelRequest } from './GameScreen';
 import { Lock, Navigation, RotateCcw, Footprints, ArrowUp } from 'lucide-react';
-import { CHECKPOINTS, COLORS, DEFAULT_AVATAR, type AvatarConfig, type Alumnus } from './types';
+import {
+  CHECKPOINTS,
+  COLORS,
+  DEFAULT_AVATAR,
+  type AvatarConfig,
+  type Alumnus,
+  type OnlinePeer,
+} from './types';
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 function RouteTrail({ path }: { path: React.RefObject<PathPoint[]> }) {
@@ -248,6 +256,8 @@ function Player({
 export default function World({
   avatar,
   alumni,
+  onlinePeers = [],
+  playerPositionRef,
   progress,
   onCheckpoint,
   active,
@@ -264,6 +274,8 @@ export default function World({
 }: {
   avatar: AvatarConfig;
   alumni: Alumnus[];
+  onlinePeers?: OnlinePeer[];
+  playerPositionRef?: React.RefObject<{ x: number; z: number }>;
   progress: number[];
   onCheckpoint: (i: number) => void;
   active: boolean;
@@ -294,7 +306,19 @@ export default function World({
     [navigation, setNavigation] = useState(false);
   const next = CHECKPOINTS.findIndex((_, i) => !progress.includes(i)),
     unlocked = next < 0 ? 6 : next;
+  const staticAlumni = useMemo(() => {
+    const liveIds = new Set(onlinePeers.map((p) => p.alumniId).filter(Boolean));
+    return liveIds.size > 0 ? alumni.filter((a) => !liveIds.has(a.id)) : alumni;
+  }, [alumni, onlinePeers]);
   const placements = useMemo(() => layoutAlumni(alumni), [alumni]);
+  useEffect(() => {
+    if (!playerPositionRef) return;
+    const id = setInterval(() => {
+      playerPositionRef.current.x = position.current.x;
+      playerPositionRef.current.z = position.current.z;
+    }, 500);
+    return () => clearInterval(id);
+  }, [playerPositionRef]);
   const navigate = useCallback(
     (target: PathPoint) => {
       path.current = findPath(position.current, target, unlocked);
@@ -531,7 +555,13 @@ export default function World({
                   </group>
                 );
               })}
-            <AlumniCrowd alumni={alumni} playing={playing} focusId={focusId} player={position} />
+            <AlumniCrowd
+              alumni={staticAlumni}
+              playing={playing}
+              focusId={focusId}
+              player={position}
+            />
+            <OnlinePeers peers={onlinePeers} playing={playing} />
             {demo &&
               alumni.length === 0 &&
               [

@@ -75,9 +75,11 @@ export function createApiHandler({
   const loginBuckets = new Map();
   const presence = new Map();
   const PRESENCE_TTL = 45000;
+  const MAX_ONLINE_PEERS = 5;
   const prunePresence = (now) => {
-    for (const [k, lastSeen] of presence) {
-      if (now - lastSeen > PRESENCE_TTL) presence.delete(k);
+    for (const [k, entry] of presence) {
+      const ts = typeof entry === 'number' ? entry : entry.lastSeen;
+      if (now - ts > PRESENCE_TTL) presence.delete(k);
     }
   };
   const adminTokenFromCookie = (request) =>
@@ -172,7 +174,7 @@ export function createApiHandler({
         bucket = { count: 0, until: now + 60000 };
         buckets.set(ip, bucket);
       }
-      if (++bucket.count > 1200)
+      if (path !== '/api/presence' && ++bucket.count > 1200)
         throw new HttpError(429, 'Terlalu banyak permintaan. Coba satu menit lagi.');
       if (buckets.size > 10000)
         for (const [key, value] of buckets) if (value.until < now) buckets.delete(key);
@@ -317,10 +319,66 @@ export function createApiHandler({
         const visitorKey = hash('presence:' + rawKey);
         if (method === 'POST' && body?.leave === true) {
           presence.delete(visitorKey);
-          return json({ online: presence.size });
+          return json({ online: presence.size, peers: [] });
         }
-        if (presence.size < 5000) presence.set(visitorKey, now);
-        return json({ online: Math.max(1, presence.size) });
+        const prev = presence.get(visitorKey);
+        let safeAvatar = prev?.avatar || {
+          character: 'male',
+          hair: 'short',
+          outfit: 'navy',
+          skin: 'warm',
+        };
+        if (body?.avatar && typeof body.avatar === 'object') {
+          try {
+            safeAvatar = validateAvatar(body.avatar);
+          } catch {}
+        }
+        const rawNick =
+          typeof body?.nickname === 'string' ? body.nickname.trim().slice(0, 24) : '';
+        const safeNickname = rawNick || prev?.nickname || 'Teman Alumni';
+        const clamp = (val, min, max, fallback) =>
+          typeof val === 'number' && Number.isFinite(val)
+            ? Math.max(min, Math.min(max, Math.round(val * 100) / 100))
+            : fallback;
+        const safeX = clamp(body?.x, -24, 24, prev?.x ?? 0);
+        const safeZ = clamp(body?.z, -20, 34, prev?.z ?? 14);
+        const safePlaying =
+          typeof body?.playing === 'boolean' ? body.playing : (prev?.playing ?? true);
+        const safeAlumniId =
+          typeof body?.alumniId === 'string' && body.alumniId
+            ? body.alumniId.slice(0, 64)
+            : (prev?.alumniId ?? null);
+
+        if (presence.size < 5000 || presence.has(visitorKey)) {
+          presence.set(visitorKey, {
+            id: visitorKey.slice(0, 12),
+            lastSeen: now,
+            nickname: safeNickname,
+            avatar: safeAvatar,
+            x: safeX,
+            z: safeZ,
+            playing: safePlaying,
+            alumniId: safeAlumniId,
+          });
+        }
+        const peers = [];
+        for (const [k, entry] of presence) {
+          if (k === visitorKey || !entry || typeof entry !== 'object') continue;
+          peers.push(entry);
+        }
+        peers.sort((a, b) => {
+          if (a.playing !== b.playing) return a.playing ? -1 : 1;
+          return b.lastSeen - a.lastSeen;
+        });
+        const topPeers = peers.slice(0, MAX_ONLINE_PEERS).map((p) => ({
+          id: p.id,
+          nickname: p.nickname,
+          avatar: p.avatar,
+          x: p.x,
+          z: p.z,
+          alumniId: p.alumniId,
+        }));
+        return json({ online: Math.max(1, presence.size), peers: topPeers });
       }
       if (method === 'GET' && path === '/api/world') {
         const rows = db

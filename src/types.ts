@@ -24,6 +24,14 @@ export type Alumnus = {
   group: 'plaza' | 'crew' | 'supporter';
   badges: string[];
 };
+export type OnlinePeer = {
+  id: string;
+  nickname: string;
+  avatar: AvatarConfig;
+  x: number;
+  z: number;
+  alumniId?: string | null;
+};
 export const DEFAULT_AVATAR: AvatarConfig = { outfit: 'navy', hair: 'short', skin: 'warm' };
 export const COLORS = {
   sage: '#679b61',

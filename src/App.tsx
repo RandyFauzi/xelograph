@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, lazy, Suspense } from 'react';
+import { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react';
 import {
   ArrowRight,
   Route,
@@ -33,6 +33,7 @@ import {
   type AvatarConfig,
   type Profile,
   type Alumnus,
+  type OnlinePeer,
 } from './types';
 const AvatarPreview = lazy(() => import('./World').then((m) => ({ default: m.AvatarPreview })));
 function Preview({ config }: { config: AvatarConfig }) {
@@ -65,6 +66,14 @@ export default function App() {
     [profile, setProfile] = useState<Profile | null>(null),
     [alumni, setAlumni] = useState<Alumnus[]>([]),
     [onlineCount, setOnlineCount] = useState(1),
+    [onlinePeers, setOnlinePeers] = useState<OnlinePeer[]>([]),
+    playerPositionRef = useRef({ x: 0, z: 14 }),
+    presenceMetaRef = useRef({
+      nickname: 'Teman Alumni',
+      avatar: DEFAULT_AVATAR,
+      alumniId: null as string | null,
+      entered: false,
+    }),
     [demo, setDemo] = useState(false),
     [index, setIndex] = useState(0),
     [focusId, setFocusId] = useState<string | null>(null),
@@ -138,6 +147,14 @@ export default function App() {
     return () => clearInterval(id);
   }, [refresh]);
   useEffect(() => {
+    presenceMetaRef.current = {
+      nickname: profile?.nickname || 'Teman Alumni',
+      avatar: profile?.avatar || DEFAULT_AVATAR,
+      alumniId: profile?.id || null,
+      entered,
+    };
+  }, [profile, entered]);
+  useEffect(() => {
     let alive = true;
     let vid = '';
     try {
@@ -155,15 +172,25 @@ export default function App() {
     const ping = async () => {
       if (document.hidden) return;
       try {
-        const res = await api<{ online: number }>('/presence', {
+        const res = await api<{ online: number; peers?: OnlinePeer[] }>('/presence', {
           method: 'POST',
-          body: JSON.stringify({ visitorId: vid }),
+          body: JSON.stringify({
+            visitorId: vid,
+            nickname: presenceMetaRef.current.nickname,
+            avatar: presenceMetaRef.current.avatar,
+            alumniId: presenceMetaRef.current.alumniId,
+            playing: presenceMetaRef.current.entered,
+            x: playerPositionRef.current.x,
+            z: playerPositionRef.current.z,
+          }),
         });
-        if (alive && typeof res?.online === 'number') setOnlineCount(Math.max(1, res.online));
+        if (!alive) return;
+        if (typeof res?.online === 'number') setOnlineCount(Math.max(1, res.online));
+        if (Array.isArray(res?.peers)) setOnlinePeers(res.peers.slice(0, 5));
       } catch {}
     };
     void ping();
-    const interval = setInterval(ping, 15000);
+    const interval = setInterval(ping, 2500);
     const onVisibility = () => {
       if (!document.hidden) void ping();
     };
@@ -309,6 +336,8 @@ export default function App() {
         profile={profile}
         alumni={alumni}
         onlineCount={onlineCount}
+        onlinePeers={onlinePeers}
+        playerPositionRef={playerPositionRef}
         demo={demo}
         entered={entered}
         paused={!!modal}

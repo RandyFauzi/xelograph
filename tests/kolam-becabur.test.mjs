@@ -93,6 +93,35 @@ test('Online presence endpoint tracks active visitors and handles leave notifica
       }),
     );
     assert.equal((await r3.json()).online, 1);
+
+    for (let i = 1; i <= 7; i++) {
+      await handle(
+        new Request('https://reunion.example/api/presence', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            visitorId: `peer-${i}`,
+            nickname: `Alumni ${i}`,
+            avatar: { character: 'female', hair: 'hijab', outfit: 'sage', skin: 'warm' },
+            x: i * 2,
+            z: 10 - i,
+            playing: true,
+          }),
+        }),
+      );
+    }
+
+    const rObserver = await handle(
+      new Request('https://reunion.example/api/presence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ visitorId: 'visitor-a', x: 0, z: 14, playing: true }),
+      }),
+    );
+    const data = await rObserver.json();
+    assert.equal(data.online, 8);
+    assert.equal(data.peers.length, 5, 'Live peer avatars are strictly capped at 5');
+    assert.equal(data.peers[0].avatar.hair, 'hijab');
   } finally {
     db.close();
   }

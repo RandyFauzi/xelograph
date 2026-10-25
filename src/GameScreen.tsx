@@ -19,7 +19,13 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
-import { CHECKPOINTS, DEFAULT_AVATAR, type Profile, type Alumnus } from './types';
+import {
+  CHECKPOINTS,
+  DEFAULT_AVATAR,
+  type Profile,
+  type Alumnus,
+  type OnlinePeer,
+} from './types';
 import type { AudioPreferences } from './game/audio';
 import AvatarPortrait from './AvatarPortrait';
 import { ICONS } from './Survey';
@@ -29,6 +35,8 @@ export function GameScreen({
   profile,
   alumni,
   onlineCount = 1,
+  onlinePeers = [],
+  playerPositionRef,
   demo,
   entered,
   paused,
@@ -51,6 +59,8 @@ export function GameScreen({
   profile: Profile | null;
   alumni: Alumnus[];
   onlineCount?: number;
+  onlinePeers?: OnlinePeer[];
+  playerPositionRef?: React.RefObject<{ x: number; z: number }>;
   demo: boolean;
   entered: boolean;
   paused: boolean;
@@ -118,6 +128,8 @@ export function GameScreen({
             <World
               avatar={profile?.avatar || DEFAULT_AVATAR}
               alumni={alumni}
+              onlinePeers={onlinePeers}
+              playerPositionRef={playerPositionRef}
               progress={profile?.progress || []}
               onCheckpoint={onCheckpoint}
               active={entered && !paused && !overview}
