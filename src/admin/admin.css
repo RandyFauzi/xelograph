@@ -2,13 +2,15 @@
    XYLOGRAPH ADMIN DASHBOARD — CLEAN MODERN WHITE STYLING
 ======================================================== */
 
-/* Body override to ensure no green/khaki leakage */
+/* Body override to ensure no green/khaki leakage and no horizontal page overflow */
+html.adm-body-override,
 body.adm-body-override {
   background-color: #f8fafc !important;
   color: #0f172a !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
   margin: 0 !important;
   padding: 0 !important;
+  overflow-x: hidden !important;
 }
 
 .adm-shell {
@@ -18,6 +20,22 @@ body.adm-body-override {
   color: #0f172a;
   display: flex;
   flex-direction: column;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Neutralize global legacy main margin-left from styles.css */
+main,
+.adm-shell main,
+.adm-content-container,
+div.adm-content-container {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  flex: 1;
 }
 
 /* Reset all font families in admin scope to prevent serif inheritance from global styles */
@@ -49,16 +67,19 @@ body.adm-body-override {
   top: 0;
   z-index: 50;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  width: 100%;
 }
 
 .adm-topbar-inner {
   max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
   padding: 0 24px;
   height: 56px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  box-sizing: border-box;
 }
 
 .adm-brand {
@@ -120,15 +141,12 @@ body.adm-body-override {
 /* --------------------------------------------------------
    MAIN CONTAINER
 -------------------------------------------------------- */
-.adm-main-content {
-  flex: 1;
-  width: 100%;
-}
-
 .adm-container {
   max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
-  padding: 32px 24px 80px;
+  padding: 28px 24px 80px;
+  box-sizing: border-box;
 }
 
 /* --------------------------------------------------------
@@ -139,8 +157,15 @@ body.adm-body-override {
   justify-content: space-between;
   align-items: flex-start;
   flex-wrap: wrap;
-  gap: 20px;
-  margin-bottom: 28px;
+  gap: 16px;
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.adm-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .adm-pill-badge {
@@ -154,7 +179,8 @@ body.adm-body-override {
   border: 1px solid #dbeafe;
   padding: 3px 10px;
   border-radius: 20px;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
+  width: fit-content;
 }
 
 .adm-pill-dot {
@@ -165,19 +191,19 @@ body.adm-body-override {
 }
 
 .adm-page-title {
-  font-size: clamp(24px, 2.5vw, 30px) !important;
+  font-size: 26px !important;
   font-weight: 800 !important;
   color: #0f172a !important;
   line-height: 1.25 !important;
-  letter-spacing: -0.6px !important;
-  margin: 0 0 6px 0 !important;
+  letter-spacing: -0.5px !important;
+  margin: 0 !important;
   font-style: normal !important;
 }
 
 .adm-page-desc {
-  font-size: 14.5px;
-  color: #64748b;
-  margin: 0;
+  font-size: 14px !important;
+  color: #64748b !important;
+  margin: 4px 0 0 0 !important;
   max-width: 700px;
   line-height: 1.5;
 }

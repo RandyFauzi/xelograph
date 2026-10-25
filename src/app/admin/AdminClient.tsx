@@ -16,8 +16,14 @@ const AdminPanel = dynamic(() => import('../../admin/AdminPanel'), {
 
 export default function AdminClient() {
   useEffect(() => {
+    const origBodyBg = document.body.style.backgroundColor;
+    const origHtmlBg = document.documentElement.style.backgroundColor;
+    document.body.style.backgroundColor = '#f8fafc';
+    document.documentElement.style.backgroundColor = '#f8fafc';
     document.body.classList.add('adm-body-override');
     return () => {
+      document.body.style.backgroundColor = origBodyBg;
+      document.documentElement.style.backgroundColor = origHtmlBg;
       document.body.classList.remove('adm-body-override');
     };
   }, []);
@@ -35,14 +41,14 @@ export default function AdminClient() {
             <span className="adm-brand-sub">Ruang Panitia</span>
           </div>
           <a href="/" className="adm-back-link">
-            <ArrowLeft size={15} />
+            <ArrowLeft size={14} />
             <span>Kembali ke Permainan</span>
           </a>
         </div>
       </header>
-      <main className="adm-main-content">
+      <div className="adm-content-container">
         <AdminPanel />
-      </main>
+      </div>
     </div>
   );
 }
