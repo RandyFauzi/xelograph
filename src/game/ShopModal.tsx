@@ -45,6 +45,20 @@ export default function ShopModal({
   const [copied, setCopied] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(false);
 
+  // Duitku Dynamic QRIS State
+  const [activeQris, setActiveQris] = useState<{
+    orderId: string;
+    reference: string;
+    qrDataUrl: string;
+    qrString: string;
+    paymentUrl: string;
+    amount: number;
+    coins: number;
+  } | null>(null);
+  const [creatingQris, setCreatingQris] = useState(false);
+  const [qrisSuccess, setQrisSuccess] = useState<number | null>(null);
+  const [showSaweriaFallback, setShowSaweriaFallback] = useState(false);
+
   // Local active avatar state for 0ms instantaneous visual updates
   const [activeAvatar, setActiveAvatar] = useState<AvatarConfig>(() => {
     return profile?.avatar ? { ...profile.avatar } : { ...DEFAULT_AVATAR };
@@ -171,6 +185,88 @@ export default function ShopModal({
       setCheckingPayment(false);
     }
   };
+
+  // Create Dynamic QRIS via Duitku
+  const handleCreateDuitkuQris = async () => {
+    if (!profile) {
+      onJoin();
+      return;
+    }
+    setCreatingQris(true);
+    campusAudio.play('tap');
+    try {
+      const res = await api<{
+        ok: boolean;
+        orderId: string;
+        reference: string;
+        qrDataUrl: string;
+        qrString: string;
+        paymentUrl: string;
+        amount: number;
+        coins: number;
+      }>('/store/topup/duitku/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ packageId: selectedPkg.id }),
+      });
+      if (res && res.ok) {
+        setActiveQris({
+          orderId: res.orderId,
+          reference: res.reference,
+          qrDataUrl: res.qrDataUrl,
+          qrString: res.qrString,
+          paymentUrl: res.paymentUrl,
+          amount: res.amount,
+          coins: res.coins,
+        });
+      }
+    } catch (e: any) {
+      onToast(e.message || 'Gagal memuat QRIS Duitku. Silakan coba lagi.');
+    } finally {
+      setCreatingQris(false);
+    }
+  };
+
+  // Poll Duitku status while activeQris is displayed
+  useEffect(() => {
+    if (!activeQris) return;
+    let alive = true;
+    let timer: any = null;
+
+    const pollStatus = async () => {
+      try {
+        const res = await api<{
+          ok: boolean;
+          status: 'pending' | 'completed' | 'failed';
+          coins_awarded?: number;
+          balance?: number;
+        }>(`/store/topup/duitku/status?orderId=${activeQris.orderId}`);
+
+        if (!alive) return;
+
+        if (res && res.status === 'completed') {
+          campusAudio.play('success');
+          const coinsEarned = res.coins_awarded || activeQris.coins;
+          setCoins((prev) => (res.balance !== undefined ? res.balance : prev + coinsEarned));
+          setQrisSuccess(coinsEarned);
+          onToast(`🎉 Pembayaran Rp ${activeQris.amount.toLocaleString('id-ID')} Berhasil! +${coinsEarned} Koin.`);
+          setActiveQris(null);
+          return;
+        }
+      } catch {}
+
+      if (alive) {
+        timer = setTimeout(pollStatus, 2500);
+      }
+    };
+
+    timer = setTimeout(pollStatus, 2500);
+
+    return () => {
+      alive = false;
+      if (timer) clearTimeout(timer);
+    };
+  }, [activeQris, onToast]);
 
   // Beli item: otomatis langsung dipakai tanpa perlu klik terpisah
   const handleBuy = async (item: StoreItem) => {
@@ -516,78 +612,175 @@ export default function ShopModal({
               })}
             </div>
 
-            {/* CHECKOUT CARD */}
-            {profile ? (
-              <div className="clash-topup-checkout">
-                <div className="clash-checkout-summary">
-                  <span>Paket Terpilih:</span>
-                  <strong>{selectedPkg.coins} Koin</strong>
-                  <span className="clash-checkout-dot">·</span>
-                  <strong className="clash-checkout-price">
-                    Rp {selectedPkg.price_idr.toLocaleString('id-ID')}
-                  </strong>
+            {/* SUCCESS BANNER */}
+            {qrisSuccess && (
+              <div className="clash-qris-success-banner">
+                <span className="clash-qris-success-icon">🎉</span>
+                <div className="clash-qris-success-text">
+                  <strong>PEMBAYARAN BERHASIL!</strong>
+                  <p>+{qrisSuccess} Koin telah ditambahkan ke saldo dompetmu.</p>
                 </div>
-
-                {/* STEP 1: REFERENCE MESSAGE CODE */}
-                <div className="clash-code-box">
-                  <div className="clash-code-meta">
-                    <small>KODE PESAN WAJIB DI SAWERIA:</small>
-                    <strong className="clash-code-text">TOPUP-{profile.id}</strong>
-                  </div>
-                  <button
-                    type="button"
-                    className={'clash-btn-copy' + (copied ? ' is-copied' : '')}
-                    onClick={handleCopyCode}
-                  >
-                    {copied ? <Check size={14} /> : <Copy size={14} />}
-                    <span>{copied ? 'Tersalin!' : 'Salin Kode'}</span>
-                  </button>
-                </div>
-
-                {/* INSTRUCTIONS */}
-                <div className="clash-topup-instructions">
-                  <p>
-                    1. Salin kode pesan di atas (<code>TOPUP-{profile.id}</code>).
-                    <br />
-                    2. Buka Saweria &amp; tempelkan kode tersebut di kolom <strong>Pesan</strong>.
-                    <br />
-                    3. Scan QRIS dengan m-Banking (BCA, Mandiri, BRI) atau e-Wallet (GoPay, OVO, Dana).
-                  </p>
-                </div>
-
-                {/* STEP 2: OPEN SAWERIA BUTTON */}
-                <div className="clash-checkout-actions">
-                  <a
-                    href={`https://saweria.co/${saweriaUser}?amount=${selectedPkg.price_idr}&msg=TOPUP-${profile.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="clash-btn-saweria-pay"
-                    onClick={() => campusAudio.play('tap')}
-                  >
-                    <span>Buka Pembayaran QRIS (Saweria)</span>
-                    <ExternalLink size={16} />
-                  </a>
-
-                  <button
-                    type="button"
-                    className="clash-btn-check-pay"
-                    onClick={handleManualCheck}
-                    disabled={checkingPayment}
-                    title="Cek apakah pembayaran sudah masuk"
-                  >
-                    <RefreshCw size={14} className={checkingPayment ? 'is-spinning' : ''} />
-                    <span>{checkingPayment ? 'Mengecek…' : 'Cek Status Pembayaran'}</span>
-                  </button>
-                </div>
-
-                {/* LIVE LISTENING RADAR */}
-                <div className="clash-radar-notice">
-                  <div className="clash-radar-dot" />
-                  <span>
-                    Sistem mendeteksi pembayaran otomatis. Koin akan langsung masuk tanpa perlu keluar.
-                  </span>
-                </div>
+                <button
+                  type="button"
+                  className="clash-btn-success-shop"
+                  onClick={() => {
+                    setQrisSuccess(null);
+                    setView('catalog');
+                  }}
+                >
+                  Belanja Item Avatar 🛍️
+                </button>
               </div>
+            )}
+
+            {/* CHECKOUT CARD OR DYNAMIC QRIS SCREEN */}
+            {profile ? (
+              activeQris ? (
+                /* =======================================================
+                   ACTIVE DUITKU DYNAMIC QRIS DISPLAY
+                   ======================================================= */
+                <div className="clash-qris-display-card">
+                  <div className="clash-qris-header">
+                    <span className="clash-qris-badge">⚡ QRIS DINAMIS OTOMATIS</span>
+                    <h4 className="clash-qris-price">
+                      Rp {activeQris.amount.toLocaleString('id-ID')}
+                    </h4>
+                    <p className="clash-qris-sub">
+                      Nominal <strong>sudah otomatis terkunci</strong> saat discan menggunakan BCA Mobile, Livin Mandiri, GoPay, OVO, dll.
+                    </p>
+                  </div>
+
+                  {/* QR CODE CONTAINER */}
+                  <div className="clash-qris-qr-box">
+                    <img
+                      src={activeQris.qrDataUrl}
+                      alt="QRIS Pembayaran Duitku"
+                      className="clash-qris-image"
+                    />
+                    <div className="clash-qris-pulse">
+                      <span className="clash-pulse-dot" />
+                      <span>Menunggu scan m-Banking / e-Wallet...</span>
+                    </div>
+                  </div>
+
+                  <div className="clash-qris-banks-row">
+                    <span>BCA · Mandiri · BRI · BNI · GoPay · ShopeePay · OVO · Dana</span>
+                  </div>
+
+                  {/* ACTIONS */}
+                  <div className="clash-qris-actions">
+                    <a
+                      href={activeQris.paymentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="clash-btn-open-payment"
+                      onClick={() => campusAudio.play('tap')}
+                    >
+                      <ExternalLink size={16} />
+                      <span>Buka Aplikasi Pembayaran ↗</span>
+                    </a>
+                    <button
+                      type="button"
+                      className="clash-btn-cancel-qris"
+                      onClick={() => {
+                        campusAudio.play('tap');
+                        setActiveQris(null);
+                      }}
+                    >
+                      ✕ Batal / Ganti Paket
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* =======================================================
+                   READY TO CHECKOUT WITH DUITKU
+                   ======================================================= */
+                <div className="clash-topup-checkout">
+                  <div className="clash-checkout-summary">
+                    <span>Paket Terpilih:</span>
+                    <strong>{selectedPkg.coins} Koin</strong>
+                    <span className="clash-checkout-dot">·</span>
+                    <strong className="clash-checkout-price">
+                      Rp {selectedPkg.price_idr.toLocaleString('id-ID')}
+                    </strong>
+                  </div>
+
+                  {/* PRIMARY ACTION: DUITKU DYNAMIC QRIS */}
+                  <button
+                    type="button"
+                    className="clash-btn-duitku-qris"
+                    onClick={handleCreateDuitkuQris}
+                    disabled={creatingQris}
+                  >
+                    <span className="clash-btn-duitku-title">
+                      {creatingQris ? 'Membuat QRIS...' : `⚡ BAYAR DENGAN QRIS OTOMATIS`}
+                    </span>
+                    <span className="clash-btn-duitku-sub">
+                      Nominal Rp {selectedPkg.price_idr.toLocaleString('id-ID')} terkunci otomatis di m-Banking
+                    </span>
+                  </button>
+
+                  {/* TOGGLE ALTERNATIVE SAWERIA */}
+                  <div className="clash-saweria-toggle-wrap">
+                    <button
+                      type="button"
+                      className="clash-btn-toggle-saweria"
+                      onClick={() => setShowSaweriaFallback(!showSaweriaFallback)}
+                    >
+                      <span>{showSaweriaFallback ? '▲ Tutup Pilihan Saweria' : '▼ Atau Gunakan Saweria'}</span>
+                    </button>
+                  </div>
+
+                  {showSaweriaFallback && (
+                    <div className="clash-saweria-fallback-box">
+                      <div className="clash-code-box">
+                        <div className="clash-code-meta">
+                          <small>KODE PESAN DI SAWERIA:</small>
+                          <strong className="clash-code-text">TOPUP-{profile.id}</strong>
+                        </div>
+                        <button
+                          type="button"
+                          className={'clash-btn-copy' + (copied ? ' is-copied' : '')}
+                          onClick={handleCopyCode}
+                        >
+                          {copied ? <Check size={14} /> : <Copy size={14} />}
+                          <span>{copied ? 'Tersalin!' : 'Salin'}</span>
+                        </button>
+                      </div>
+
+                      <div className="clash-checkout-actions">
+                        <a
+                          href={`https://saweria.co/${saweriaUser}?amount=${selectedPkg.price_idr}&msg=TOPUP-${profile.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="clash-btn-saweria-pay"
+                          onClick={() => campusAudio.play('tap')}
+                        >
+                          <span>Buka Saweria</span>
+                          <ExternalLink size={16} />
+                        </a>
+                        <button
+                          type="button"
+                          className="clash-btn-check-pay"
+                          onClick={handleManualCheck}
+                          disabled={checkingPayment}
+                        >
+                          <RefreshCw size={14} className={checkingPayment ? 'is-spinning' : ''} />
+                          <span>{checkingPayment ? 'Mengecek…' : 'Cek'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* LIVE LISTENING RADAR */}
+                  <div className="clash-radar-notice">
+                    <div className="clash-radar-dot" />
+                    <span>
+                      Sistem mendeteksi pembayaran QRIS otomatis secara instan.
+                    </span>
+                  </div>
+                </div>
+              )
             ) : (
               /* GUEST NOTICE */
               <div className="clash-guest-box">

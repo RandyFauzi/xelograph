@@ -232,6 +232,64 @@ test('Avatar Store & Inventory: coin balance, purchasing, equipping, and unautho
 
     const storeStill115 = await handle(new Request('http://localhost/api/store', { headers: { cookie } }));
     assert.equal((await storeStill115.json()).coins, 115);
+
+    // 13. Duitku Dynamic QRIS Callback Verification & Coin Crediting
+    const duitkuOrderId = 'XELO_TEST_ORD_999';
+    const duitkuAmount = '50000'; // pack_250: 250 coins
+    const duitkuMerchantCode = 'DS37157';
+    const duitkuApiKey = '201c99689731a38823b0efffabae9dc3';
+
+    // Insert a pending Duitku transaction
+    db.prepare(
+      'INSERT INTO topup_transactions(id, alumni_id, saweria_trx_id, package_id, amount_idr, coins_awarded, donator_name, raw_message, status) VALUES(?,?,?,?,?,?,?,?,?)'
+    ).run(
+      duitkuOrderId,
+      alumniId,
+      'DS37157_REF_999',
+      'pack_250',
+      50000,
+      250,
+      'Randy',
+      'Duitku QRIS',
+      'pending'
+    );
+
+    // Pending status check
+    const statusRes = await handle(new Request(`http://localhost/api/store/topup/duitku/status?orderId=${duitkuOrderId}`));
+    assert.equal(statusRes.status, 200);
+
+    // Calculate Duitku callback signature: md5(merchantCode + amount + merchantOrderId + apiKey)
+    const { createHash } = await import('node:crypto');
+    const validDuitkuSig = createHash('md5')
+      .update(duitkuMerchantCode + duitkuAmount + duitkuOrderId + duitkuApiKey)
+      .digest('hex');
+
+    // Simulate Duitku payment callback (HTTP POST form-urlencoded / json)
+    const callbackRes = await handle(
+      new Request('http://localhost/api/store/topup/duitku/callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          merchantCode: duitkuMerchantCode,
+          amount: duitkuAmount,
+          merchantOrderId: duitkuOrderId,
+          signature: validDuitkuSig,
+          resultCode: '00',
+          reference: 'DS37157_REF_999',
+        }),
+      })
+    );
+    assert.equal(callbackRes.status, 200);
+
+    // Verify wallet updated: 115 + 250 = 365 coins!
+    const storeAfterDuitku = await handle(new Request('http://localhost/api/store', { headers: { cookie } }));
+    assert.equal((await storeAfterDuitku.json()).coins, 365);
+
+    // Status check now returns completed
+    const completedStatusRes = await handle(new Request(`http://localhost/api/store/topup/duitku/status?orderId=${duitkuOrderId}`));
+    const completedStatusData = await completedStatusRes.json();
+    assert.equal(completedStatusData.status, 'completed');
+    assert.equal(completedStatusData.coins_awarded, 250);
   } finally {
     db.close();
   }

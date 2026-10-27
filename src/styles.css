@@ -3928,3 +3928,276 @@ td b {
 
 
 
+
+/* =======================================================
+   DUITKU DYNAMIC QRIS MODAL STYLES
+   ======================================================= */
+.clash-btn-duitku-qris {
+  width: 100%;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+  color: #ffffff;
+  border: 2px solid #fef08a;
+  box-shadow: 0 5px 0 #78350f, 0 8px 20px rgba(245, 158, 11, 0.4);
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  user-select: none;
+}
+
+.clash-btn-duitku-qris:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 #78350f, 0 10px 24px rgba(245, 158, 11, 0.5);
+  background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+}
+
+.clash-btn-duitku-qris:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #78350f;
+}
+
+.clash-btn-duitku-qris:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.clash-btn-duitku-title {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
+}
+
+.clash-btn-duitku-sub {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fef3c7;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Dynamic QRIS Display Card */
+.clash-qris-display-card {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+  border: 2px solid #38bdf8;
+  border-radius: 20px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.25);
+  animation: clash-appear 0.25s ease-out;
+}
+
+.clash-qris-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.clash-qris-badge {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  border: 1.5px solid #38bdf8;
+  margin-bottom: 2px;
+}
+
+.clash-qris-price {
+  font-size: 26px;
+  font-weight: 900;
+  color: #fde047;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.clash-qris-sub {
+  font-size: 11.5px;
+  color: #cbd5e1;
+  margin: 0;
+  max-width: 320px;
+  line-height: 1.4;
+}
+
+.clash-qris-qr-box {
+  background: #ffffff;
+  padding: 12px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  border: 3px solid #e2e8f0;
+}
+
+.clash-qris-image {
+  width: 220px;
+  height: 220px;
+  display: block;
+  image-rendering: pixelated;
+  border-radius: 6px;
+}
+
+.clash-qris-pulse {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.clash-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16a34a;
+  box-shadow: 0 0 6px #16a34a;
+  animation: clash-pulse 1.2s infinite;
+}
+
+.clash-qris-banks-row {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+.clash-qris-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 340px;
+}
+
+.clash-btn-open-payment {
+  flex: 1;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 999px;
+  background: #0284c7;
+  color: #ffffff;
+  border: 1.5px solid #38bdf8;
+  box-shadow: 0 3px 0 #0369a1;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.clash-btn-open-payment:hover {
+  background: #0369a1;
+}
+
+.clash-btn-cancel-qris {
+  padding: 0 14px;
+  height: 38px;
+  border-radius: 999px;
+  background: #334155;
+  color: #e2e8f0;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 3px 0 #1e293b;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.clash-btn-cancel-qris:hover {
+  background: #475569;
+}
+
+/* Success Banner */
+.clash-qris-success-banner {
+  background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+  border: 2px solid #86efac;
+  border-radius: 16px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 6px 16px rgba(22, 101, 52, 0.4);
+  animation: clash-appear 0.25s ease-out;
+}
+
+.clash-qris-success-icon {
+  font-size: 28px;
+}
+
+.clash-qris-success-text {
+  flex: 1;
+}
+
+.clash-qris-success-text strong {
+  font-size: 13.5px;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.clash-qris-success-text p {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: #bbf7d0;
+}
+
+.clash-btn-success-shop {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #facc15;
+  color: #713f12;
+  border: 2px solid #fef08a;
+  box-shadow: 0 3px 0 #a16207;
+  font-size: 11.5px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+/* Saweria Fallback Toggle */
+.clash-saweria-toggle-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: -4px;
+}
+
+.clash-btn-toggle-saweria {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 8px;
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+
+.clash-btn-toggle-saweria:hover {
+  color: #f8fafc;
+}
+
+.clash-saweria-fallback-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+}

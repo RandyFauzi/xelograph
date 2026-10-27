@@ -1,4 +1,5 @@
-import { randomBytes, randomUUID, timingSafeEqual, createHmac } from 'node:crypto';
+import { randomBytes, randomUUID, timingSafeEqual, createHmac, createHash } from 'node:crypto';
+import QRCode from 'qrcode';
 import { hash, openDb, validateDatabasePath } from './db.mjs';
 import { backup } from 'node:sqlite';
 import { mkdirSync, chmodSync } from 'node:fs';
@@ -46,11 +47,25 @@ async function readJson(request, limit = 16384) {
     }
     chunks.push(Buffer.from(value));
   }
+  const raw = Buffer.concat(chunks).toString('utf8');
+  const contentType = request.headers.get('content-type') || '';
+  if (contentType.includes('application/x-www-form-urlencoded')) {
+    const params = new URLSearchParams(raw);
+    const obj = {};
+    for (const [k, v] of params.entries()) obj[k] = v;
+    return obj;
+  }
   try {
-    const body = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
+    const body = JSON.parse(raw || '{}');
     if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error();
     return body;
   } catch {
+    try {
+      const params = new URLSearchParams(raw);
+      const obj = {};
+      for (const [k, v] of params.entries()) obj[k] = v;
+      if (Object.keys(obj).length > 0) return obj;
+    } catch {}
     throw new HttpError(400, 'Format data tidak valid.');
   }
 }
@@ -160,7 +175,8 @@ export function createApiHandler({
         path = url.pathname,
         method = request.method;
       const origin = request.headers.get('origin');
-      if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && origin && path !== '/api/store/topup/webhook') {
+      const isExternalWebhook = path === '/api/store/topup/webhook' || path === '/api/store/topup/duitku/callback';
+      if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && origin && !isExternalWebhook) {
         let sameHost = false;
         try {
           sameHost = new URL(origin).host === (request.headers.get('host') || url.host);
@@ -538,7 +554,248 @@ export function createApiHandler({
               { id: 'pack_600', coins: 600, price_idr: 100000 },
             ],
             saweria_username: process.env.SAWERIA_USERNAME || 'randyfauzi24',
+            duitku_merchant_code: process.env.DUITKU_MERCHANT_CODE || 'DS37157',
+            duitku_active: true,
           });
+        }
+
+        const DUITKU_MERCHANT_CODE = process.env.DUITKU_MERCHANT_CODE || 'DS37157';
+        const DUITKU_API_KEY = process.env.DUITKU_API_KEY || '201c99689731a38823b0efffabae9dc3';
+        const DUITKU_ENV = process.env.DUITKU_ENV || 'sandbox';
+        const DUITKU_INQUIRY_URL = DUITKU_ENV === 'production'
+          ? 'https://passport.duitku.com/webapi/api/merchant/v2/inquiry'
+          : 'https://sandbox.duitku.com/webapi/api/merchant/v2/inquiry';
+        const DUITKU_STATUS_URL = DUITKU_ENV === 'production'
+          ? 'https://passport.duitku.com/webapi/api/merchant/transactionStatus'
+          : 'https://sandbox.duitku.com/webapi/api/merchant/transactionStatus';
+
+        if (method === 'POST' && path === '/api/store/topup/duitku/create') {
+          const token = sessionToken(request);
+          if (!token) throw new HttpError(401, 'Silakan login terlebih dahulu untuk top up.');
+          const alumni = db
+            .prepare(
+              'SELECT a.id, a.nickname, a.whatsapp FROM sessions s JOIN alumni a ON a.id = s.alumni_id WHERE s.token = ? AND s.expires > ?',
+            )
+            .get(hash(token), Date.now());
+          if (!alumni) throw new HttpError(401, 'Sesi tidak valid.');
+
+          const packages = [
+            { id: 'pack_test', coins: 5, price_idr: 2000 },
+            { id: 'pack_100', coins: 100, price_idr: 20000 },
+            { id: 'pack_250', coins: 250, price_idr: 50000 },
+            { id: 'pack_600', coins: 600, price_idr: 100000 },
+          ];
+
+          const packageId = String(body?.packageId || 'pack_test');
+          const selected = packages.find((p) => p.id === packageId) || packages[0];
+
+          const merchantOrderId = 'XELO_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7).toUpperCase();
+          const signature = createHash('md5')
+            .update(DUITKU_MERCHANT_CODE + merchantOrderId + selected.price_idr + DUITKU_API_KEY)
+            .digest('hex');
+
+          const inquiryPayload = {
+            merchantCode: DUITKU_MERCHANT_CODE,
+            paymentAmount: selected.price_idr,
+            paymentMethod: 'NQ', // Nobu Universal QRIS
+            merchantOrderId,
+            productDetails: `Top Up ${selected.coins} Koin Xelograph`,
+            email: 'alumni@xelograph.appku.site',
+            phoneNumber: alumni.whatsapp || '08123456789',
+            callbackUrl: 'https://xelograph.appku.site/api/store/topup/duitku/callback',
+            returnUrl: 'https://xelograph.appku.site',
+            expiryPeriod: 15,
+            signature,
+          };
+
+          const duitkuRes = await fetch(DUITKU_INQUIRY_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(inquiryPayload),
+          });
+
+          if (!duitkuRes.ok) {
+            const errTxt = await duitkuRes.text();
+            throw new HttpError(502, 'Gagal menghubungi server Duitku: ' + errTxt);
+          }
+
+          const duitkuData = await duitkuRes.json();
+          if (duitkuData.statusCode !== '00') {
+            throw new HttpError(400, duitkuData.statusMessage || 'Gagal membuat QRIS.');
+          }
+
+          const qrDataUrl = await QRCode.toDataURL(duitkuData.qrString, {
+            margin: 1,
+            width: 320,
+            color: { dark: '#000000', light: '#ffffff' },
+          });
+
+          db.prepare(
+            'INSERT INTO topup_transactions(id, alumni_id, saweria_trx_id, package_id, amount_idr, coins_awarded, donator_name, raw_message, status) VALUES(?,?,?,?,?,?,?,?,?)',
+          ).run(
+            merchantOrderId,
+            alumni.id,
+            duitkuData.reference || merchantOrderId,
+            selected.id,
+            selected.price_idr,
+            selected.coins,
+            alumni.nickname,
+            'Duitku QRIS',
+            'pending',
+          );
+
+          return json({
+            ok: true,
+            orderId: merchantOrderId,
+            reference: duitkuData.reference,
+            qrString: duitkuData.qrString,
+            qrDataUrl,
+            paymentUrl: duitkuData.paymentUrl,
+            amount: selected.price_idr,
+            coins: selected.coins,
+            expiryMinutes: 15,
+          });
+        }
+
+        if (method === 'GET' && path === '/api/store/topup/duitku/status') {
+          const orderId = String(url.searchParams.get('orderId') || '').trim();
+          if (!orderId) throw new HttpError(400, 'Parameter orderId diperlukan.');
+
+          const trx = db
+            .prepare(
+              'SELECT id, alumni_id, package_id, amount_idr, coins_awarded, status FROM topup_transactions WHERE id=?',
+            )
+            .get(orderId);
+          if (!trx) throw new HttpError(404, 'Transaksi tidak ditemukan.');
+
+          if (trx.status === 'completed') {
+            const wallet = db.prepare('SELECT coins_balance FROM user_wallets WHERE alumni_id=?').get(trx.alumni_id);
+            return json({
+              ok: true,
+              status: 'completed',
+              coins_awarded: trx.coins_awarded,
+              balance: wallet?.coins_balance || 0,
+            });
+          }
+
+          // Check with Duitku transactionStatus API for instant confirmation
+          const signature = createHash('md5')
+            .update(DUITKU_MERCHANT_CODE + orderId + DUITKU_API_KEY)
+            .digest('hex');
+
+          try {
+            const checkRes = await fetch(DUITKU_STATUS_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                merchantCode: DUITKU_MERCHANT_CODE,
+                merchantOrderId: orderId,
+                signature,
+              }),
+            });
+
+            if (checkRes.ok) {
+              const checkData = await checkRes.json();
+              if (checkData.statusCode === '00') {
+                // Payment SUCCESS!
+                let currentBalance = 0;
+                transaction(() => {
+                  db.prepare(
+                    "UPDATE topup_transactions SET status='completed' WHERE id=? AND status='pending'",
+                  ).run(orderId);
+                  db.prepare(
+                    'INSERT INTO user_wallets(alumni_id, coins_balance) VALUES(?,?) ON CONFLICT(alumni_id) DO UPDATE SET coins_balance=coins_balance+?, updated_at=CURRENT_TIMESTAMP',
+                  ).run(trx.alumni_id, trx.coins_awarded, trx.coins_awarded);
+
+                  const alumni = db.prepare('SELECT nickname FROM alumni WHERE id=?').get(trx.alumni_id);
+                  const updatedWallet = db
+                    .prepare('SELECT coins_balance FROM user_wallets WHERE alumni_id=?')
+                    .get(trx.alumni_id);
+                  currentBalance = updatedWallet?.coins_balance || 0;
+
+                  const chatMsgId = 'chat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+                  db.prepare(
+                    'INSERT INTO chat_messages(id, alumni_id, visitor_id, nickname, text, is_system, created_ms) VALUES(?,?,?,?,?,1,?)',
+                  ).run(
+                    chatMsgId,
+                    trx.alumni_id,
+                    'system',
+                    'Sistem Toko',
+                    `🎉 ${alumni?.nickname || 'Alumni'} baru saja isi ulang ${trx.coins_awarded} Koin via QRIS Dinamis!`,
+                    Date.now(),
+                  );
+                });
+
+                return json({
+                  ok: true,
+                  status: 'completed',
+                  coins_awarded: trx.coins_awarded,
+                  balance: currentBalance,
+                });
+              } else if (checkData.statusCode === '02') {
+                return json({ ok: true, status: 'failed' });
+              }
+            }
+          } catch (e) {
+            console.error('Error polling Duitku transactionStatus:', e);
+          }
+
+          return json({ ok: true, status: 'pending' });
+        }
+
+        if (method === 'POST' && path === '/api/store/topup/duitku/callback') {
+          const merchantCode = String(body?.merchantCode || '');
+          const amount = String(body?.amount || '');
+          const merchantOrderId = String(body?.merchantOrderId || '');
+          const signature = String(body?.signature || '');
+          const resultCode = String(body?.resultCode || '');
+          const reference = String(body?.reference || '');
+
+          if (!merchantCode || !amount || !merchantOrderId || !signature) {
+            throw new HttpError(400, 'Parameter callback tidak lengkap.');
+          }
+
+          const expectedSig = createHash('md5')
+            .update(merchantCode + amount + merchantOrderId + DUITKU_API_KEY)
+            .digest('hex');
+
+          if (signature.toLowerCase() !== expectedSig.toLowerCase()) {
+            throw new HttpError(403, 'Signature Duitku tidak valid.');
+          }
+
+          if (resultCode === '00') {
+            const trx = db
+              .prepare(
+                'SELECT id, alumni_id, coins_awarded, status FROM topup_transactions WHERE id=?',
+              )
+              .get(merchantOrderId);
+
+            if (trx && trx.status === 'pending') {
+              transaction(() => {
+                db.prepare(
+                  "UPDATE topup_transactions SET status='completed', saweria_trx_id=? WHERE id=?",
+                ).run(reference || trx.id, trx.id);
+                db.prepare(
+                  'INSERT INTO user_wallets(alumni_id, coins_balance) VALUES(?,?) ON CONFLICT(alumni_id) DO UPDATE SET coins_balance=coins_balance+?, updated_at=CURRENT_TIMESTAMP',
+                ).run(trx.alumni_id, trx.coins_awarded, trx.coins_awarded);
+
+                const alumni = db.prepare('SELECT nickname FROM alumni WHERE id=?').get(trx.alumni_id);
+                const chatMsgId = 'chat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+                db.prepare(
+                  'INSERT INTO chat_messages(id, alumni_id, visitor_id, nickname, text, is_system, created_ms) VALUES(?,?,?,?,?,1,?)',
+                ).run(
+                  chatMsgId,
+                  trx.alumni_id,
+                  'system',
+                  'Sistem Toko',
+                  `🎉 ${alumni?.nickname || 'Alumni'} baru saja isi ulang ${trx.coins_awarded} Koin via QRIS Dinamis!`,
+                  Date.now(),
+                );
+              });
+            }
+          }
+
+          return new Response('OK', { status: 200, headers: { 'Content-Type': 'text/plain' } });
         }
 
         if (method === 'POST' && path === '/api/store/topup/webhook') {
