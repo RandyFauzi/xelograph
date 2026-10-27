@@ -781,7 +781,7 @@ export default function World({
                   <button className="interact" onClick={openPentol}>
                     <span className="interact-key">E</span>
                     <span>
-                      Jajan Pentol Mas Bro<small>Racik porsi kenangan</small>
+                      Sapa Pakle<small>Pentol Bakwan Pakle</small>
                     </span>
                     <Navigation size={18} />
                   </button>

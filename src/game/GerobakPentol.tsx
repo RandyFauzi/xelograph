@@ -2,10 +2,71 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { Flame } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import { GEROBAK_PENTOL, pentolProximity } from './gerobakPentol.mjs';
 
 const STEAM_COUNT = 8;
+
+function createPakleSignTexture(): THREE.CanvasTexture | null {
+  if (typeof document === 'undefined') return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 384;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+
+  // Warm cream background & double border matching original signboard
+  ctx.fillStyle = '#faf8f0';
+  ctx.fillRect(0, 0, 512, 384);
+  ctx.strokeStyle = '#d3cfc2';
+  ctx.lineWidth = 10;
+  ctx.strokeRect(8, 8, 496, 368);
+  ctx.lineWidth = 3;
+  ctx.strokeRect(18, 18, 476, 348);
+
+  // Corner rivets
+  for (const [cx, cy] of [
+    [28, 28],
+    [484, 28],
+    [28, 356],
+    [484, 356],
+  ]) {
+    ctx.fillStyle = '#9aa0a6';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Line 1: PENTOL
+  ctx.font = '900 86px Impact, "Arial Black", sans-serif';
+  ctx.fillStyle = '#7f1111';
+  ctx.fillText('PENTOL', 260, 102);
+  ctx.fillStyle = '#e52521';
+  ctx.fillText('PENTOL', 256, 98);
+
+  // Line 2: BAKWAN
+  ctx.font = '900 64px Impact, "Arial Black", sans-serif';
+  ctx.fillStyle = '#9a4a06';
+  ctx.fillText('BAKWAN', 259, 198);
+  ctx.fillStyle = '#f5820b';
+  ctx.fillText('BAKWAN', 256, 195);
+
+  // Line 3: PAKLE..
+  ctx.font = '900 82px Impact, "Arial Black", sans-serif';
+  ctx.fillStyle = '#7f1111';
+  ctx.fillText('PAKLE..', 260, 298);
+  ctx.fillStyle = '#e52521';
+  ctx.fillText('PAKLE..', 256, 294);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.flipY = false;
+  texture.needsUpdate = true;
+  return texture;
+}
 
 export default function GerobakPentol({
   player,
@@ -13,7 +74,6 @@ export default function GerobakPentol({
   playing,
   onNear,
   onOpen,
-  onWalk,
 }: {
   player: React.RefObject<THREE.Vector3>;
   active: boolean;
@@ -23,6 +83,8 @@ export default function GerobakPentol({
   onWalk?: (point: { x: number; z: number }) => void;
 }) {
   const { scene } = useGLTF(GEROBAK_PENTOL.model, false, true);
+
+  const signTexture = useMemo(() => createPakleSignTexture(), []);
 
   const model = useMemo(() => {
     const copy = scene.clone(true);
@@ -39,11 +101,18 @@ export default function GerobakPentol({
       }
       if (object instanceof THREE.Mesh) {
         const cloneMat = (m: THREE.Material) => {
-          const cloned = m.clone();
+          const cloned = m.clone() as THREE.MeshStandardMaterial;
           if (object.name === 'Char_Face_Decal' || cloned.name === 'M_Face') {
             cloned.transparent = true;
             cloned.depthWrite = false;
             cloned.alphaTest = 0.05;
+          }
+          if (
+            (object.name === 'Front_Signboard' || cloned.name === 'M_Sign') &&
+            signTexture
+          ) {
+            cloned.map = signTexture;
+            cloned.needsUpdate = true;
           }
           return cloned;
         };
@@ -55,10 +124,11 @@ export default function GerobakPentol({
       }
     });
     return copy;
-  }, [scene]);
+  }, [scene, signTexture]);
 
   useEffect(
     () => () => {
+      signTexture?.dispose();
       model.traverse((object) => {
         if (object instanceof THREE.Mesh) {
           for (const material of Array.isArray(object.material)
@@ -70,7 +140,7 @@ export default function GerobakPentol({
       });
       document.body.style.cursor = '';
     },
-    [model],
+    [model, signTexture],
   );
 
   const animatedParts = useMemo(() => {
@@ -221,12 +291,12 @@ export default function GerobakPentol({
               event.stopPropagation();
               handleTrigger();
             }}
-            aria-label="Jajan di Gerobak Pentol Mas Bro"
+            aria-label="Sapa Pakle di Gerobak Pentol Bakwan Pakle"
           >
             <span>
-              <Flame size={11} fill="currentColor" />
+              <MessageCircle size={11} fill="currentColor" />
             </span>
-            <b>Pentol Mas Bro</b>
+            <b>Pentol Bakwan Pakle</b>
           </button>
         </Html>
       )}

@@ -4,9 +4,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { KOLAM_BECABUR, kolamProximity } from '../src/game/kolamBecabur.mjs';
 import {
   GEROBAK_PENTOL,
-  PENTOL_PORTIONS,
-  PENTOL_TOPPINGS,
-  PENTOL_SAUCES,
+  PAKLE_DIALOGUES,
   pentolProximity,
 } from '../src/game/gerobakPentol.mjs';
 import { findPath, isWalkable, MISSION_ZONES } from '../src/game/navigation.mjs';
@@ -156,9 +154,8 @@ test('Gerobak Pentol Mas Bro proximity hysteresis, walkability, and optimized GL
   const steppedAway = pentolProximity({ x: GEROBAK_PENTOL.x - 4.2, z: GEROBAK_PENTOL.z }, true, true);
   assert.equal(steppedAway.latched, false);
 
-  assert.ok(PENTOL_PORTIONS.length >= 3);
-  assert.ok(PENTOL_TOPPINGS.length >= 5);
-  assert.ok(PENTOL_SAUCES.length >= 4);
+  assert.equal(GEROBAK_PENTOL.title, 'Pentol Bakwan Pakle');
+  assert.ok(PAKLE_DIALOGUES.length >= 4);
 
   const previewBytes = readFileSync(new URL('../public' + GEROBAK_PENTOL.preview, import.meta.url));
   assert.equal(previewBytes.toString('ascii', 1, 4), 'PNG');

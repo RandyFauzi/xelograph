@@ -10,27 +10,10 @@ export const GEROBAK_PENTOL: {
   model: string;
   preview: string;
   title: string;
+  npcName: string;
 };
 
-export const PENTOL_PORTIONS: Array<{
-  id: string;
-  label: string;
-  badge: string;
-  desc: string;
-}>;
-
-export const PENTOL_TOPPINGS: Array<{
-  id: string;
-  label: string;
-  emoji: string;
-}>;
-
-export const PENTOL_SAUCES: Array<{
-  id: string;
-  label: string;
-}>;
-
-export const MASBRO_QUOTES: string[];
+export const PAKLE_DIALOGUES: string[];
 
 export function pentolProximity(
   position: { x: number; z: number },

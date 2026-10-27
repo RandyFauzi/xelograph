@@ -2547,183 +2547,77 @@ td b {
 .map-pin.pentol-pin span {
   background: #d9381e;
 }
-.pentol-showcase {
+.pakle-npc-dialog {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
-.pentol-showcase-hero {
+.pakle-npc-header {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 16px;
 }
-.pentol-showcase-hero img {
-  width: 108px;
-  height: 108px;
+.pakle-npc-header img {
+  width: 84px;
+  height: 84px;
   object-fit: contain;
-  border-radius: 20px;
+  border-radius: 18px;
   background: radial-gradient(circle at 50% 40%, #ffffff 0%, #e7f4fb 100%);
   border: 1px solid rgba(35, 128, 219, 0.22);
   padding: 6px;
   flex-shrink: 0;
-  box-shadow: 0 8px 22px rgba(25, 65, 110, 0.12);
+  box-shadow: 0 6px 18px rgba(25, 65, 110, 0.1);
 }
-.pentol-builder {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.pentol-section {
+.pakle-speech-bubble {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fffdf7 0%, #fff4ea 100%);
+  border: 1.5px solid rgba(217, 56, 30, 0.24);
+  box-shadow: 0 8px 20px rgba(140, 45, 25, 0.08);
 }
-.pentol-step-label {
+.pakle-speaker-tag {
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #4f6356;
-}
-.pentol-portion-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-.pentol-portion-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  padding: 12px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1.5px solid rgba(49, 75, 64, 0.14);
-  text-align: left;
-  cursor: pointer;
-  transition: all 0.16s ease;
-}
-.pentol-portion-card:hover {
-  border-color: rgba(217, 56, 30, 0.45);
-  background: #ffffff;
-}
-.pentol-portion-card.is-selected {
-  background: #fff9f5;
-  border-color: #d9381e;
-  box-shadow: 0 6px 16px rgba(217, 56, 30, 0.12);
-}
-.pentol-portion-card small {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #c8371d;
 }
-.pentol-portion-card strong {
-  font-size: 13.5px;
-  color: #1f2e27;
-}
-.pentol-portion-card span {
-  font-size: 11.5px;
-  line-height: 1.4;
-  color: #54665b;
-}
-.pentol-chip-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.pentol-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 13px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.78);
-  border: 1.5px solid rgba(49, 75, 64, 0.16);
-  font-size: 12.5px;
-  font-weight: 500;
-  color: #26382f;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.pentol-chip:hover {
-  border-color: rgba(35, 128, 219, 0.45);
-}
-.pentol-chip.is-selected {
-  background: #1d6ec2;
-  border-color: #1d6ec2;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(29, 110, 194, 0.22);
-}
-.pentol-served-card {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #fffdf7 0%, #fff3ea 100%);
-  border: 1.5px solid rgba(217, 56, 30, 0.28);
-  box-shadow: 0 8px 20px rgba(140, 45, 25, 0.08);
-}
-.pentol-served-badge {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #c8371d;
-}
-.pentol-served-card strong {
-  font-size: 15px;
-  color: #1e2d24;
-}
-.pentol-served-items {
+.pakle-speech-bubble p {
   margin: 0;
-  font-size: 12.5px;
-  line-height: 1.55;
-  color: #3f5247;
-}
-.pentol-served-card blockquote {
-  margin: 4px 0 0;
-  padding-top: 8px;
-  border-top: 1px dashed rgba(217, 56, 30, 0.24);
-  font-size: 12.5px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: #26382f;
   font-style: italic;
-  color: #6b3423;
 }
-.pentol-showcase-actions {
+.pakle-npc-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
-.pentol-order-button {
+.pakle-talk-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 18px;
-  border-radius: 12px;
-  background: #d9381e;
-  color: #ffffff;
-  border: none;
-  font-size: 13px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #b83219;
+  border: 1.5px solid rgba(217, 56, 30, 0.45);
+  font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 6px 16px rgba(217, 56, 30, 0.26);
-  transition: transform 0.15s ease, background 0.15s ease;
+  transition: background 0.15s ease, transform 0.15s ease;
 }
-.pentol-order-button:hover {
-  background: #bf2f17;
+.pakle-talk-button:hover {
+  background: #fff5f0;
   transform: translateY(-1px);
-}
-@media (max-width: 720px) {
-  .pentol-showcase-hero {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .pentol-portion-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 
