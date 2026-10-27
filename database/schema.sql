@@ -107,3 +107,19 @@ CREATE TABLE IF NOT EXISTS alumni_inventory (
  acquired_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
  PRIMARY KEY(alumni_id, item_id)
 );
+
+CREATE TABLE IF NOT EXISTS topup_transactions (
+ id TEXT PRIMARY KEY,
+ alumni_id TEXT NOT NULL REFERENCES alumni(id) ON DELETE CASCADE,
+ saweria_trx_id TEXT UNIQUE,
+ package_id TEXT NOT NULL,
+ amount_idr INTEGER NOT NULL,
+ coins_awarded INTEGER NOT NULL,
+ donator_name TEXT,
+ donator_email TEXT,
+ raw_message TEXT,
+ status TEXT NOT NULL DEFAULT 'completed',
+ created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_topup_alumni ON topup_transactions(alumni_id);
+CREATE INDEX IF NOT EXISTS idx_topup_saweria ON topup_transactions(saweria_trx_id);

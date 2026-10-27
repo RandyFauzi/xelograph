@@ -1,10 +1,22 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles, Copy, Check, ExternalLink, RefreshCw } from 'lucide-react';
 import { api } from '../api';
 import { campusAudio } from './audio';
 import { AvatarPreview } from '../World';
 import { DEFAULT_AVATAR } from '../types';
 import type { AvatarConfig, Profile, StoreItem } from '../types';
+
+interface TopUpPackage {
+  id: string;
+  coins: number;
+  price_idr: number;
+}
+
+const TOPUP_PACKAGES: TopUpPackage[] = [
+  { id: 'pack_100', coins: 100, price_idr: 20000 },
+  { id: 'pack_250', coins: 250, price_idr: 50000 },
+  { id: 'pack_600', coins: 600, price_idr: 100000 },
+];
 
 export default function ShopModal({
   profile,
@@ -19,11 +31,18 @@ export default function ShopModal({
   onClose: () => void;
   onJoin: () => void;
 }) {
+  const [view, setView] = useState<'catalog' | 'topup'>('catalog');
   const [coins, setCoins] = useState(100);
   const [items, setItems] = useState<StoreItem[]>([]);
   const [inventory, setInventory] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyItem, setBusyItem] = useState<string | null>(null);
+
+  // Top Up State
+  const [selectedPkg, setSelectedPkg] = useState<TopUpPackage>(TOPUP_PACKAGES[0]);
+  const [saweriaUser, setSaweriaUser] = useState('randyfauzi');
+  const [copied, setCopied] = useState(false);
+  const [checkingPayment, setCheckingPayment] = useState(false);
 
   // Local active avatar state for 0ms instantaneous visual updates
   const [activeAvatar, setActiveAvatar] = useState<AvatarConfig>(() => {
@@ -47,25 +66,32 @@ export default function ShopModal({
     }
   }, [profile?.avatar]);
 
+  // Initial load: catalog items & packages
   useEffect(() => {
     let alive = true;
     void (async () => {
       try {
-        const data = await api<{
-          coins: number;
-          items: StoreItem[];
-          inventory: string[];
-          equipped: string[];
-        }>('/store');
-        if (alive && data) {
-          setCoins(data.coins ?? 100);
-          setItems(data.items || []);
-          setInventory(data.inventory || []);
+        const [storeData, topupData] = await Promise.all([
+          api<{
+            coins: number;
+            items: StoreItem[];
+            inventory: string[];
+            equipped: string[];
+          }>('/store'),
+          api<{
+            packages: TopUpPackage[];
+            saweria_username: string;
+          }>('/store/topup/packages').catch(() => null),
+        ]);
 
-          // Sync equipped items from server
-          if (data.equipped && data.equipped.length > 0) {
-            const head = data.equipped.find((id) => id === 'topi_beret_bear');
-            const eye = data.equipped.find(
+        if (alive && storeData) {
+          setCoins(storeData.coins ?? 100);
+          setItems(storeData.items || []);
+          setInventory(storeData.inventory || []);
+
+          if (storeData.equipped && storeData.equipped.length > 0) {
+            const head = storeData.equipped.find((id) => id === 'topi_beret_bear');
+            const eye = storeData.equipped.find(
               (id) => id === 'pixel_sunglasses' || id === 'anime_sunglasses',
             );
             setActiveAvatar((prev) => ({
@@ -74,6 +100,10 @@ export default function ShopModal({
               ...(eye ? { eyewear: eye } : {}),
             }));
           }
+        }
+
+        if (alive && topupData?.saweria_username) {
+          setSaweriaUser(topupData.saweria_username);
         }
       } catch {
         // Fallback for guest
@@ -86,6 +116,59 @@ export default function ShopModal({
     };
   }, []);
 
+  // Poll for incoming coins while top-up view is active
+  useEffect(() => {
+    if (view !== 'topup' || !profile) return;
+    let alive = true;
+    const interval = setInterval(async () => {
+      try {
+        const res = await api<{ coins: number }>('/store');
+        if (alive && res && res.coins > coins) {
+          setCoins(res.coins);
+          campusAudio.play('success');
+          onToast(`🎉 Pembayaran berhasil! Saldo kamu sekarang ${res.coins} Koin.`);
+          setView('catalog');
+        }
+      } catch {
+        // Silent poll error
+      }
+    }, 3500);
+    return () => {
+      alive = false;
+      clearInterval(interval);
+    };
+  }, [view, coins, profile, onToast]);
+
+  const handleCopyCode = () => {
+    if (!profile) return;
+    const code = `TOPUP-${profile.id}`;
+    void navigator.clipboard.writeText(code);
+    campusAudio.play('tap');
+    setCopied(true);
+    onToast('Kode pesan berhasil disalin ke clipboard! 📋');
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleManualCheck = async () => {
+    setCheckingPayment(true);
+    campusAudio.play('tap');
+    try {
+      const res = await api<{ coins: number }>('/store');
+      if (res && res.coins > coins) {
+        setCoins(res.coins);
+        campusAudio.play('success');
+        onToast(`🎉 Pembayaran terverifikasi! Saldo bertambah.`);
+        setView('catalog');
+      } else {
+        onToast('Belum ada pembayaran baru yang terdeteksi. Silakan selesaikan scan QRIS.');
+      }
+    } catch (e) {
+      onToast((e as Error).message);
+    } finally {
+      setCheckingPayment(false);
+    }
+  };
+
   // Beli item: otomatis langsung dipakai tanpa perlu klik terpisah
   const handleBuy = async (item: StoreItem) => {
     if (!profile) {
@@ -94,7 +177,8 @@ export default function ShopModal({
     }
     if (coins < item.price_coins) {
       campusAudio.play('tap');
-      onToast('Koin tidak cukup! Selesaikan misi untuk koin tambahan.');
+      onToast('Koin tidak cukup! Silakan isi ulang koin.');
+      setView('topup');
       return;
     }
     setBusyItem(item.id);
@@ -126,7 +210,6 @@ export default function ShopModal({
       });
       if (res?.ok) {
         setCoins(res.coins);
-        // Persist equip on backend
         const updated = await api<Profile>('/store/equip', {
           method: 'POST',
           body: JSON.stringify({
@@ -140,7 +223,6 @@ export default function ShopModal({
         }
       }
     } catch (e) {
-      // Revert if buy failed
       setCoins(prevCoins);
       setInventory(prevInv);
       setActiveAvatar(prevAvatar);
@@ -162,7 +244,6 @@ export default function ShopModal({
       [item.category]: action === 'equip' ? item.id : null,
     };
 
-    // INSTANT OPTIMISTIC UPDATE: 0ms LATENCY!
     setActiveAvatar(nextAvatar);
     onProfileUpdate({
       ...profile,
@@ -222,7 +303,6 @@ export default function ShopModal({
         key={item.id}
         className={`clash-card theme-${theme} ${isEquipped ? 'is-equipped' : ''} ${isOwned ? 'is-owned' : ''}`}
       >
-        {/* Card Header: Title & Subtag */}
         <div className="clash-card-header">
           <span className="clash-card-title">{getCleanTitle(item)}</span>
           <span className="clash-card-subtag">
@@ -230,7 +310,6 @@ export default function ShopModal({
           </span>
         </div>
 
-        {/* Center: Large 3D Sticker Preview */}
         <div className="clash-card-preview">
           <div className="clash-preview-halo" />
           <img
@@ -241,7 +320,6 @@ export default function ShopModal({
           />
         </div>
 
-        {/* Bottom: Action / Coin Button */}
         <div className="clash-card-footer">
           {isOwned ? (
             isEquipped ? (
@@ -271,7 +349,7 @@ export default function ShopModal({
               className={`clash-btn clash-btn-buy ${!canAfford ? 'is-disabled' : ''}`}
               disabled={isBusy || (!profile ? false : !canAfford)}
               onClick={() => handleBuy(item)}
-              title={!canAfford ? 'Koin belum cukup' : `Beli seharga ${item.price_coins} koin & langsung pakai`}
+              title={!canAfford ? 'Koin belum cukup (Klik untuk top-up)' : `Beli seharga ${item.price_coins} koin & langsung pakai`}
             >
               <span className="clash-coin-symbol">🪙</span>
               <span className="clash-coin-price">{item.price_coins}</span>
@@ -318,7 +396,7 @@ export default function ShopModal({
             <path d="M 480,0 L 600,0 L 600,40 Q 540,72 480,40 Z" fill="url(#awning-dark)" />
             <path d="M 600,0 L 720,0 L 720,40 Q 660,72 600,40 Z" fill="url(#awning-light)" />
 
-            {/* Vibrant turquoise rim highlight */}
+            {/* Turquoise rim highlight */}
             <path
               d="M 0,40 Q 60,72 120,40 Q 180,72 240,40 Q 300,72 360,40 Q 420,72 480,40 Q 540,72 600,40 Q 660,72 720,40"
               fill="none"
@@ -342,12 +420,23 @@ export default function ShopModal({
           </div>
 
           <div className="clash-shop-badge">
-            <span>TOKO AVATAR</span>
+            <span>{view === 'topup' ? 'ISI ULANG KOIN' : 'TOKO AVATAR'}</span>
           </div>
 
           <div className="clash-pill clash-pill-coins" title="Saldo Koin">
             <span className="clash-coin-symbol">🪙</span>
             <strong className="clash-coin-num">{coins.toLocaleString('id-ID')}</strong>
+            <button
+              type="button"
+              className={'clash-btn-topup-toggle' + (view === 'topup' ? ' is-active' : '')}
+              onClick={() => {
+                campusAudio.play('tap');
+                setView(view === 'catalog' ? 'topup' : 'catalog');
+              }}
+              title={view === 'catalog' ? 'Buka Menu Isi Ulang Koin' : 'Kembali ke Katalog Toko'}
+            >
+              {view === 'catalog' ? '+ ISI' : 'TOKO'}
+            </button>
           </div>
 
           <button
@@ -362,14 +451,146 @@ export default function ShopModal({
         </div>
       </header>
 
-      {/* SHOP CARDS CONTENT */}
+      {/* SHOP BODY: TOP UP VIEW OR CATALOG VIEW */}
       <div className="clash-shop-body">
         {loading ? (
           <div className="clash-shop-loading">
             <div className="clash-loading-spinner" />
             <span>Membuka gerai toko…</span>
           </div>
+        ) : view === 'topup' ? (
+          /* =======================================================
+             TOP UP COIN VIEW (CLEAN, NO GIMMICK LABELS)
+             ======================================================= */
+          <div className="clash-topup-container">
+            <div className="clash-section-header">
+              <div className="clash-section-title-wrap">
+                <span className="clash-section-icon">🪙</span>
+                <h3 className="clash-section-title">PILIH JUMLAH KOIN</h3>
+              </div>
+              <span className="clash-section-tag">QRIS Nasional</span>
+            </div>
+
+            {/* 3 PACKAGE CARDS */}
+            <div className="clash-topup-grid">
+              {TOPUP_PACKAGES.map((pkg, idx) => {
+                const isSelected = selectedPkg.id === pkg.id;
+                return (
+                  <div
+                    key={pkg.id}
+                    className={'clash-topup-card' + (isSelected ? ' is-selected' : '')}
+                    onClick={() => {
+                      campusAudio.play('tap');
+                      setSelectedPkg(pkg);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <div className="clash-topup-coin-icon">
+                      {idx === 0 && <span className="topup-icon-coin">🪙</span>}
+                      {idx === 1 && <span className="topup-icon-stack">🪙🪙</span>}
+                      {idx === 2 && <span className="topup-icon-chest">🪙🪙🪙</span>}
+                    </div>
+                    <div className="clash-topup-amount">
+                      <strong>{pkg.coins}</strong> KOIN
+                    </div>
+                    <div className="clash-topup-price-badge">
+                      Rp {pkg.price_idr.toLocaleString('id-ID')}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* CHECKOUT CARD */}
+            {profile ? (
+              <div className="clash-topup-checkout">
+                <div className="clash-checkout-summary">
+                  <span>Paket Terpilih:</span>
+                  <strong>{selectedPkg.coins} Koin</strong>
+                  <span className="clash-checkout-dot">·</span>
+                  <strong className="clash-checkout-price">
+                    Rp {selectedPkg.price_idr.toLocaleString('id-ID')}
+                  </strong>
+                </div>
+
+                {/* STEP 1: REFERENCE MESSAGE CODE */}
+                <div className="clash-code-box">
+                  <div className="clash-code-meta">
+                    <small>KODE PESAN WAJIB DI SAWERIA:</small>
+                    <strong className="clash-code-text">TOPUP-{profile.id}</strong>
+                  </div>
+                  <button
+                    type="button"
+                    className={'clash-btn-copy' + (copied ? ' is-copied' : '')}
+                    onClick={handleCopyCode}
+                  >
+                    {copied ? <Check size={14} /> : <Copy size={14} />}
+                    <span>{copied ? 'Tersalin!' : 'Salin Kode'}</span>
+                  </button>
+                </div>
+
+                {/* INSTRUCTIONS */}
+                <div className="clash-topup-instructions">
+                  <p>
+                    1. Salin kode pesan di atas (<code>TOPUP-{profile.id}</code>).
+                    <br />
+                    2. Buka Saweria &amp; tempelkan kode tersebut di kolom <strong>Pesan</strong>.
+                    <br />
+                    3. Scan QRIS dengan m-Banking (BCA, Mandiri, BRI) atau e-Wallet (GoPay, OVO, Dana).
+                  </p>
+                </div>
+
+                {/* STEP 2: OPEN SAWERIA BUTTON */}
+                <div className="clash-checkout-actions">
+                  <a
+                    href={`https://saweria.co/${saweriaUser}?amount=${selectedPkg.price_idr}&msg=TOPUP-${profile.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="clash-btn-saweria-pay"
+                    onClick={() => campusAudio.play('tap')}
+                  >
+                    <span>Buka Pembayaran QRIS (Saweria)</span>
+                    <ExternalLink size={16} />
+                  </a>
+
+                  <button
+                    type="button"
+                    className="clash-btn-check-pay"
+                    onClick={handleManualCheck}
+                    disabled={checkingPayment}
+                    title="Cek apakah pembayaran sudah masuk"
+                  >
+                    <RefreshCw size={14} className={checkingPayment ? 'is-spinning' : ''} />
+                    <span>{checkingPayment ? 'Mengecek…' : 'Cek Status Pembayaran'}</span>
+                  </button>
+                </div>
+
+                {/* LIVE LISTENING RADAR */}
+                <div className="clash-radar-notice">
+                  <div className="clash-radar-dot" />
+                  <span>
+                    Sistem mendeteksi pembayaran otomatis. Koin akan langsung masuk tanpa perlu keluar.
+                  </span>
+                </div>
+              </div>
+            ) : (
+              /* GUEST NOTICE */
+              <div className="clash-guest-box">
+                <p>
+                  Kamu sedang menjelajah sebagai <strong>Tamu</strong>. Buat karakter alumni
+                  terlebih dahulu agar koin yang kamu beli tersimpan permanen di akunmu.
+                </p>
+                <button type="button" className="clash-btn-join-trigger" onClick={onJoin}>
+                  Buat Karakter Sekarang <ArrowRight size={16} />
+                </button>
+              </div>
+            )}
+          </div>
         ) : (
+          /* =======================================================
+             CATALOG VIEW (AVATAR ITEMS & FITTING ROOM)
+             ======================================================= */
           <>
             {/* LIVE 3D FITTING ROOM STAGE (KAMAR PAS) */}
             <div className="clash-fitting-stage">
@@ -463,7 +684,11 @@ export default function ShopModal({
       <footer className="clash-shop-footer">
         <div className="clash-footer-hint">
           <Sparkles size={14} className="clash-sparkle-icon" />
-          <span>Aksesoris otomatis aktif &amp; tersimpan pada karaktermu!</span>
+          <span>
+            {view === 'topup'
+              ? 'Scan QRIS Saweria dan koin otomatis bertambah ke akunmu.'
+              : 'Aksesoris otomatis aktif & tersimpan pada karaktermu!'}
+          </span>
         </div>
         <button
           type="button"

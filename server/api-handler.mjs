@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { randomBytes, randomUUID, timingSafeEqual, createHmac } from 'node:crypto';
 import { hash, openDb, validateDatabasePath } from './db.mjs';
 import { backup } from 'node:sqlite';
 import { mkdirSync, chmodSync } from 'node:fs';
@@ -527,6 +527,116 @@ export function createApiHandler({
             )
             .all();
           return json({ coins, items, inventory, equipped });
+        }
+
+        if (method === 'GET' && path === '/api/store/topup/packages') {
+          return json({
+            packages: [
+              { id: 'pack_100', coins: 100, price_idr: 20000 },
+              { id: 'pack_250', coins: 250, price_idr: 50000 },
+              { id: 'pack_600', coins: 600, price_idr: 100000 },
+            ],
+            saweria_username: process.env.SAWERIA_USERNAME || 'randyfauzi',
+          });
+        }
+
+        if (method === 'POST' && path === '/api/store/topup/webhook') {
+          // Signature verification (if secret configured)
+          const secret = process.env.SAWERIA_WEBHOOK_SECRET;
+          const sig = request.headers.get('saweria-callback-signature') || request.headers.get('x-saweria-signature');
+          if (secret && sig) {
+            const expected = createHmac('sha256', secret).update(JSON.stringify(body)).digest('hex');
+            if (sig !== expected) {
+              throw new HttpError(403, 'Invalid signature.');
+            }
+          }
+
+          const saweriaTrxId = String(body?.id || '').trim();
+          if (!saweriaTrxId) throw new HttpError(400, 'ID transaksi Saweria diperlukan.');
+
+          const amountRaw = Number(body?.amount_raw) || 0;
+          if (amountRaw <= 0) throw new HttpError(400, 'Nominal tidak valid.');
+
+          // Idempotency: prevent double crediting
+          const existing = db
+            .prepare('SELECT id, coins_awarded, alumni_id FROM topup_transactions WHERE saweria_trx_id=?')
+            .get(saweriaTrxId);
+          if (existing) {
+            return json({ ok: true, duplicate: true, coins: existing.coins_awarded });
+          }
+
+          const msg = String(body?.message || '').trim();
+          let targetAlumni = null;
+          const idMatch = msg.match(/TOPUP[#:\s\-_]*([a-zA-Z0-9_\-]+)/i) || msg.match(/^([a-zA-Z0-9_\-]+)$/);
+          if (idMatch) {
+            const rawId = idMatch[1].trim();
+            targetAlumni = db.prepare('SELECT id, nickname FROM alumni WHERE id=? OR LOWER(nickname)=LOWER(?)').get(rawId, rawId);
+          }
+
+          if (!targetAlumni) {
+            const donator = String(body?.donator_name || '').trim();
+            if (donator) {
+              targetAlumni = db.prepare('SELECT id, nickname FROM alumni WHERE LOWER(nickname)=LOWER(?)').get(donator);
+            }
+          }
+
+          if (!targetAlumni) {
+            throw new HttpError(404, 'Alumni penerima koin tidak ditemukan dari pesan: ' + msg);
+          }
+
+          // Exact user-specified rates:
+          // 100 Koin = 20.000, 250 Koin = 50.000, 600 Koin = 100.000
+          let coinsAwarded = 0;
+          let packageId = 'custom';
+          if (amountRaw >= 100000) {
+            coinsAwarded = Math.floor(amountRaw / 100000) * 600;
+            packageId = 'pack_600';
+          } else if (amountRaw >= 50000) {
+            coinsAwarded = 250;
+            packageId = 'pack_250';
+          } else if (amountRaw >= 20000) {
+            coinsAwarded = 100;
+            packageId = 'pack_100';
+          } else {
+            coinsAwarded = Math.max(1, Math.floor(amountRaw / 200));
+          }
+
+          const orderId = 'topup_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+
+          transaction(() => {
+            db.prepare(
+              'INSERT INTO topup_transactions(id, alumni_id, saweria_trx_id, package_id, amount_idr, coins_awarded, donator_name, donator_email, raw_message, status) VALUES(?,?,?,?,?,?,?,?,?,?)'
+            ).run(
+              orderId,
+              targetAlumni.id,
+              saweriaTrxId,
+              packageId,
+              amountRaw,
+              coinsAwarded,
+              String(body?.donator_name || ''),
+              String(body?.donator_email || ''),
+              msg,
+              'completed'
+            );
+
+            db.prepare(
+              'INSERT INTO user_wallets(alumni_id, coins_balance) VALUES(?,?) ON CONFLICT(alumni_id) DO UPDATE SET coins_balance=coins_balance+?, updated_at=CURRENT_TIMESTAMP'
+            ).run(targetAlumni.id, coinsAwarded, coinsAwarded);
+
+            const chatMsgId = 'chat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+            db.prepare(
+              'INSERT INTO chat_messages(id, alumni_id, visitor_id, nickname, text, is_system, created_ms) VALUES(?,?,?,?,?,1,?)'
+            ).run(
+              chatMsgId,
+              targetAlumni.id,
+              'system',
+              'Sistem Toko',
+              `🎉 ${targetAlumni.nickname} baru saja isi ulang ${coinsAwarded} Koin di Toko Avatar!`,
+              Date.now()
+            );
+          });
+
+          return json({ ok: true, coins: coinsAwarded, alumni_id: targetAlumni.id });
         }
 
         if (!session) {

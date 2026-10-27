@@ -3042,7 +3042,38 @@ td b {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 6px 12px;
+}
+
+.clash-btn-topup-toggle {
+  margin-left: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #facc15 0%, #d97706 100%);
+  color: #78350f;
+  border: 1.5px solid #fef08a;
+  box-shadow: 0 2px 0 #b45309;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.clash-btn-topup-toggle:hover {
+  background: linear-gradient(180deg, #fde047 0%, #b45309 100%);
+}
+
+.clash-btn-topup-toggle:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 #b45309;
+}
+
+.clash-btn-topup-toggle.is-active {
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+  color: #ffffff;
+  border-color: #bae6fd;
+  box-shadow: 0 2px 0 #0369a1;
 }
 
 .clash-coin-symbol {
@@ -3175,6 +3206,321 @@ td b {
   color: #86efac;
   font-weight: 600;
   margin-top: 3px;
+}
+
+/* =========================================================================
+   Top Up Coins UI (Clean, No-gimmick Packages)
+   ========================================================================= */
+.clash-topup-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.clash-topup-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.clash-topup-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 10px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffc72c 0%, #ea580c 100%);
+  border: 3px solid #ffffff;
+  box-shadow: 0 6px 0 #9a3412, 0 10px 20px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  text-align: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  user-select: none;
+}
+
+.clash-topup-card:hover {
+  transform: translateY(-2px);
+}
+
+.clash-topup-card.is-selected {
+  border-color: #22d3ee;
+  box-shadow: 0 6px 0 #0284c7, 0 0 16px rgba(34, 211, 238, 0.6);
+  transform: translateY(-2px);
+}
+
+.clash-topup-coin-icon {
+  font-size: 32px;
+  line-height: 1;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+}
+
+.topup-icon-coin {
+  display: inline-block;
+}
+
+.topup-icon-stack {
+  letter-spacing: -6px;
+}
+
+.topup-icon-chest {
+  letter-spacing: -5px;
+}
+
+.clash-topup-amount {
+  font-size: 13.5px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.8px;
+  text-shadow: 0 2px 2px rgba(0, 0, 0, 0.5);
+}
+
+.clash-topup-amount strong {
+  font-size: 17px;
+}
+
+.clash-topup-price-badge {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0f172a;
+  border: 2px solid #f1f5f9;
+  box-shadow: 0 3px 0 #cbd5e1;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+/* Checkout Box */
+.clash-topup-checkout {
+  background: rgba(14, 25, 75, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.clash-checkout-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #cbd5e1;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  flex-wrap: wrap;
+}
+
+.clash-checkout-summary strong {
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.clash-checkout-price {
+  color: #fde047 !important;
+  font-size: 14px;
+}
+
+.clash-checkout-dot {
+  color: #64748b;
+}
+
+.clash-code-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1.5px dashed #38bdf8;
+}
+
+.clash-code-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.clash-code-meta small {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #94a3b8;
+}
+
+.clash-code-text {
+  font-size: 16px;
+  font-weight: 900;
+  color: #38bdf8;
+  letter-spacing: 1px;
+  font-family: monospace;
+}
+
+.clash-btn-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #0284c7;
+  color: #ffffff;
+  border: 1.5px solid #38bdf8;
+  box-shadow: 0 3px 0 #0369a1;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.clash-btn-copy:hover {
+  background: #0369a1;
+}
+
+.clash-btn-copy:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 #0369a1;
+}
+
+.clash-btn-copy.is-copied {
+  background: #16a34a;
+  border-color: #86efac;
+  box-shadow: 0 3px 0 #14532d;
+}
+
+.clash-topup-instructions {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #cbd5e1;
+  background: rgba(0, 0, 0, 0.22);
+  padding: 8px 12px;
+  border-radius: 10px;
+}
+
+.clash-topup-instructions p {
+  margin: 0;
+}
+
+.clash-topup-instructions code {
+  background: rgba(255, 255, 255, 0.15);
+  color: #38bdf8;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 800;
+}
+
+.clash-checkout-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.clash-btn-saweria-pay {
+  flex: 1;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  color: #ffffff;
+  border: 2px solid #fde68a;
+  box-shadow: 0 4px 0 #b45309;
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.clash-btn-saweria-pay:hover {
+  background: linear-gradient(180deg, #d97706 0%, #b45309 100%);
+}
+
+.clash-btn-saweria-pay:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #b45309;
+}
+
+.clash-btn-check-pay {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: #1e293b;
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 3px 0 #0f172a;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.clash-btn-check-pay:hover {
+  background: #334155;
+}
+
+.clash-radar-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+  color: #93c5fd;
+  margin-top: 2px;
+}
+
+.clash-radar-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  animation: clash-pulse 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.clash-guest-box {
+  background: rgba(15, 23, 72, 0.5);
+  border: 2px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  padding: 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.clash-guest-box p {
+  margin: 0;
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+.clash-btn-join-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #ffffff;
+  border: 2px solid #60a5fa;
+  box-shadow: 0 3px 0 #1d4ed8;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .clash-btn-buy-tag {
@@ -3521,6 +3867,37 @@ td b {
   .clash-cards-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+  }
+  .clash-topup-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .clash-topup-card {
+    padding: 10px 4px;
+    border-radius: 14px;
+  }
+  .clash-topup-coin-icon {
+    font-size: 22px;
+  }
+  .clash-topup-amount {
+    font-size: 11px;
+  }
+  .clash-topup-amount strong {
+    font-size: 13.5px;
+  }
+  .clash-topup-price-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+  .clash-checkout-actions {
+    flex-direction: column;
+  }
+  .clash-btn-saweria-pay {
+    width: 100%;
+  }
+  .clash-btn-check-pay {
+    width: 100%;
+    justify-content: center;
   }
   .clash-shop-body {
     padding: 10px 12px;

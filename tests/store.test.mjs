@@ -147,6 +147,66 @@ test('Avatar Store & Inventory: coin balance, purchasing, equipping, and unautho
     const unequipData = await unequipRes.json();
     assert.equal(!unequipData.avatar.headwear, true);
     assert.equal(unequipData.avatar.eyewear, 'pixel_sunglasses');
+
+    // 11. Top Up Packages API
+    const packRes = await handle(new Request('http://localhost/api/store/topup/packages'));
+    assert.equal(packRes.status, 200);
+    const packData = await packRes.json();
+    assert.equal(packData.packages.length, 3);
+    assert.equal(packData.packages[0].coins, 100);
+    assert.equal(packData.packages[0].price_idr, 20000);
+    assert.equal(packData.packages[1].coins, 250);
+    assert.equal(packData.packages[1].price_idr, 50000);
+    assert.equal(packData.packages[2].coins, 600);
+    assert.equal(packData.packages[2].price_idr, 100000);
+
+    // 12. Saweria Webhook for 100 coins (Rp 20.000)
+    // Current wallet balance is 10 (100 - 50 - 40 = 10)
+    const alumniId = regRes ? (await (await handle(new Request('http://localhost/api/me', { headers: { cookie } }))).json()).id : null;
+    assert.ok(alumniId);
+
+    const webhookRes = await handle(
+      new Request('http://localhost/api/store/topup/webhook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: 'saweria_trx_test_001',
+          amount_raw: 20000,
+          donator_name: 'Randy',
+          donator_email: 'randy@test.com',
+          message: `TOPUP-${alumniId}`,
+        }),
+      }),
+    );
+    assert.equal(webhookRes.status, 200);
+    const webhookData = await webhookRes.json();
+    assert.equal(webhookData.ok, true);
+    assert.equal(webhookData.coins, 100);
+
+    // Verify wallet updated: 10 + 100 = 110 coins!
+    const storeAfterTopup = await handle(new Request('http://localhost/api/store', { headers: { cookie } }));
+    const storeAfterData = await storeAfterTopup.json();
+    assert.equal(storeAfterData.coins, 110);
+
+    // Idempotency: duplicate webhook does not credit again
+    const dupRes = await handle(
+      new Request('http://localhost/api/store/topup/webhook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: 'saweria_trx_test_001',
+          amount_raw: 20000,
+          donator_name: 'Randy',
+          donator_email: 'randy@test.com',
+          message: `TOPUP-${alumniId}`,
+        }),
+      }),
+    );
+    assert.equal(dupRes.status, 200);
+    assert.equal((await dupRes.json()).duplicate, true);
+
+    const storeStill110 = await handle(new Request('http://localhost/api/store', { headers: { cookie } }));
+    assert.equal((await storeStill110.json()).coins, 110);
   } finally {
     db.close();
   }
