@@ -61,6 +61,37 @@ export function openDb(path = process.env.DATABASE_PATH || './data/xelograph.sql
     if (!adminColumns.includes('credential_hash'))
       db.exec("ALTER TABLE admin_sessions ADD COLUMN credential_hash TEXT NOT NULL DEFAULT ''");
     db.exec('UPDATE alumni SET avatar_updated_at=created_at WHERE avatar_updated_at IS NULL');
+    db.exec('INSERT OR IGNORE INTO user_wallets(alumni_id, coins_balance) SELECT id, 100 FROM alumni');
+    const insertItem = db.prepare(
+      'INSERT OR IGNORE INTO store_items(id, name, category, price_coins, model_url, preview_url, description) VALUES(?,?,?,?,?,?,?)',
+    );
+    insertItem.run(
+      'topi_beret_bear',
+      'Topi Beret Telinga Beruang',
+      'headwear',
+      50,
+      '/models/topi_beret_bear.glb',
+      '/branding/store/topi_beret_bear.png',
+      'Topi beret kotak-kotak lucu dengan sepasang telinga beruang dan pita manis.',
+    );
+    insertItem.run(
+      'pixel_sunglasses',
+      'Kacamata Pixel Thug Life',
+      'eyewear',
+      40,
+      '/models/pixel_sunglasses.glb',
+      '/branding/store/pixel_sunglasses.png',
+      'Kacamata 8-bit voxel "Deal With It" legendaris dengan glint piksel putih.',
+    );
+    insertItem.run(
+      'anime_sunglasses',
+      'Kacamata Anime Cyber Wing',
+      'eyewear',
+      40,
+      '/models/anime_sunglasses.glb',
+      '/branding/store/anime_sunglasses.png',
+      'Kacamata anime futuristik berujung sayap runcing bergaya Kamina Gurren Lagann.',
+    );
     db.exec('COMMIT');
   } catch (error) {
     db.exec('ROLLBACK');

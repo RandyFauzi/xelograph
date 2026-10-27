@@ -3,6 +3,18 @@ export type AvatarConfig = {
   outfit: 'sage' | 'clay' | 'navy' | 'cream';
   hair: 'short' | 'bob' | 'cap' | 'long' | 'ponytail' | 'hijab' | 'quiff';
   skin: 'light' | 'warm' | 'deep';
+  headwear?: string | null;
+  eyewear?: string | null;
+  border?: string | null;
+};
+export type StoreItem = {
+  id: string;
+  name: string;
+  category: 'headwear' | 'eyewear' | 'outfit' | 'border';
+  price_coins: number;
+  model_url?: string | null;
+  preview_url: string;
+  description?: string | null;
 };
 export type Answers = Record<string, string | string[]>;
 export type Profile = {

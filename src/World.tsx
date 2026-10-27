@@ -28,7 +28,9 @@ import AlumniCrowd from './game/AlumniCrowd';
 import CreatorMonument from './game/CreatorMonument';
 import KolamBecabur from './game/KolamBecabur';
 import GerobakPentol from './game/GerobakPentol';
+import ShopBuilding from './game/ShopBuilding';
 import OnlinePeers from './game/OnlinePeers';
+import { AvatarAccessories } from './game/AvatarAccessories';
 import { layoutAlumni } from './game/alumniLayout.mjs';
 import type { TravelRequest } from './GameScreen';
 import { Lock, Navigation, RotateCcw, Footprints, ArrowUp } from 'lucide-react';
@@ -128,7 +130,12 @@ function Character({
       limb.object.quaternion.copy(limb.rest).multiply(swing);
     });
   });
-  return <primitive object={model} {...props} />;
+  return (
+    <group {...props}>
+      <primitive object={model} />
+      <AvatarAccessories headwear={config.headwear} eyewear={config.eyewear} />
+    </group>
+  );
 }
 class SceneBoundary extends Component<
   { children: ReactNode; fallback: ReactNode },
@@ -308,6 +315,7 @@ export default function World({
   onCreator,
   onKolam,
   onPentol,
+  onShop,
 }: {
   avatar: AvatarConfig;
   nickname?: string;
@@ -335,6 +343,7 @@ export default function World({
   onCreator: () => void;
   onKolam: () => void;
   onPentol: () => void;
+  onShop: () => void;
 }) {
   const keys = useRef(new Set<string>()),
     stick = useRef({ x: 0, y: 0 }),
@@ -349,6 +358,7 @@ export default function World({
     [nearCreator, setNearCreator] = useState(false),
     [nearKolam, setNearKolam] = useState(false),
     [nearPentol, setNearPentol] = useState(false),
+    [nearShop, setNearShop] = useState(false),
     [failed, setFailed] = useState(false),
     [navigation, setNavigation] = useState(false);
   const next = CHECKPOINTS.findIndex((_, i) => !progress.includes(i)),
@@ -380,6 +390,11 @@ export default function World({
     setNavigation(false);
     onPentol();
   }, [onPentol]);
+  const openShop = useCallback(() => {
+    path.current = [];
+    setNavigation(false);
+    onShop();
+  }, [onShop]);
   const lastTravel = useRef<number | null>(null),
     lastFocus = useRef<string | null>(null);
   useEffect(() => {
@@ -448,6 +463,7 @@ export default function World({
       if (k === 'e' && nearCreator) openCreator();
       else if (k === 'e' && nearKolam) openKolam();
       else if (k === 'e' && nearPentol) openPentol();
+      else if (k === 'e' && nearShop) openShop();
       else if (k === 'e' && near >= 0) onCheckpoint(near);
     };
     const up = (e: KeyboardEvent) => keys.current.delete(e.key.toLowerCase());
@@ -471,9 +487,11 @@ export default function World({
     nearCreator,
     nearKolam,
     nearPentol,
+    nearShop,
     openCreator,
     openKolam,
     openPentol,
+    openShop,
     onCheckpoint,
   ]);
   const fallback = (
@@ -546,6 +564,15 @@ export default function World({
                 onNear={setNearPentol}
                 onOpen={openPentol}
                 onWalk={navigate}
+              />
+            </Suspense>
+            <Suspense fallback={null}>
+              <ShopBuilding
+                player={position}
+                active={active}
+                playing={playing}
+                onNear={setNearShop}
+                onOpen={openShop}
               />
             </Suspense>
             {playing && <RouteTrail path={path} />}
@@ -806,7 +833,16 @@ export default function World({
                     <Navigation size={18} />
                   </button>
                 )}
-                {near >= 0 && !nearCreator && !nearKolam && !nearPentol && (
+                {nearShop && !nearCreator && !nearKolam && !nearPentol && (
+                  <button className="interact" onClick={openShop}>
+                    <span className="interact-key">E</span>
+                    <span>
+                      Masuk Shop<small>Toko Avatar &amp; Aksesoris</small>
+                    </span>
+                    <Navigation size={18} />
+                  </button>
+                )}
+                {near >= 0 && !nearCreator && !nearKolam && !nearPentol && !nearShop && (
                   <button className="interact" onClick={() => onCheckpoint(near)}>
                     <span className="interact-key">E</span>
                     <span>

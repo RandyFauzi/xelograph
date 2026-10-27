@@ -89,7 +89,7 @@ export function GameScreen({
   onJoin: () => void;
   onResume: () => void;
   onPanel: (
-    panel: 'quests' | 'alumni' | 'settings' | 'pass' | 'creator' | 'kolam' | 'pentol',
+    panel: 'quests' | 'alumni' | 'settings' | 'pass' | 'creator' | 'kolam' | 'pentol' | 'shop',
   ) => void;
   onCheckpoint: (i: number) => void;
   onTravel: (i: number) => void;
@@ -166,6 +166,7 @@ export function GameScreen({
               onCreator={() => onPanel('creator')}
               onKolam={() => onPanel('kolam')}
               onPentol={() => onPanel('pentol')}
+              onShop={() => onPanel('shop')}
             />
           </Suspense>
         )}

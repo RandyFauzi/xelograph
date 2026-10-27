@@ -287,6 +287,7 @@ export function createApiHandler({
             new Date().toISOString(),
           );
           db.prepare('INSERT INTO responses(alumni_id) VALUES(?)').run(id);
+          db.prepare('INSERT OR IGNORE INTO user_wallets(alumni_id, coins_balance) VALUES(?,100)').run(id);
           db.prepare('UPDATE alumni SET avatar_updated_at=created_at WHERE id=?').run(id);
           if (inv)
             db.prepare('UPDATE invitations SET alumni_id=? WHERE code_hash=?').run(id, hash(code));
@@ -490,6 +491,130 @@ export function createApiHandler({
           },
           201,
         );
+      }
+      if (path === '/api/store' || path.startsWith('/api/store/')) {
+        const token = sessionToken(request);
+        const session =
+          token &&
+          db
+            .prepare(
+              'SELECT a.id, a.nickname, a.avatar_json, a.avatar_revision FROM sessions s JOIN alumni a ON a.id=s.alumni_id WHERE s.token_hash=? AND s.expires_at>?',
+            )
+            .get(hash(token), now);
+
+        if (method === 'GET' && path === '/api/store') {
+          let coins = 0;
+          let inventory = [];
+          let equipped = [];
+          if (session) {
+            let wallet = db
+              .prepare('SELECT coins_balance FROM user_wallets WHERE alumni_id=?')
+              .get(session.id);
+            if (!wallet) {
+              db.prepare('INSERT OR IGNORE INTO user_wallets(alumni_id, coins_balance) VALUES(?,100)').run(session.id);
+              wallet = { coins_balance: 100 };
+            }
+            coins = wallet.coins_balance;
+            const rows = db
+              .prepare('SELECT item_id, is_equipped FROM alumni_inventory WHERE alumni_id=?')
+              .all(session.id);
+            inventory = rows.map((r) => r.item_id);
+            equipped = rows.filter((r) => r.is_equipped).map((r) => r.item_id);
+          }
+          const items = db
+            .prepare(
+              'SELECT id, name, category, price_coins, model_url, preview_url, description FROM store_items WHERE is_active=1 ORDER BY price_coins ASC',
+            )
+            .all();
+          return json({ coins, items, inventory, equipped });
+        }
+
+        if (!session) {
+          throw new HttpError(401, 'Buat karakter terlebih dahulu untuk mengakses toko.');
+        }
+
+        if (method === 'POST' && path === '/api/store/buy') {
+          const itemId = String(body?.itemId || '').trim();
+          const item = db
+            .prepare('SELECT id, name, category, price_coins FROM store_items WHERE id=? AND is_active=1')
+            .get(itemId);
+          if (!item) throw new HttpError(404, 'Item tidak ditemukan.');
+
+          const owned = db
+            .prepare('SELECT item_id FROM alumni_inventory WHERE alumni_id=? AND item_id=?')
+            .get(session.id, itemId);
+          if (owned) throw new HttpError(400, 'Kamu sudah memiliki item ini.');
+
+          let wallet = db
+            .prepare('SELECT coins_balance FROM user_wallets WHERE alumni_id=?')
+            .get(session.id);
+          if (!wallet) {
+            db.prepare('INSERT OR IGNORE INTO user_wallets(alumni_id, coins_balance) VALUES(?,100)').run(session.id);
+            wallet = { coins_balance: 100 };
+          }
+          if (wallet.coins_balance < item.price_coins) {
+            throw new HttpError(400, 'Koin tidak cukup untuk membeli item ini.');
+          }
+
+          let newBalance = wallet.coins_balance;
+          transaction(() => {
+            db.prepare(
+              'UPDATE user_wallets SET coins_balance=coins_balance-?, updated_at=? WHERE alumni_id=?',
+            ).run(item.price_coins, new Date(now).toISOString(), session.id);
+            db.prepare(
+              'INSERT INTO alumni_inventory(alumni_id, item_id, is_equipped, acquired_at) VALUES(?,?,0,?)',
+            ).run(session.id, itemId, new Date(now).toISOString());
+            newBalance -= item.price_coins;
+          });
+
+          return json({ ok: true, coins: newBalance, itemId });
+        }
+
+        if (method === 'POST' && path === '/api/store/equip') {
+          const itemId = String(body?.itemId || '').trim();
+          const slot = body?.slot;
+          const action = body?.action;
+          if (!['headwear', 'eyewear'].includes(slot)) {
+            throw new HttpError(400, 'Slot aksesoris tidak valid.');
+          }
+
+          const curAvatar = validateAvatar(JSON.parse(session.avatar_json));
+
+          transaction(() => {
+            if (action === 'equip') {
+              const item = db
+                .prepare('SELECT id, category FROM store_items WHERE id=? AND is_active=1')
+                .get(itemId);
+              if (!item || item.category !== slot) {
+                throw new HttpError(400, 'Item tidak sesuai dengan slot.');
+              }
+              const owned = db
+                .prepare('SELECT item_id FROM alumni_inventory WHERE alumni_id=? AND item_id=?')
+                .get(session.id, itemId);
+              if (!owned) throw new HttpError(403, 'Kamu belum memiliki item ini.');
+
+              db.prepare(
+                'UPDATE alumni_inventory SET is_equipped=0 WHERE alumni_id=? AND item_id IN (SELECT id FROM store_items WHERE category=?)',
+              ).run(session.id, slot);
+              db.prepare(
+                'UPDATE alumni_inventory SET is_equipped=1 WHERE alumni_id=? AND item_id=?',
+              ).run(session.id, itemId);
+
+              curAvatar[slot] = itemId;
+            } else {
+              db.prepare(
+                'UPDATE alumni_inventory SET is_equipped=0 WHERE alumni_id=? AND item_id IN (SELECT id FROM store_items WHERE category=?)',
+              ).run(session.id, slot);
+              curAvatar[slot] = null;
+            }
+
+            db.prepare(
+              'UPDATE alumni SET avatar_json=?, avatar_revision=avatar_revision+1, avatar_updated_at=? WHERE id=?',
+            ).run(JSON.stringify(curAvatar), new Date(now).toISOString(), session.id);
+          });
+
+          return json(profile(session.id));
+        }
       }
       if (method === 'GET' && path === '/api/world') {
         const rows = db

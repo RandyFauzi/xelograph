@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { avatarPartVisible } from './avatarParts.mjs';
 import { headingForMovement, isWalkable } from './navigation.mjs';
 import { COLORS, DEFAULT_AVATAR, type OnlinePeer } from '../types';
+import { AvatarAccessories } from './AvatarAccessories';
 
 const reduceMotion =
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -174,6 +175,7 @@ function OnlinePeerCharacter({
   return (
     <group ref={group} position={[peer.x, 0.28, peer.z]}>
       <primitive object={model} />
+      <AvatarAccessories headwear={config.headwear} eyewear={config.eyewear} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
         <ringGeometry args={[0.33, 0.4, 24]} />
         <meshBasicMaterial color="#22c55e" transparent opacity={0.82} depthWrite={false} />

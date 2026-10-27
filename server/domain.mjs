@@ -37,7 +37,16 @@ export function validateAvatar(a) {
     !['light', 'warm', 'deep'].includes(a.skin)
   )
     throw new Error('Pilihan avatar tidak valid.');
-  return { outfit: a.outfit, hair: a.hair, skin: a.skin, character: a.character || 'male' };
+  const res = {
+    outfit: a.outfit,
+    hair: a.hair,
+    skin: a.skin,
+    character: a.character || 'male',
+  };
+  if (typeof a.headwear === 'string' && a.headwear) res.headwear = a.headwear;
+  if (typeof a.eyewear === 'string' && a.eyewear) res.eyewear = a.eyewear;
+  if (typeof a.border === 'string' && a.border) res.border = a.border;
+  return res;
 }
 export function validateAnswer(index, value) {
   if (

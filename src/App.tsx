@@ -24,6 +24,7 @@ import { campusAudio, loadAudioPreferences, type AudioPreferences } from './game
 import { CREATOR_MONUMENT } from './game/creatorMonument.mjs';
 import { KOLAM_BECABUR } from './game/kolamBecabur.mjs';
 import { GEROBAK_PENTOL, PAKLE_DIALOGUES } from './game/gerobakPentol.mjs';
+import ShopModal from './game/ShopModal';
 import AvatarOptions from './AvatarOptions';
 import { api, download } from './api';
 import {
@@ -57,6 +58,7 @@ type Modal =
   | 'creator'
   | 'kolam'
   | 'pentol'
+  | 'shop'
   | 'avatar'
   | null;
 export default function App() {
@@ -433,7 +435,10 @@ export default function App() {
         >
           <section
             className={
-              'modal ' + (modal === 'join' || modal === 'avatar' || modal === 'kolam' ? 'wide' : '')
+              'modal ' +
+              (modal === 'join' || modal === 'avatar' || modal === 'kolam' || modal === 'shop'
+                ? 'wide'
+                : '')
             }
             role="dialog"
             aria-modal="true"
@@ -446,7 +451,9 @@ export default function App() {
                     ? 'Kenangan Kolam Becabur'
                     : modal === 'pentol'
                       ? 'Pentol Bakwan Pakle'
-                      : modal === 'survey'
+                      : modal === 'shop'
+                        ? 'Shop Toko Avatar'
+                        : modal === 'survey'
                       ? CHECKPOINTS[index].name
                       : modal === 'join'
                         ? 'Buat karakter'
@@ -574,6 +581,18 @@ export default function App() {
               <PakleNpcDialog
                 nickname={profile?.nickname || guestIdentity.nickname || 'Teman Alumni'}
                 onClose={() => setModal(null)}
+              />
+            )}
+            {modal === 'shop' && (
+              <ShopModal
+                profile={profile}
+                onProfileUpdate={(updated) => {
+                  setProfile(updated);
+                  void refresh();
+                }}
+                onToast={setToast}
+                onClose={() => setModal(null)}
+                onJoin={() => setModal('join')}
               />
             )}
             {modal === 'quests' && (

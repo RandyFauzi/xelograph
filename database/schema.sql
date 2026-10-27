@@ -82,3 +82,28 @@ CREATE TABLE IF NOT EXISTS chat_messages (
  created_ms INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS chat_created_idx ON chat_messages(created_ms);
+
+CREATE TABLE IF NOT EXISTS user_wallets (
+ alumni_id TEXT PRIMARY KEY REFERENCES alumni(id) ON DELETE CASCADE,
+ coins_balance INTEGER NOT NULL DEFAULT 100 CHECK(coins_balance >= 0),
+ updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS store_items (
+ id TEXT PRIMARY KEY,
+ name TEXT NOT NULL,
+ category TEXT NOT NULL CHECK(category IN ('headwear', 'eyewear', 'outfit', 'border')),
+ price_coins INTEGER NOT NULL DEFAULT 0,
+ model_url TEXT,
+ preview_url TEXT NOT NULL,
+ description TEXT,
+ is_active INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS alumni_inventory (
+ alumni_id TEXT NOT NULL REFERENCES alumni(id) ON DELETE CASCADE,
+ item_id TEXT NOT NULL REFERENCES store_items(id) ON DELETE CASCADE,
+ is_equipped INTEGER NOT NULL DEFAULT 0,
+ acquired_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ PRIMARY KEY(alumni_id, item_id)
+);
