@@ -574,7 +574,7 @@ export function createApiHandler({
           if (!token) throw new HttpError(401, 'Silakan login terlebih dahulu untuk top up.');
           const alumni = db
             .prepare(
-              'SELECT a.id, a.nickname, a.whatsapp FROM sessions s JOIN alumni a ON a.id = s.alumni_id WHERE s.token = ? AND s.expires > ?',
+              'SELECT a.id, a.nickname, a.whatsapp FROM sessions s JOIN alumni a ON a.id = s.alumni_id WHERE s.token_hash = ? AND s.expires_at > ?',
             )
             .get(hash(token), Date.now());
           if (!alumni) throw new HttpError(401, 'Sesi tidak valid.');

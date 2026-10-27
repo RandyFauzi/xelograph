@@ -233,7 +233,21 @@ test('Avatar Store & Inventory: coin balance, purchasing, equipping, and unautho
     const storeStill115 = await handle(new Request('http://localhost/api/store', { headers: { cookie } }));
     assert.equal((await storeStill115.json()).coins, 115);
 
-    // 13. Duitku Dynamic QRIS Callback Verification & Coin Crediting
+    // 13. Duitku Dynamic QRIS Creation, Callback Verification & Coin Crediting
+    const createQrisRes = await handle(
+      new Request('http://localhost/api/store/topup/duitku/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', cookie },
+        body: JSON.stringify({ packageId: 'pack_test' }),
+      })
+    );
+    assert.equal(createQrisRes.status, 200);
+    const createQrisData = await createQrisRes.json();
+    assert.equal(createQrisData.ok, true);
+    assert.ok(createQrisData.qrDataUrl.startsWith('data:image/png;base64,'));
+    assert.equal(createQrisData.amount, 2000);
+    assert.equal(createQrisData.coins, 5);
+
     const duitkuOrderId = 'XELO_TEST_ORD_999';
     const duitkuAmount = '50000'; // pack_250: 250 coins
     const duitkuMerchantCode = 'DS37157';
