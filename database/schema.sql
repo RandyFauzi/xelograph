@@ -70,3 +70,15 @@ CREATE TABLE IF NOT EXISTS legacy_responses (
  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS legacy_phone_idx ON legacy_responses(whatsapp);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+ id TEXT PRIMARY KEY,
+ alumni_id TEXT REFERENCES alumni(id) ON DELETE SET NULL,
+ visitor_id TEXT,
+ nickname TEXT NOT NULL,
+ text TEXT NOT NULL,
+ is_system INTEGER NOT NULL DEFAULT 0 CHECK(is_system IN (0,1)),
+ created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+ created_ms INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS chat_created_idx ON chat_messages(created_ms);

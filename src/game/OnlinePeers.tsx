@@ -12,9 +12,11 @@ const reduceMotion =
 function OnlinePeerCharacter({
   peer,
   playing,
+  bubbleText,
 }: {
   peer: OnlinePeer;
   playing: boolean;
+  bubbleText?: string;
 }) {
   const { scene } = useGLTF('/models/avatar.glb');
   const config = peer.avatar || DEFAULT_AVATAR;
@@ -177,13 +179,22 @@ function OnlinePeerCharacter({
         <meshBasicMaterial color="#22c55e" transparent opacity={0.82} depthWrite={false} />
       </mesh>
       {playing && (
-        <Html position={[0, 1.98, 0]} center zIndexRange={[8, 0]}>
-          <span className="online-peer-label">
-            <i />
-            <b>{peer.nickname || 'Teman Alumni'}</b>
-            <small>ONLINE</small>
-          </span>
-        </Html>
+        <>
+          <Html position={[0, 1.98, 0]} center zIndexRange={[8, 0]}>
+            <span className="online-peer-label">
+              <i />
+              <b>{peer.nickname || 'Teman Alumni'}</b>
+              <small>ONLINE</small>
+            </span>
+          </Html>
+          {bubbleText && (
+            <Html position={[0, 2.45, 0]} center zIndexRange={[14, 0]}>
+              <div className="chat-speech-bubble" role="status">
+                <p>{bubbleText}</p>
+              </div>
+            </Html>
+          )}
+        </>
       )}
     </group>
   );
@@ -192,16 +203,29 @@ function OnlinePeerCharacter({
 export default function OnlinePeers({
   peers,
   playing,
+  activeBubbles = {},
 }: {
   peers: OnlinePeer[];
   playing: boolean;
+  activeBubbles?: Record<string, string>;
 }) {
   const visiblePeers = useMemo(() => peers.slice(0, 5), [peers]);
   return (
     <group name="OnlinePeersGroup">
-      {visiblePeers.map((peer) => (
-        <OnlinePeerCharacter key={peer.id} peer={peer} playing={playing} />
-      ))}
+      {visiblePeers.map((peer) => {
+        const bubbleText =
+          activeBubbles[peer.id.toLowerCase()] ||
+          (peer.nickname ? activeBubbles[peer.nickname.toLowerCase().trim()] : undefined) ||
+          (peer.alumniId ? activeBubbles[peer.alumniId.toLowerCase()] : undefined);
+        return (
+          <OnlinePeerCharacter
+            key={peer.id}
+            peer={peer}
+            playing={playing}
+            bubbleText={bubbleText}
+          />
+        );
+      })}
     </group>
   );
 }

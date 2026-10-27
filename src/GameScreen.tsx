@@ -30,6 +30,8 @@ import {
 import type { AudioPreferences } from './game/audio';
 import AvatarPortrait from './AvatarPortrait';
 import { ICONS } from './Survey';
+import ChatRoom from './game/ChatRoom';
+import { useChat } from './game/useChat';
 const World = lazy(() => import('./World'));
 export type TravelRequest = { index: number; nonce: number };
 export function GameScreen({
@@ -93,6 +95,11 @@ export function GameScreen({
   onTravel: (i: number) => void;
   onError: (message: string) => void;
 }) {
+  const chat = useChat({
+    profile,
+    guestNickname,
+    enabled: entered,
+  });
   const next = profile ? CHECKPOINTS.findIndex((_, i) => !profile.progress.includes(i)) : 0;
   const quest = CHECKPOINTS[next < 0 ? 6 : next];
   const fullscreen = async () => {
@@ -143,6 +150,7 @@ export function GameScreen({
               nickname={profile?.nickname || guestNickname}
               alumni={alumni}
               onlinePeers={onlinePeers}
+              activeBubbles={chat.activeBubbles}
               playerPositionRef={playerPositionRef}
               progress={profile?.progress || []}
               onCheckpoint={onCheckpoint}
@@ -390,6 +398,16 @@ export function GameScreen({
               <ArrowUpRight size={16} />
             </button>
           )}
+          <ChatRoom
+            profile={profile}
+            messages={chat.messages}
+            unreadCount={chat.unreadCount}
+            isOpen={chat.isOpen}
+            sending={chat.sending}
+            onToggleOpen={chat.toggleOpen}
+            onSendMessage={chat.sendMessage}
+            onJoin={onJoin}
+          />
         </>
       )}
       {demo && <span className="game-demo">MODE UJI</span>}

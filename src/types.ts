@@ -35,6 +35,15 @@ export type OnlinePeer = {
   moving?: boolean;
   alumniId?: string | null;
 };
+export type ChatMessage = {
+  id: string;
+  senderId?: string | null;
+  nickname: string;
+  text: string;
+  isSystem: boolean;
+  createdAt: string;
+  createdMs: number;
+};
 export const DEFAULT_AVATAR: AvatarConfig = { outfit: 'navy', hair: 'short', skin: 'warm' };
 export const COLORS = {
   sage: '#679b61',

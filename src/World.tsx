@@ -218,6 +218,7 @@ function Player({
   playerPositionRef,
   onNear,
   mapDot,
+  bubbleText,
 }: {
   config: AvatarConfig;
   nickname?: string;
@@ -236,6 +237,7 @@ function Player({
   }>;
   onNear: (i: number) => void;
   mapDot: React.RefObject<SVGCircleElement | null>;
+  bubbleText?: string;
 }) {
   const group = useRef<THREE.Group>(null);
   const walking = usePlayerMotion({
@@ -275,6 +277,13 @@ function Player({
       <Html position={[0, 1.95, 0]} center zIndexRange={[8, 0]}>
         <span className="player-label">{labelText}</span>
       </Html>
+      {bubbleText && (
+        <Html position={[0, 2.45, 0]} center zIndexRange={[14, 0]}>
+          <div className="chat-speech-bubble" role="status">
+            <p>{bubbleText}</p>
+          </div>
+        </Html>
+      )}
     </group>
   );
 }
@@ -283,6 +292,7 @@ export default function World({
   nickname,
   alumni,
   onlinePeers = [],
+  activeBubbles = {},
   playerPositionRef,
   progress,
   onCheckpoint,
@@ -303,6 +313,7 @@ export default function World({
   nickname?: string;
   alumni: Alumnus[];
   onlinePeers?: OnlinePeer[];
+  activeBubbles?: Record<string, string>;
   playerPositionRef?: React.RefObject<{
     x: number;
     z: number;
@@ -615,7 +626,11 @@ export default function World({
               focusId={focusId}
               player={position}
             />
-            <OnlinePeers peers={onlinePeers} playing={playing} />
+            <OnlinePeers
+              peers={onlinePeers}
+              playing={playing}
+              activeBubbles={activeBubbles}
+            />
             {demo &&
               alumni.length === 0 &&
               [
@@ -645,6 +660,11 @@ export default function World({
               playerPositionRef={playerPositionRef}
               onNear={setNear}
               mapDot={mapDot}
+              bubbleText={
+                (nickname ? activeBubbles[nickname.toLowerCase().trim()] : undefined) ||
+                activeBubbles['kamu'] ||
+                activeBubbles['me']
+              }
             />
             <OrbitControls
               ref={controls}

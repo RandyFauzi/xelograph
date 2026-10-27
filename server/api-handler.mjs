@@ -74,6 +74,7 @@ export function createApiHandler({
   const buckets = new Map();
   const loginBuckets = new Map();
   const presence = new Map();
+  const chatRateLimit = new Map();
   const PRESENCE_TTL = 45000;
   const MAX_ONLINE_PEERS = 5;
   const prunePresence = (now) => {
@@ -414,6 +415,82 @@ export function createApiHandler({
         }));
         return json({ online: Math.max(1, presence.size), peers: topPeers });
       }
+      if (method === 'GET' && path === '/api/chat') {
+        const since = Number(url.searchParams.get('since'));
+        const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit')) || 50));
+        let rows;
+        if (Number.isFinite(since) && since > 0) {
+          rows = db
+            .prepare(
+              'SELECT id, alumni_id, visitor_id, nickname, text, is_system, created_at, created_ms FROM chat_messages WHERE created_ms > ? ORDER BY created_ms ASC LIMIT ?',
+            )
+            .all(since, limit);
+        } else {
+          rows = db
+            .prepare(
+              'SELECT * FROM (SELECT id, alumni_id, visitor_id, nickname, text, is_system, created_at, created_ms FROM chat_messages ORDER BY created_ms DESC LIMIT ?) ORDER BY created_ms ASC',
+            )
+            .all(limit);
+        }
+        return json({
+          messages: rows.map((r) => ({
+            id: r.id,
+            senderId: r.alumni_id || r.visitor_id,
+            nickname: r.nickname,
+            text: r.text,
+            isSystem: !!r.is_system,
+            createdAt: r.created_at,
+            createdMs: r.created_ms,
+          })),
+        });
+      }
+      if (method === 'POST' && path === '/api/chat') {
+        const token = sessionToken(request);
+        const session =
+          token &&
+          db
+            .prepare(
+              'SELECT a.id, a.nickname FROM sessions s JOIN alumni a ON a.id=s.alumni_id WHERE s.token_hash=? AND s.expires_at>?',
+            )
+            .get(hash(token), now);
+        if (!session) {
+          throw new HttpError(401, 'Buat karakter terlebih dahulu untuk ikut ngobrol.');
+        }
+        const lastSent = chatRateLimit.get(session.id) || 0;
+        if (now - lastSent < 2000) {
+          throw new HttpError(429, 'Tunggu sebentar sebelum mengirim pesan lagi.');
+        }
+        let rawText = typeof body?.text === 'string' ? body.text.trim() : '';
+        rawText = rawText.replace(/<[^>]*>/g, '').replace(/[\r\n\t]+/g, ' ').trim();
+        if (!rawText) throw new HttpError(400, 'Pesan tidak boleh kosong.');
+        if (rawText.length > 100) rawText = rawText.slice(0, 100);
+
+        const msgId = randomUUID();
+        const iso = new Date(now).toISOString();
+        transaction(() => {
+          db.prepare(
+            'INSERT INTO chat_messages(id, alumni_id, visitor_id, nickname, text, is_system, created_at, created_ms) VALUES(?,?,?,?,?,0,?,?)',
+          ).run(msgId, session.id, null, session.nickname, rawText, iso, now);
+          db.prepare(
+            'DELETE FROM chat_messages WHERE id NOT IN (SELECT id FROM chat_messages ORDER BY created_ms DESC LIMIT 100)',
+          ).run();
+        });
+        chatRateLimit.set(session.id, now);
+        return json(
+          {
+            message: {
+              id: msgId,
+              senderId: session.id,
+              nickname: session.nickname,
+              text: rawText,
+              isSystem: false,
+              createdAt: iso,
+              createdMs: now,
+            },
+          },
+          201,
+        );
+      }
       if (method === 'GET' && path === '/api/world') {
         const rows = db
           .prepare(
@@ -580,11 +657,26 @@ export function createApiHandler({
           return json(profile(id));
         }
         if (method === 'POST' && path === '/api/complete') {
-          if (profile(id).progress.length !== 7)
+          const cur = profile(id);
+          if (cur.progress.length !== 7)
             throw new HttpError(400, 'Selesaikan ketujuh checkpoint terlebih dahulu.');
+          const wasCompleted = !!cur.completedAt;
           db.prepare(
             'UPDATE responses SET completed_at=COALESCE(completed_at,?) WHERE alumni_id=?',
           ).run(new Date().toISOString(), id);
+          if (!wasCompleted) {
+            const sysId = randomUUID();
+            const iso = new Date().toISOString();
+            const broadcastText = `🎉 ${cur.nickname} baru saja menyelesaikan survei reuni dan mendapatkan Reunion Pass!`;
+            transaction(() => {
+              db.prepare(
+                'INSERT INTO chat_messages(id, alumni_id, visitor_id, nickname, text, is_system, created_at, created_ms) VALUES(?,?,?,?,?,1,?,?)',
+              ).run(sysId, id, null, 'Sistem', broadcastText, iso, Date.now());
+              db.prepare(
+                'DELETE FROM chat_messages WHERE id NOT IN (SELECT id FROM chat_messages ORDER BY created_ms DESC LIMIT 100)',
+              ).run();
+            });
+          }
           return json(profile(id));
         }
         if (method === 'PATCH' && path === '/api/profile') {
