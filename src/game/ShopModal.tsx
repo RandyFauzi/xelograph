@@ -13,6 +13,7 @@ interface TopUpPackage {
 }
 
 const TOPUP_PACKAGES: TopUpPackage[] = [
+  { id: 'pack_test', coins: 5, price_idr: 2000 },
   { id: 'pack_100', coins: 100, price_idr: 20000 },
   { id: 'pack_250', coins: 250, price_idr: 50000 },
   { id: 'pack_600', coins: 600, price_idr: 100000 },
@@ -487,9 +488,10 @@ export default function ShopModal({
                     tabIndex={0}
                   >
                     <div className="clash-topup-coin-icon">
-                      {idx === 0 && <span className="topup-icon-coin">🪙</span>}
-                      {idx === 1 && <span className="topup-icon-stack">🪙🪙</span>}
-                      {idx === 2 && <span className="topup-icon-chest">🪙🪙🪙</span>}
+                      {pkg.coins === 5 && <span className="topup-icon-coin">🪙</span>}
+                      {pkg.coins === 100 && <span className="topup-icon-coin">🪙</span>}
+                      {pkg.coins === 250 && <span className="topup-icon-stack">🪙🪙</span>}
+                      {pkg.coins === 600 && <span className="topup-icon-chest">🪙🪙🪙</span>}
                     </div>
                     <div className="clash-topup-amount">
                       <strong>{pkg.coins}</strong> KOIN

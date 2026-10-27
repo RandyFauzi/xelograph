@@ -532,6 +532,7 @@ export function createApiHandler({
         if (method === 'GET' && path === '/api/store/topup/packages') {
           return json({
             packages: [
+              { id: 'pack_test', coins: 5, price_idr: 2000 },
               { id: 'pack_100', coins: 100, price_idr: 20000 },
               { id: 'pack_250', coins: 250, price_idr: 50000 },
               { id: 'pack_600', coins: 600, price_idr: 100000 },
@@ -597,8 +598,11 @@ export function createApiHandler({
           } else if (amountRaw >= 20000) {
             coinsAwarded = 100;
             packageId = 'pack_100';
+          } else if (amountRaw >= 2000) {
+            coinsAwarded = 5;
+            packageId = 'pack_test';
           } else {
-            coinsAwarded = Math.max(1, Math.floor(amountRaw / 200));
+            coinsAwarded = Math.max(1, Math.floor(amountRaw / 400));
           }
 
           const orderId = 'topup_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);

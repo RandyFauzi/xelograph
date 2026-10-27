@@ -152,18 +152,43 @@ test('Avatar Store & Inventory: coin balance, purchasing, equipping, and unautho
     const packRes = await handle(new Request('http://localhost/api/store/topup/packages'));
     assert.equal(packRes.status, 200);
     const packData = await packRes.json();
-    assert.equal(packData.packages.length, 3);
-    assert.equal(packData.packages[0].coins, 100);
-    assert.equal(packData.packages[0].price_idr, 20000);
-    assert.equal(packData.packages[1].coins, 250);
-    assert.equal(packData.packages[1].price_idr, 50000);
-    assert.equal(packData.packages[2].coins, 600);
-    assert.equal(packData.packages[2].price_idr, 100000);
+    assert.equal(packData.packages.length, 4);
+    assert.equal(packData.packages[0].coins, 5);
+    assert.equal(packData.packages[0].price_idr, 2000);
+    assert.equal(packData.packages[1].coins, 100);
+    assert.equal(packData.packages[1].price_idr, 20000);
+    assert.equal(packData.packages[2].coins, 250);
+    assert.equal(packData.packages[2].price_idr, 50000);
+    assert.equal(packData.packages[3].coins, 600);
+    assert.equal(packData.packages[3].price_idr, 100000);
 
     // 12. Saweria Webhook for 100 coins (Rp 20.000)
     // Current wallet balance is 10 (100 - 50 - 40 = 10)
     const alumniId = regRes ? (await (await handle(new Request('http://localhost/api/me', { headers: { cookie } }))).json()).id : null;
     assert.ok(alumniId);
+
+    // Test Rp 2.000 -> 5 coins package
+    const webhookTestRes = await handle(
+      new Request('http://localhost/api/store/topup/webhook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: 'saweria_trx_test_small_001',
+          amount_raw: 2000,
+          donator_name: 'Randy Small Test',
+          donator_email: 'randy@test.com',
+          message: `TOPUP-${alumniId}`,
+        }),
+      }),
+    );
+    assert.equal(webhookTestRes.status, 200);
+    const webhookTestData = await webhookTestRes.json();
+    assert.equal(webhookTestData.ok, true);
+    assert.equal(webhookTestData.coins, 5);
+
+    // Wallet: 10 + 5 = 15 coins
+    const storeAfterTestTopup = await handle(new Request('http://localhost/api/store', { headers: { cookie } }));
+    assert.equal((await storeAfterTestTopup.json()).coins, 15);
 
     const webhookRes = await handle(
       new Request('http://localhost/api/store/topup/webhook', {
@@ -183,10 +208,10 @@ test('Avatar Store & Inventory: coin balance, purchasing, equipping, and unautho
     assert.equal(webhookData.ok, true);
     assert.equal(webhookData.coins, 100);
 
-    // Verify wallet updated: 10 + 100 = 110 coins!
+    // Verify wallet updated: 15 + 100 = 115 coins!
     const storeAfterTopup = await handle(new Request('http://localhost/api/store', { headers: { cookie } }));
     const storeAfterData = await storeAfterTopup.json();
-    assert.equal(storeAfterData.coins, 110);
+    assert.equal(storeAfterData.coins, 115);
 
     // Idempotency: duplicate webhook does not credit again
     const dupRes = await handle(
@@ -205,8 +230,8 @@ test('Avatar Store & Inventory: coin balance, purchasing, equipping, and unautho
     assert.equal(dupRes.status, 200);
     assert.equal((await dupRes.json()).duplicate, true);
 
-    const storeStill110 = await handle(new Request('http://localhost/api/store', { headers: { cookie } }));
-    assert.equal((await storeStill110.json()).coins, 110);
+    const storeStill115 = await handle(new Request('http://localhost/api/store', { headers: { cookie } }));
+    assert.equal((await storeStill115.json()).coins, 115);
   } finally {
     db.close();
   }
