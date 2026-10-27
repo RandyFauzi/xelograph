@@ -160,7 +160,7 @@ export function createApiHandler({
         path = url.pathname,
         method = request.method;
       const origin = request.headers.get('origin');
-      if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && origin) {
+      if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && origin && path !== '/api/store/topup/webhook') {
         let sameHost = false;
         try {
           sameHost = new URL(origin).host === (request.headers.get('host') || url.host);
