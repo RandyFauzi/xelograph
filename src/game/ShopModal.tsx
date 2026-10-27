@@ -95,10 +95,12 @@ export default function ShopModal({
             const eye = storeData.equipped.find(
               (id) => id === 'pixel_sunglasses' || id === 'anime_sunglasses',
             );
+            const outfit = storeData.equipped.find((id) => id.startsWith('row4_'));
             setActiveAvatar((prev) => ({
               ...prev,
               ...(head ? { headwear: head } : {}),
               ...(eye ? { eyewear: eye } : {}),
+              ...(outfit ? { outfit } : {}),
             }));
           }
         }
@@ -242,7 +244,7 @@ export default function ShopModal({
     const prevAvatar = activeAvatar;
     const nextAvatar: AvatarConfig = {
       ...activeAvatar,
-      [item.category]: action === 'equip' ? item.id : null,
+      [item.category]: action === 'equip' ? item.id : item.category === 'outfit' ? 'navy' : null,
     };
 
     setActiveAvatar(nextAvatar);
@@ -280,14 +282,23 @@ export default function ShopModal({
 
   const headwearItems = items.filter((i) => i.category === 'headwear');
   const eyewearItems = items.filter((i) => i.category === 'eyewear');
+  const outfitItems = items.filter((i) => i.category === 'outfit');
   const otherItems = items.filter(
-    (i) => i.category !== 'headwear' && i.category !== 'eyewear',
+    (i) => i.category !== 'headwear' && i.category !== 'eyewear' && i.category !== 'outfit',
   );
 
   const getCleanTitle = (item: StoreItem) => {
     if (item.id === 'topi_beret_bear') return 'TOPI BERET';
     if (item.id === 'pixel_sunglasses') return 'KACAMATA PIXEL';
     if (item.id === 'anime_sunglasses') return 'KACAMATA ANIME';
+    if (item.id === 'row4_01_varsity_black') return 'VARSITY JACKET';
+    if (item.id === 'row4_02_track_blue') return 'TRACK BLUE';
+    if (item.id === 'row4_03_track_stripes') return 'TRACK STRIPES';
+    if (item.id === 'row4_04_halfzip_cream') return 'HALF-ZIP CREAM';
+    if (item.id === 'row4_05_halfzip_green') return 'HALF-ZIP GREEN';
+    if (item.id === 'row4_06_polo_brown') return 'POLO SWEATER';
+    if (item.id === 'row4_07_crewneck_charcoal') return 'CREWNECK';
+    if (item.id === 'row4_08_formal_tie') return 'FORMAL TIE';
     return item.name.replace(/^(Topi|Kacamata)\s+/i, '').toUpperCase();
   };
 
@@ -295,7 +306,8 @@ export default function ShopModal({
     const isOwned = inventory.includes(item.id);
     const isEquipped =
       (item.category === 'headwear' && activeAvatar?.headwear === item.id) ||
-      (item.category === 'eyewear' && activeAvatar?.eyewear === item.id);
+      (item.category === 'eyewear' && activeAvatar?.eyewear === item.id) ||
+      (item.category === 'outfit' && activeAvatar?.outfit === item.id);
     const isBusy = busyItem === item.id;
     const canAfford = coins >= item.price_coins;
 
@@ -625,6 +637,15 @@ export default function ShopModal({
                           : 'Belum Pakai'}
                     </strong>
                   </div>
+                  <div className="clash-slot-pill">
+                    <span>👕 Baju:</span>
+                    <strong>
+                      {items.find((i) => i.id === activeAvatar.outfit)?.name ||
+                        (activeAvatar.outfit && activeAvatar.outfit.startsWith('row4_')
+                          ? 'Baju Khusus'
+                          : 'Baju Standar')}
+                    </strong>
+                  </div>
                 </div>
                 <div className="clash-fitting-hint">
                   ✓ Tombol Gunakan langsung mengaktifkan aksesoris di karaktermu!
@@ -660,6 +681,22 @@ export default function ShopModal({
                 </div>
                 <div className="clash-cards-grid">
                   {eyewearItems.map((item) => renderCard(item, 'heroes'))}
+                </div>
+              </div>
+            )}
+
+            {/* OUTFIT & TOPS SECTION */}
+            {outfitItems.length > 0 && (
+              <div className="clash-section-box">
+                <div className="clash-section-header">
+                  <div className="clash-section-title-wrap">
+                    <span className="clash-section-icon">👕</span>
+                    <h3 className="clash-section-title">KOLEKSI BAJU &amp; JAKET</h3>
+                  </div>
+                  <span className="clash-section-tag">30 Koin per Pcs</span>
+                </div>
+                <div className="clash-cards-grid">
+                  {outfitItems.map((item) => renderCard(item, 'heroes'))}
                 </div>
               </div>
             )}

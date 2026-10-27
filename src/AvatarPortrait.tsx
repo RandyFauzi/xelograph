@@ -2,7 +2,7 @@ import { COLORS, type AvatarConfig } from './types';
 // Flat portrait of the same modular Blender character; keeps directory GPU usage constant.
 export default function AvatarPortrait({ config }: { config: AvatarConfig }) {
   const skin = COLORS[config.skin],
-    shirt = COLORS[config.outfit];
+    shirt = (COLORS as Record<string, string>)[config.outfit] || '#347cc5';
   return (
     <svg
       viewBox="0 0 220 200"

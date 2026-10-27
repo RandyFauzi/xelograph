@@ -199,7 +199,7 @@ function CrowdInstances({
       mesh.current!.setMatrixAt(i, dummy.matrix);
       color.set(
         material.name === 'AvatarShirt'
-          ? COLORS[a.avatar.outfit]
+          ? (COLORS as Record<string, string>)[a.avatar.outfit] || COLORS.navy
           : material.name === 'AvatarSkin'
             ? COLORS[a.avatar.skin]
             : '#ffffff',

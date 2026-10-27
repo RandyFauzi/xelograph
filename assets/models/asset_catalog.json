@@ -1,0 +1,225 @@
+{
+  "clothing_tops_row4": [
+    {
+      "id": "row4_01_varsity_black",
+      "name": "Varsity Jacket Hitam Putih",
+      "category": "outfit",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/row4_01_varsity_black.glb",
+      "preview_url": "/branding/store/row4_01_varsity_black.png",
+      "description": "Jaket varsity wol hitam dengan lengan kulit putih, double striped rib, kancing snap logam, dan welt pocket."
+    },
+    {
+      "id": "row4_02_track_blue",
+      "name": "Track Jacket Biru Garis Putih",
+      "category": "outfit",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/row4_02_track_blue.glb",
+      "preview_url": "/branding/store/row4_02_track_blue.png",
+      "description": "Jaket olahraga biru elektrik dengan blok garis putih melintang di dada dan lengan serta resleting tengah."
+    },
+    {
+      "id": "row4_03_track_stripes",
+      "name": "Track Jacket Hitam Garis Lengan",
+      "category": "outfit",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/row4_03_track_stripes.glb",
+      "preview_url": "/branding/store/row4_03_track_stripes.png",
+      "description": "Jaket track hitam pekat dengan strip racing putih ganda di sepanjang lengan dan resleting penuh."
+    },
+    {
+      "id": "row4_04_halfzip_cream",
+      "name": "Sweater Half-Zip Krem",
+      "category": "outfit",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/row4_04_halfzip_cream.glb",
+      "preview_url": "/branding/store/row4_04_halfzip_cream.png",
+      "description": "Pullover fleece krem lembut dengan kerah corong terbuka, placket half-zip gelap, dan bandul resleting perak."
+    },
+    {
+      "id": "row4_05_halfzip_green",
+      "name": "Sweater Half-Zip Hijau Label",
+      "category": "outfit",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/row4_05_halfzip_green.glb",
+      "preview_url": "/branding/store/row4_05_halfzip_green.png",
+      "description": "Pullover hijau botol dengan placket half-zip putih kontras dan patch label retro di dada kiri."
+    },
+    {
+      "id": "row4_06_polo_brown",
+      "name": "Sweater Polo Cokelat Kerah Putih",
+      "category": "outfit",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/row4_06_polo_brown.glb",
+      "preview_url": "/branding/store/row4_06_polo_brown.png",
+      "description": "Sweater rajut cokelat karamel berkerah kemeja putih runcing berlapis di atas leher V-neck elegan."
+    },
+    {
+      "id": "row4_07_crewneck_charcoal",
+      "name": "Crewneck Charcoal Garis Gelap",
+      "category": "outfit",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/row4_07_crewneck_charcoal.glb",
+      "preview_url": "/branding/store/row4_07_crewneck_charcoal.png",
+      "description": "Sweatshirt arang gelap klasik dengan kerah bulat, aksen segitiga V-insert, dan garis ganda di pinggang."
+    },
+    {
+      "id": "row4_08_formal_tie",
+      "name": "Kemeja Putih Dasi Hitam",
+      "category": "outfit",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/row4_08_formal_tie.glb",
+      "preview_url": "/branding/store/row4_08_formal_tie.png",
+      "description": "Kemeja putih rapi lengan pendek berlipat dengan dasi formal hitam bersimpul Windsor dan saku dada."
+    }
+  ],
+  "accessories": [
+    {
+      "id": "acc_anime_cyber_shades",
+      "name": "Kacamata Anime Cyber Wing (Kamina Shades)",
+      "category": "accessory",
+      "slot": "face_eyewear",
+      "status": "staged_in_asset_database",
+      "description": "Kacamata anime futuristik berujung sayap runcing dengan garis pantulan cahaya komik bergaya Kamina / Gurren Lagann. Dibuat khusus untuk aksesoris karakter avatar.",
+      "files": {
+        "glb": "assets/models/anime_sunglasses.glb",
+        "blend": "assets/blender/anime_sunglasses.blend",
+        "preview_hero": "assets/previews/anime_sunglasses.png",
+        "preview_front": "assets/previews/anime_sunglasses_front.png",
+        "builder": "assets/blender/build_anime_sunglasses.py"
+      },
+      "dimensions": {
+        "width_m": 0.68,
+        "height_m": 0.17,
+        "depth_m": 0.32
+      },
+      "attachment": {
+        "bone": "Head",
+        "recommended_position": [
+          0.0,
+          -0.268,
+          1.42
+        ],
+        "recommended_rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "recommended_scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "materials": [
+        "Shades_Black (Polished Obsidian)",
+        "Shades_DarkLens (Smoked Visor)",
+        "Shades_Reflection (Stylized Comic Highlight)",
+        "Shades_Gunmetal (Titanium Hinges)",
+        "Shades_TempleBlack (Acetate Arms)"
+      ],
+      "game_integration": {
+        "is_active_in_game": false,
+        "note": "Aset disimpan di database aset 3D (tidak langsung dimasukkan ke game aktif)"
+      }
+    },
+    {
+      "id": "acc_pixel_deal_with_it_shades",
+      "name": "Kacamata Pixel Deal With It (Thug Life 8-Bit Shades)",
+      "category": "accessory",
+      "slot": "face_eyewear",
+      "status": "staged_in_asset_database",
+      "description": "Kacamata hitam 8-bit voxel 'Deal With It' / 'Thug Life' dengan glint piksel putih diagonal khas. Dibuat presisi 25x5 voxel untuk aksesoris karakter avatar.",
+      "files": {
+        "glb": "assets/models/pixel_sunglasses.glb",
+        "blend": "assets/blender/pixel_sunglasses.blend",
+        "preview_hero": "assets/previews/pixel_sunglasses.png",
+        "preview_front": "assets/previews/pixel_sunglasses_front.png",
+        "preview_avatar": "assets/previews/pixel_sunglasses_avatar.png",
+        "builder": "assets/blender/build_pixel_sunglasses.py"
+      },
+      "dimensions": {
+        "width_m": 0.62,
+        "height_m": 0.14,
+        "depth_m": 0.3
+      },
+      "attachment": {
+        "bone": "Head",
+        "recommended_position": [
+          0.0,
+          -0.268,
+          1.42
+        ],
+        "recommended_rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "recommended_scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "materials": [
+        "Pixel_Black (Tactile Voxel Obsidian)",
+        "Pixel_Glint (Emissive White 8-Bit Specular)",
+        "Pixel_Hinge (Matte Metal Accent)"
+      ],
+      "game_integration": {
+        "is_active_in_game": false,
+        "note": "Aset disimpan di database aset 3D (tidak langsung dimasukkan ke game aktif)"
+      }
+    }
+  ],
+  "currencies": [
+    {
+      "id": "prop_user_gold_coin",
+      "name": "User Gold Coin (Koin Emas Pengguna)",
+      "category": "currency",
+      "type": "reusable_prop",
+      "status": "ready_in_asset_database",
+      "description": "Aset 3D koin emas bergaya stylized low-poly untuk mata uang/koin pengguna. Memiliki relief bintang chiseled 3D di kedua sisi, pinggiran rim beveled bertingkat, dan gerigi tepi milled.",
+      "files": {
+        "glb": "assets/models/user_coin.glb",
+        "glb_public": "public/models/user_coin.glb",
+        "blend": "assets/blender/user_coin.blend",
+        "preview_hero": "assets/previews/user_coin.png",
+        "preview_front": "assets/previews/user_coin_front.png",
+        "builder": "assets/blender/build_user_coin.py"
+      },
+      "dimensions": {
+        "diameter_m": 0.4,
+        "thickness_m": 0.048,
+        "pivot": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "materials": [
+        "Coin_GoldRim (Polished Golden Rim)",
+        "Coin_GoldInner (Warm Sunken Base)",
+        "Coin_GoldStar (Chiseled Relief Star)",
+        "Coin_GoldEdge (Milled Circumference Detailing)"
+      ],
+      "reusability": {
+        "is_reusable": true,
+        "use_cases": [
+          "User wallet / coin balance 3D icon in HUD/Shop",
+          "World pickup collectible coin with idle rotation",
+          "Quest completion reward pop-up / coin fountain fx",
+          "Shop currency display in 3D store"
+        ]
+      }
+    }
+  ]
+}

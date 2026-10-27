@@ -1,6 +1,6 @@
 export type AvatarConfig = {
   character?: 'male' | 'female';
-  outfit: 'sage' | 'clay' | 'navy' | 'cream';
+  outfit: 'sage' | 'clay' | 'navy' | 'cream' | string;
   hair: 'short' | 'bob' | 'cap' | 'long' | 'ponytail' | 'hijab' | 'quiff';
   skin: 'light' | 'warm' | 'deep';
   headwear?: string | null;

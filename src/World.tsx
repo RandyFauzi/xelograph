@@ -86,7 +86,7 @@ function Character({
       return createStaticAvatar(scene, {
         hair: config.hair,
         character: config.character,
-        outfitColor: COLORS[config.outfit],
+        outfitColor: (COLORS as Record<string, string>)[config.outfit] || COLORS.navy,
         skinColor: COLORS[config.skin],
       });
     const copy = scene.clone(true);
@@ -95,7 +95,7 @@ function Character({
         o.castShadow = true;
         o.visible = avatarPartVisible(o.name, config);
         const m = (o.material as THREE.MeshStandardMaterial).clone();
-        if (m.name === 'AvatarShirt') m.color.set(COLORS[config.outfit]);
+        if (m.name === 'AvatarShirt') m.color.set((COLORS as Record<string, string>)[config.outfit] || COLORS.navy);
         if (m.name === 'AvatarSkin') m.color.set(COLORS[config.skin]);
         o.material = m;
       }
@@ -133,7 +133,7 @@ function Character({
   return (
     <group {...props}>
       <primitive object={model} />
-      <AvatarAccessories headwear={config.headwear} eyewear={config.eyewear} />
+      <AvatarAccessories headwear={config.headwear} eyewear={config.eyewear} outfit={config.outfit} />
     </group>
   );
 }

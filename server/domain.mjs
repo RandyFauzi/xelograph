@@ -29,7 +29,8 @@ export function normalizePhone(value) {
 export function validateAvatar(a) {
   if (
     !a ||
-    !['sage', 'clay', 'navy', 'cream'].includes(a.outfit) ||
+    (!['sage', 'clay', 'navy', 'cream'].includes(a.outfit) &&
+      !a.outfit?.startsWith('row4_')) ||
     !AVATAR_HAIRS.includes(a.hair) ||
     (['ponytail', 'hijab'].includes(a.hair) && a.character !== 'female') ||
     (a.hair === 'quiff' && a.character === 'female') ||

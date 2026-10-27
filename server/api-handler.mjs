@@ -688,7 +688,7 @@ export function createApiHandler({
           const itemId = String(body?.itemId || '').trim();
           const slot = body?.slot;
           const action = body?.action;
-          if (!['headwear', 'eyewear'].includes(slot)) {
+          if (!['headwear', 'eyewear', 'outfit'].includes(slot)) {
             throw new HttpError(400, 'Slot aksesoris tidak valid.');
           }
 
@@ -719,7 +719,11 @@ export function createApiHandler({
               db.prepare(
                 'UPDATE alumni_inventory SET is_equipped=0 WHERE alumni_id=? AND item_id IN (SELECT id FROM store_items WHERE category=?)',
               ).run(session.id, slot);
-              curAvatar[slot] = null;
+              if (slot === 'outfit') {
+                curAvatar.outfit = 'navy';
+              } else {
+                curAvatar[slot] = null;
+              }
             }
 
             db.prepare(

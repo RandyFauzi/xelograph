@@ -92,6 +92,79 @@ export function openDb(path = process.env.DATABASE_PATH || './data/xelograph.sql
       '/branding/store/anime_sunglasses.png',
       'Kacamata anime futuristik berujung sayap runcing bergaya Kamina Gurren Lagann.',
     );
+    // Row 4 Tops Collection (30 Koin per baju)
+    insertItem.run(
+      'row4_01_varsity_black',
+      'Varsity Jacket Hitam Putih',
+      'outfit',
+      30,
+      '/models/row4_01_varsity_black.glb',
+      '/branding/store/row4_01_varsity_black.png',
+      'Jaket varsity wol hitam dengan lengan kulit putih, double striped rib, kancing snap logam, dan welt pocket.',
+    );
+    insertItem.run(
+      'row4_02_track_blue',
+      'Track Jacket Biru Garis Putih',
+      'outfit',
+      30,
+      '/models/row4_02_track_blue.glb',
+      '/branding/store/row4_02_track_blue.png',
+      'Jaket olahraga biru elektrik dengan blok garis putih melintang di dada dan lengan serta resleting tengah.',
+    );
+    insertItem.run(
+      'row4_03_track_stripes',
+      'Track Jacket Hitam Garis Lengan',
+      'outfit',
+      30,
+      '/models/row4_03_track_stripes.glb',
+      '/branding/store/row4_03_track_stripes.png',
+      'Jaket track hitam pekat dengan strip racing putih ganda di sepanjang lengan dan resleting penuh.',
+    );
+    insertItem.run(
+      'row4_04_halfzip_cream',
+      'Sweater Half-Zip Krem',
+      'outfit',
+      30,
+      '/models/row4_04_halfzip_cream.glb',
+      '/branding/store/row4_04_halfzip_cream.png',
+      'Pullover fleece krem lembut dengan kerah corong terbuka, placket half-zip gelap, dan bandul resleting perak.',
+    );
+    insertItem.run(
+      'row4_05_halfzip_green',
+      'Sweater Half-Zip Hijau Label',
+      'outfit',
+      30,
+      '/models/row4_05_halfzip_green.glb',
+      '/branding/store/row4_05_halfzip_green.png',
+      'Pullover hijau botol dengan placket half-zip putih kontras dan patch label retro di dada kiri.',
+    );
+    insertItem.run(
+      'row4_06_polo_brown',
+      'Sweater Polo Cokelat Kerah Putih',
+      'outfit',
+      30,
+      '/models/row4_06_polo_brown.glb',
+      '/branding/store/row4_06_polo_brown.png',
+      'Sweater rajut cokelat karamel berkerah kemeja putih runcing berlapis di atas leher V-neck elegan.',
+    );
+    insertItem.run(
+      'row4_07_crewneck_charcoal',
+      'Crewneck Charcoal Garis Gelap',
+      'outfit',
+      30,
+      '/models/row4_07_crewneck_charcoal.glb',
+      '/branding/store/row4_07_crewneck_charcoal.png',
+      'Sweatshirt arang gelap klasik dengan kerah bulat, aksen segitiga V-insert, dan garis ganda di pinggang.',
+    );
+    insertItem.run(
+      'row4_08_formal_tie',
+      'Kemeja Putih Dasi Hitam',
+      'outfit',
+      30,
+      '/models/row4_08_formal_tie.glb',
+      '/branding/store/row4_08_formal_tie.png',
+      'Kemeja putih rapi lengan pendek berlipat dengan dasi formal hitam bersimpul Windsor dan saku dada.',
+    );
     db.exec('COMMIT');
   } catch (error) {
     db.exec('ROLLBACK');

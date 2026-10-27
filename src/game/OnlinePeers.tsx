@@ -29,7 +29,7 @@ function OnlinePeerCharacter({
         o.castShadow = true;
         o.visible = avatarPartVisible(o.name, config);
         const m = (o.material as THREE.MeshStandardMaterial).clone();
-        if (m.name === 'AvatarShirt') m.color.set(COLORS[config.outfit] || COLORS.navy);
+        if (m.name === 'AvatarShirt') m.color.set((COLORS as Record<string, string>)[config.outfit] || COLORS.navy);
         if (m.name === 'AvatarSkin') m.color.set(COLORS[config.skin] || COLORS.warm);
         o.material = m;
       }
@@ -175,7 +175,7 @@ function OnlinePeerCharacter({
   return (
     <group ref={group} position={[peer.x, 0.28, peer.z]}>
       <primitive object={model} />
-      <AvatarAccessories headwear={config.headwear} eyewear={config.eyewear} />
+      <AvatarAccessories headwear={config.headwear} eyewear={config.eyewear} outfit={config.outfit} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
         <ringGeometry args={[0.33, 0.4, 24]} />
         <meshBasicMaterial color="#22c55e" transparent opacity={0.82} depthWrite={false} />
