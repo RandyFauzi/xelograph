@@ -3091,6 +3091,103 @@ td b {
   gap: 16px;
 }
 
+/* Live 3D Fitting Room (Kamar Pas) in Shop */
+.clash-fitting-stage {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: rgba(10, 18, 55, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.clash-fitting-model {
+  width: 100px;
+  height: 112px;
+  border-radius: 14px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, rgba(15, 23, 42, 0.5) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.clash-fitting-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.clash-fitting-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #fde047;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.clash-fitting-title {
+  font-size: 14px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clash-fitting-slots {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.clash-slot-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.clash-slot-pill span {
+  color: #cbd5e1;
+}
+
+.clash-slot-pill strong {
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.clash-fitting-hint {
+  font-size: 10.5px;
+  color: #86efac;
+  font-weight: 600;
+  margin-top: 3px;
+}
+
+.clash-btn-buy-tag {
+  font-size: 9px;
+  font-weight: 900;
+  background: #e0f2fe;
+  color: #0284c7;
+  padding: 1.5px 5px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+  margin-left: 2px;
+}
+
 .clash-shop-loading {
   display: flex;
   flex-direction: column;
@@ -3406,6 +3503,21 @@ td b {
 }
 
 @media (max-width: 640px) {
+  .clash-fitting-stage {
+    padding: 10px;
+    gap: 12px;
+  }
+  .clash-fitting-model {
+    width: 82px;
+    height: 96px;
+  }
+  .clash-fitting-title {
+    font-size: 13px;
+  }
+  .clash-slot-pill {
+    font-size: 9.5px;
+    padding: 2px 6px;
+  }
   .clash-cards-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;

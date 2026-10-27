@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { api } from '../api';
 import { campusAudio } from './audio';
-import type { Profile, StoreItem } from '../types';
+import { AvatarPreview } from '../World';
+import { DEFAULT_AVATAR } from '../types';
+import type { AvatarConfig, Profile, StoreItem } from '../types';
 
 export default function ShopModal({
   profile,
@@ -23,7 +25,27 @@ export default function ShopModal({
   const [loading, setLoading] = useState(true);
   const [busyItem, setBusyItem] = useState<string | null>(null);
 
-  const curAvatar = profile?.avatar;
+  // Local active avatar state for 0ms instantaneous visual updates
+  const [activeAvatar, setActiveAvatar] = useState<AvatarConfig>(() => {
+    return profile?.avatar ? { ...profile.avatar } : { ...DEFAULT_AVATAR };
+  });
+
+  // Keep local avatar in sync if parent profile changes
+  useEffect(() => {
+    if (profile?.avatar) {
+      setActiveAvatar((prev) => {
+        if (
+          prev.headwear === profile.avatar.headwear &&
+          prev.eyewear === profile.avatar.eyewear &&
+          prev.outfit === profile.avatar.outfit &&
+          prev.hair === profile.avatar.hair
+        ) {
+          return prev;
+        }
+        return { ...profile.avatar };
+      });
+    }
+  }, [profile?.avatar]);
 
   useEffect(() => {
     let alive = true;
@@ -39,6 +61,19 @@ export default function ShopModal({
           setCoins(data.coins ?? 100);
           setItems(data.items || []);
           setInventory(data.inventory || []);
+
+          // Sync equipped items from server
+          if (data.equipped && data.equipped.length > 0) {
+            const head = data.equipped.find((id) => id === 'topi_beret_bear');
+            const eye = data.equipped.find(
+              (id) => id === 'pixel_sunglasses' || id === 'anime_sunglasses',
+            );
+            setActiveAvatar((prev) => ({
+              ...prev,
+              ...(head ? { headwear: head } : {}),
+              ...(eye ? { eyewear: eye } : {}),
+            }));
+          }
         }
       } catch {
         // Fallback for guest
@@ -51,16 +86,39 @@ export default function ShopModal({
     };
   }, []);
 
+  // Beli item: otomatis langsung dipakai tanpa perlu klik terpisah
   const handleBuy = async (item: StoreItem) => {
     if (!profile) {
       onJoin();
       return;
     }
     if (coins < item.price_coins) {
+      campusAudio.play('tap');
       onToast('Koin tidak cukup! Selesaikan misi untuk koin tambahan.');
       return;
     }
     setBusyItem(item.id);
+
+    // Optimistic instant equip & coin deduct
+    const prevCoins = coins;
+    const prevInv = inventory;
+    const prevAvatar = activeAvatar;
+
+    setCoins((c) => Math.max(0, c - item.price_coins));
+    setInventory((inv) => (inv.includes(item.id) ? inv : [...inv, item.id]));
+
+    const nextAvatar: AvatarConfig = {
+      ...activeAvatar,
+      [item.category]: item.id,
+    };
+    setActiveAvatar(nextAvatar);
+    onProfileUpdate({
+      ...profile,
+      avatar: nextAvatar,
+    });
+    campusAudio.play('success');
+    onToast(`Berhasil dibeli & langsung dipakai: ${item.name}! ✨`);
+
     try {
       const res = await api<{ ok: boolean; coins: number; itemId: string }>('/store/buy', {
         method: 'POST',
@@ -68,23 +126,55 @@ export default function ShopModal({
       });
       if (res?.ok) {
         setCoins(res.coins);
-        setInventory((prev) => [...prev, item.id]);
-        campusAudio.play('success');
-        onToast(`Berhasil membeli ${item.name}! 🎉`);
-
-        // Automatically equip newly purchased item
-        await handleEquip(item, 'equip');
+        // Persist equip on backend
+        const updated = await api<Profile>('/store/equip', {
+          method: 'POST',
+          body: JSON.stringify({
+            itemId: item.id,
+            slot: item.category,
+            action: 'equip',
+          }),
+        });
+        if (updated) {
+          onProfileUpdate(updated);
+        }
       }
     } catch (e) {
+      // Revert if buy failed
+      setCoins(prevCoins);
+      setInventory(prevInv);
+      setActiveAvatar(prevAvatar);
+      onProfileUpdate({ ...profile, avatar: prevAvatar });
       onToast((e as Error).message);
     } finally {
       setBusyItem(null);
     }
   };
 
+  // Gunakan / Lepas item: otomatis aktif seketika (0ms)
   const handleEquip = async (item: StoreItem, action: 'equip' | 'unequip') => {
     if (!profile) return;
     setBusyItem(item.id);
+
+    const prevAvatar = activeAvatar;
+    const nextAvatar: AvatarConfig = {
+      ...activeAvatar,
+      [item.category]: action === 'equip' ? item.id : null,
+    };
+
+    // INSTANT OPTIMISTIC UPDATE: 0ms LATENCY!
+    setActiveAvatar(nextAvatar);
+    onProfileUpdate({
+      ...profile,
+      avatar: nextAvatar,
+    });
+    campusAudio.play('tap');
+    onToast(
+      action === 'equip'
+        ? `${item.name} aktif digunakan! ✨`
+        : `${item.name} berhasil dilepas.`,
+    );
+
     try {
       const updated = await api<Profile>('/store/equip', {
         method: 'POST',
@@ -96,14 +186,10 @@ export default function ShopModal({
       });
       if (updated) {
         onProfileUpdate(updated);
-        campusAudio.play('tap');
-        onToast(
-          action === 'equip'
-            ? `${item.name} berhasil dipakai!`
-            : `${item.name} dilepas.`,
-        );
       }
     } catch (e) {
+      setActiveAvatar(prevAvatar);
+      onProfileUpdate({ ...profile, avatar: prevAvatar });
       onToast((e as Error).message);
     } finally {
       setBusyItem(null);
@@ -126,8 +212,8 @@ export default function ShopModal({
   const renderCard = (item: StoreItem, theme: 'minis' | 'heroes') => {
     const isOwned = inventory.includes(item.id);
     const isEquipped =
-      (item.category === 'headwear' && curAvatar?.headwear === item.id) ||
-      (item.category === 'eyewear' && curAvatar?.eyewear === item.id);
+      (item.category === 'headwear' && activeAvatar?.headwear === item.id) ||
+      (item.category === 'eyewear' && activeAvatar?.eyewear === item.id);
     const isBusy = busyItem === item.id;
     const canAfford = coins >= item.price_coins;
 
@@ -139,7 +225,9 @@ export default function ShopModal({
         {/* Card Header: Title & Subtag */}
         <div className="clash-card-header">
           <span className="clash-card-title">{getCleanTitle(item)}</span>
-          <span className="clash-card-subtag">1 Tersedia</span>
+          <span className="clash-card-subtag">
+            {isEquipped ? '✓ Sedang Dipakai' : isOwned ? 'Dimiliki' : '1 Tersedia'}
+          </span>
         </div>
 
         {/* Center: Large 3D Sticker Preview */}
@@ -162,9 +250,9 @@ export default function ShopModal({
                 className="clash-btn clash-btn-equipped"
                 disabled={isBusy}
                 onClick={() => handleEquip(item, 'unequip')}
-                title="Klik untuk melepas"
+                title="Klik untuk melepas item"
               >
-                <span className="clash-btn-label">✓ DIPAKAI</span>
+                <span className="clash-btn-label">✓ SEDANG DIGUNAKAN</span>
               </button>
             ) : (
               <button
@@ -172,8 +260,9 @@ export default function ShopModal({
                 className="clash-btn clash-btn-equip"
                 disabled={isBusy}
                 onClick={() => handleEquip(item, 'equip')}
+                title="Klik untuk otomatis mengaktifkan item ini"
               >
-                <span className="clash-btn-label">PAKAI</span>
+                <span className="clash-btn-label">⚡ GUNAKAN</span>
               </button>
             )
           ) : (
@@ -182,10 +271,11 @@ export default function ShopModal({
               className={`clash-btn clash-btn-buy ${!canAfford ? 'is-disabled' : ''}`}
               disabled={isBusy || (!profile ? false : !canAfford)}
               onClick={() => handleBuy(item)}
-              title={!canAfford ? 'Koin belum cukup' : `Beli seharga ${item.price_coins} koin`}
+              title={!canAfford ? 'Koin belum cukup' : `Beli seharga ${item.price_coins} koin & langsung pakai`}
             >
               <span className="clash-coin-symbol">🪙</span>
               <span className="clash-coin-price">{item.price_coins}</span>
+              <span className="clash-btn-buy-tag">BELI &amp; PAKAI</span>
             </button>
           )}
         </div>
@@ -281,6 +371,44 @@ export default function ShopModal({
           </div>
         ) : (
           <>
+            {/* LIVE 3D FITTING ROOM STAGE (KAMAR PAS) */}
+            <div className="clash-fitting-stage">
+              <div className="clash-fitting-model">
+                <AvatarPreview config={activeAvatar} />
+              </div>
+              <div className="clash-fitting-info">
+                <div className="clash-fitting-badge">
+                  <Sparkles size={13} /> KAMAR PAS LIVE
+                </div>
+                <div className="clash-fitting-title">
+                  {profile?.nickname || 'Karakter Kamu'}
+                </div>
+                <div className="clash-fitting-slots">
+                  <div className="clash-slot-pill">
+                    <span>🎩 Topi:</span>
+                    <strong>
+                      {activeAvatar.headwear === 'topi_beret_bear'
+                        ? 'Topi Beret Beruang'
+                        : 'Belum Pakai'}
+                    </strong>
+                  </div>
+                  <div className="clash-slot-pill">
+                    <span>🕶️ Kacamata:</span>
+                    <strong>
+                      {activeAvatar.eyewear === 'pixel_sunglasses'
+                        ? 'Kacamata Pixel'
+                        : activeAvatar.eyewear === 'anime_sunglasses'
+                          ? 'Kacamata Anime'
+                          : 'Belum Pakai'}
+                    </strong>
+                  </div>
+                </div>
+                <div className="clash-fitting-hint">
+                  ✓ Tombol Gunakan langsung mengaktifkan aksesoris di karaktermu!
+                </div>
+              </div>
+            </div>
+
             {/* HEADWEAR SECTION (MINIS THEME) */}
             {headwearItems.length > 0 && (
               <div className="clash-section-box">
@@ -335,10 +463,15 @@ export default function ShopModal({
       <footer className="clash-shop-footer">
         <div className="clash-footer-hint">
           <Sparkles size={14} className="clash-sparkle-icon" />
-          <span>Aksesoris langsung tersimpan &amp; terlihat oleh pengunjung lain!</span>
+          <span>Aksesoris otomatis aktif &amp; tersimpan pada karaktermu!</span>
         </div>
-        <button type="button" className="clash-btn-done" onClick={onClose}>
-          Selesai Belanja <ArrowRight size={16} />
+        <button
+          type="button"
+          className="clash-btn-done"
+          onClick={onClose}
+          title="Kembali ke petualangan kampus"
+        >
+          ✓ Kembali Menjelajah <ArrowRight size={16} />
         </button>
       </footer>
     </div>

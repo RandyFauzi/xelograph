@@ -77,3 +77,7 @@ export function AvatarAccessories({
     </>
   );
 }
+
+useGLTF.preload('/models/topi_beret_bear.glb', false, true);
+useGLTF.preload('/models/pixel_sunglasses.glb', false, true);
+useGLTF.preload('/models/anime_sunglasses.glb', false, true);
