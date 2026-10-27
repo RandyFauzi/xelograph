@@ -438,7 +438,8 @@ export default function App() {
               'modal ' +
               (modal === 'join' || modal === 'avatar' || modal === 'kolam' || modal === 'shop'
                 ? 'wide'
-                : '')
+                : '') +
+              (modal === 'shop' ? ' modal-clash-shop' : '')
             }
             role="dialog"
             aria-modal="true"
