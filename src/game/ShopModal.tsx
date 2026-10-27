@@ -40,7 +40,7 @@ export default function ShopModal({
 
   // Top Up State
   const [selectedPkg, setSelectedPkg] = useState<TopUpPackage>(TOPUP_PACKAGES[0]);
-  const [saweriaUser, setSaweriaUser] = useState('randyfauzi');
+  const [saweriaUser, setSaweriaUser] = useState('randyfauzi24');
   const [copied, setCopied] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(false);
 

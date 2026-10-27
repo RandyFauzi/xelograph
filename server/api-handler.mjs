@@ -536,7 +536,7 @@ export function createApiHandler({
               { id: 'pack_250', coins: 250, price_idr: 50000 },
               { id: 'pack_600', coins: 600, price_idr: 100000 },
             ],
-            saweria_username: process.env.SAWERIA_USERNAME || 'randyfauzi',
+            saweria_username: process.env.SAWERIA_USERNAME || 'randyfauzi24',
           });
         }
 
