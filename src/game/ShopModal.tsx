@@ -1,5 +1,21 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles, Copy, Check, ExternalLink, RefreshCw } from 'lucide-react';
+import {
+  ArrowRight,
+  Sparkles,
+  Copy,
+  Check,
+  ExternalLink,
+  RefreshCw,
+  ShoppingBag,
+  Coins,
+  X,
+  Search,
+  Shirt,
+  Glasses,
+  HardHat,
+  LoaderCircle,
+} from 'lucide-react';
+import './shop.css';
 import { api } from '../api';
 import { campusAudio } from './audio';
 import { AvatarPreview } from '../World';
@@ -33,7 +49,12 @@ export default function ShopModal({
   onJoin: () => void;
 }) {
   const [view, setView] = useState<'catalog' | 'topup'>('catalog');
-  const [coins, setCoins] = useState(100);
+  const [coins, setCoins] = useState(0);
+  const [category, setCategory] = useState('all');
+  const [query, setQuery] = useState('');
+  const [ownedOnly, setOwnedOnly] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [retry, setRetry] = useState(0);
   const [items, setItems] = useState<StoreItem[]>([]);
   const [inventory, setInventory] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,6 +105,8 @@ export default function ShopModal({
   // Initial load: catalog items & packages
   useEffect(() => {
     let alive = true;
+    setLoading(true);
+    setLoadError('');
     void (async () => {
       try {
         const [storeData, topupData] = await Promise.all([
@@ -100,7 +123,7 @@ export default function ShopModal({
         ]);
 
         if (alive && storeData) {
-          setCoins(storeData.coins ?? 100);
+          setCoins(storeData.coins ?? 0);
           setItems(storeData.items || []);
           setInventory(storeData.inventory || []);
 
@@ -123,7 +146,7 @@ export default function ShopModal({
           setSaweriaUser(topupData.saweria_username);
         }
       } catch {
-        // Fallback for guest
+        if (alive) setLoadError('Koleksi belum dapat dimuat. Coba sekali lagi, ya.');
       } finally {
         if (alive) setLoading(false);
       }
@@ -131,7 +154,7 @@ export default function ShopModal({
     return () => {
       alive = false;
     };
-  }, []);
+  }, [retry]);
 
   // Poll for incoming coins while top-up view is active
   useEffect(() => {
@@ -249,7 +272,9 @@ export default function ShopModal({
           const coinsEarned = res.coins_awarded || activeQris.coins;
           setCoins((prev) => (res.balance !== undefined ? res.balance : prev + coinsEarned));
           setQrisSuccess(coinsEarned);
-          onToast(`🎉 Pembayaran Rp ${activeQris.amount.toLocaleString('id-ID')} Berhasil! +${coinsEarned} Koin.`);
+          onToast(
+            `🎉 Pembayaran Rp ${activeQris.amount.toLocaleString('id-ID')} Berhasil! +${coinsEarned} Koin.`,
+          );
           setActiveQris(null);
           return;
         }
@@ -350,9 +375,7 @@ export default function ShopModal({
     });
     campusAudio.play('tap');
     onToast(
-      action === 'equip'
-        ? `${item.name} aktif digunakan! ✨`
-        : `${item.name} berhasil dilepas.`,
+      action === 'equip' ? `${item.name} aktif digunakan! ✨` : `${item.name} berhasil dilepas.`,
     );
 
     try {
@@ -376,13 +399,18 @@ export default function ShopModal({
     }
   };
 
-  const headwearItems = items.filter((i) => i.category === 'headwear');
-  const eyewearItems = items.filter((i) => i.category === 'eyewear');
-  const outfitItems = items.filter((i) => i.category === 'outfit');
-  const otherItems = items.filter(
-    (i) => i.category !== 'headwear' && i.category !== 'eyewear' && i.category !== 'outfit',
+  const filteredItems = items.filter(
+    (item) =>
+      (category === 'all' || item.category === category) &&
+      (!ownedOnly || inventory.includes(item.id)) &&
+      item.name.toLocaleLowerCase('id-ID').includes(query.trim().toLocaleLowerCase('id-ID')),
   );
-
+  const categories = [
+    { id: 'all', label: 'Semua', icon: ShoppingBag },
+    { id: 'headwear', label: 'Topi', icon: HardHat },
+    { id: 'eyewear', label: 'Kacamata', icon: Glasses },
+    { id: 'outfit', label: 'Pakaian', icon: Shirt },
+  ];
   const getCleanTitle = (item: StoreItem) => {
     if (item.id === 'topi_beret_bear') return 'TOPI BERET';
     if (item.id === 'pixel_sunglasses') return 'KACAMATA PIXEL';
@@ -410,12 +438,13 @@ export default function ShopModal({
     return (
       <div
         key={item.id}
+        aria-busy={isBusy}
         className={`clash-card theme-${theme} ${isEquipped ? 'is-equipped' : ''} ${isOwned ? 'is-owned' : ''}`}
       >
         <div className="clash-card-header">
           <span className="clash-card-title">{getCleanTitle(item)}</span>
           <span className="clash-card-subtag">
-            {isEquipped ? '✓ Sedang Dipakai' : isOwned ? 'Dimiliki' : '1 Tersedia'}
+            {isEquipped ? 'Dipakai' : isOwned ? 'Dimiliki' : 'Koleksi avatar'}
           </span>
         </div>
 
@@ -435,34 +464,51 @@ export default function ShopModal({
               <button
                 type="button"
                 className="clash-btn clash-btn-equipped"
-                disabled={isBusy}
+                disabled={busyItem !== null}
                 onClick={() => handleEquip(item, 'unequip')}
                 title="Klik untuk melepas item"
               >
-                <span className="clash-btn-label">✓ SEDANG DIGUNAKAN</span>
+                <span className="clash-btn-label">
+                  {isBusy ? <LoaderCircle size={15} className="shop-spin" /> : <Check size={15} />}{' '}
+                  {isBusy ? 'Menyimpan…' : 'Dipakai · Lepas'}
+                </span>
               </button>
             ) : (
               <button
                 type="button"
                 className="clash-btn clash-btn-equip"
-                disabled={isBusy}
+                disabled={busyItem !== null}
                 onClick={() => handleEquip(item, 'equip')}
                 title="Klik untuk otomatis mengaktifkan item ini"
               >
-                <span className="clash-btn-label">⚡ GUNAKAN</span>
+                <span className="clash-btn-label">{isBusy ? 'Menyimpan…' : 'Gunakan'}</span>
               </button>
             )
           ) : (
             <button
               type="button"
               className={`clash-btn clash-btn-buy ${!canAfford ? 'is-disabled' : ''}`}
-              disabled={isBusy || (!profile ? false : !canAfford)}
+              disabled={busyItem !== null}
               onClick={() => handleBuy(item)}
-              title={!canAfford ? 'Koin belum cukup (Klik untuk top-up)' : `Beli seharga ${item.price_coins} koin & langsung pakai`}
+              title={
+                !profile
+                  ? 'Buat karakter untuk membeli item'
+                  : !canAfford
+                    ? 'Isi koin untuk membeli item ini'
+                    : `Beli seharga ${item.price_coins} koin & langsung pakai`
+              }
             >
-              <span className="clash-coin-symbol">🪙</span>
+              <Coins className="clash-coin-symbol" size={16} aria-hidden="true" />
               <span className="clash-coin-price">{item.price_coins}</span>
-              <span className="clash-btn-buy-tag">BELI &amp; PAKAI</span>
+              <span className="clash-btn-buy-tag">
+                {isBusy
+                  ? 'Membeli…'
+                  : !profile
+                    ? 'Buat karakter'
+                    : !canAfford
+                      ? 'Isi koin'
+                      : 'Beli & pakai'}
+              </span>
             </button>
           )}
         </div>
@@ -472,93 +518,56 @@ export default function ShopModal({
 
   return (
     <div className="clash-shop-wrapper">
-      {/* CANOPY AWNING & TOP STATUS BAR */}
-      <header className="clash-shop-header">
-        <div className="clash-awning-canvas-wrap">
-          <svg
-            className="clash-awning-svg"
-            viewBox="0 0 720 76"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <defs>
-              <linearGradient id="awning-dark" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#1e40af" />
-                <stop offset="60%" stopColor="#2563eb" />
-                <stop offset="100%" stopColor="#1d4ed8" />
-              </linearGradient>
-              <linearGradient id="awning-light" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#0284c7" />
-                <stop offset="60%" stopColor="#38bdf8" />
-                <stop offset="100%" stopColor="#0ea5e9" />
-              </linearGradient>
-              <filter id="awning-shadow" x="-5%" y="0%" width="110%" height="150%">
-                <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#020617" floodOpacity="0.45" />
-              </filter>
-            </defs>
-
-            {/* 6 Scalloped canopy panels across 720 width (120px each) */}
-            <path d="M 0,0 L 120,0 L 120,40 Q 60,72 0,40 Z" fill="url(#awning-dark)" />
-            <path d="M 120,0 L 240,0 L 240,40 Q 180,72 120,40 Z" fill="url(#awning-light)" />
-            <path d="M 240,0 L 360,0 L 360,40 Q 300,72 240,40 Z" fill="url(#awning-dark)" />
-            <path d="M 360,0 L 480,0 L 480,40 Q 420,72 360,40 Z" fill="url(#awning-light)" />
-            <path d="M 480,0 L 600,0 L 600,40 Q 540,72 480,40 Z" fill="url(#awning-dark)" />
-            <path d="M 600,0 L 720,0 L 720,40 Q 660,72 600,40 Z" fill="url(#awning-light)" />
-
-            {/* Turquoise rim highlight */}
-            <path
-              d="M 0,40 Q 60,72 120,40 Q 180,72 240,40 Q 300,72 360,40 Q 420,72 480,40 Q 540,72 600,40 Q 660,72 720,40"
-              fill="none"
-              stroke="#22d3ee"
-              strokeWidth="6"
-              strokeLinecap="round"
-              filter="url(#awning-shadow)"
-            />
-          </svg>
+      <header className="shop-header">
+        <div className="shop-brand">
+          <span className="shop-brand-icon">
+            <ShoppingBag size={22} aria-hidden="true" />
+          </span>
+          <div>
+            <span className="shop-eyebrow">XYLOGRAPH / AVATAR STORE</span>
+            <h2>Gaya kecil, cerita baru.</h2>
+          </div>
         </div>
-
-        {/* TOP STATUS BAR (OVERLAY) */}
-        <div className="clash-topbar">
-          <div className="clash-pill clash-pill-player" title="Identitas Anda">
-            <span className="clash-player-badge">
-              {profile ? profile.nickname.charAt(0).toUpperCase() : '👤'}
+        <div className="shop-header-actions">
+          <div
+            className="shop-wallet"
+            aria-label={
+              profile ? `Saldo ${coins} koin` : 'Buat karakter untuk memiliki dompet koin'
+            }
+          >
+            <Coins size={20} aria-hidden="true" />
+            <span>
+              <small>Saldo koin</small>
+              <strong>{profile ? (loading ? '…' : coins.toLocaleString('id-ID')) : '—'}</strong>
             </span>
-            <span className="clash-player-name">
-              {profile?.nickname || 'Tamu Alumni'}
-            </span>
           </div>
-
-          <div className="clash-shop-badge">
-            <span>{view === 'topup' ? 'ISI ULANG KOIN' : 'TOKO AVATAR'}</span>
-          </div>
-
-          <div className="clash-pill clash-pill-coins" title="Saldo Koin">
-            <span className="clash-coin-symbol">🪙</span>
-            <strong className="clash-coin-num">{coins.toLocaleString('id-ID')}</strong>
-            <button
-              type="button"
-              className={'clash-btn-topup-toggle' + (view === 'topup' ? ' is-active' : '')}
-              onClick={() => {
-                campusAudio.play('tap');
-                setView(view === 'catalog' ? 'topup' : 'catalog');
-              }}
-              title={view === 'catalog' ? 'Buka Menu Isi Ulang Koin' : 'Kembali ke Katalog Toko'}
-            >
-              {view === 'catalog' ? '+ ISI' : 'TOKO'}
-            </button>
-          </div>
-
           <button
             type="button"
             className="clash-btn-close"
             onClick={onClose}
-            aria-label="Tutup Shop"
-            title="Tutup Shop"
+            aria-label="Tutup toko"
           >
-            ✕
+            <X size={20} />
           </button>
         </div>
       </header>
+      <nav className="shop-navigation" aria-label="Menu toko">
+        <div className="shop-view-switch">
+          <button
+            type="button"
+            aria-pressed={view === 'catalog'}
+            onClick={() => setView('catalog')}
+          >
+            <ShoppingBag size={16} />
+            Koleksi
+          </button>
+          <button type="button" aria-pressed={view === 'topup'} onClick={() => setView('topup')}>
+            <Coins size={16} />
+            Isi koin
+          </button>
+        </div>
+        <span className="shop-player-label">Untuk {profile?.nickname || 'karakter barumu'}</span>
+      </nav>
 
       {/* SHOP BODY: TOP UP VIEW OR CATALOG VIEW */}
       <div className="clash-shop-body">
@@ -567,6 +576,15 @@ export default function ShopModal({
             <div className="clash-loading-spinner" />
             <span>Membuka gerai toko…</span>
           </div>
+        ) : loadError ? (
+          <div className="shop-empty" role="alert">
+            <ShoppingBag size={28} />
+            <h3>Toko sedang beristirahat</h3>
+            <p>{loadError}</p>
+            <button type="button" onClick={() => setRetry((n) => n + 1)}>
+              Coba lagi <RefreshCw size={16} />
+            </button>
+          </div>
         ) : view === 'topup' ? (
           /* =======================================================
              TOP UP COIN VIEW (CLEAN, NO GIMMICK LABELS)
@@ -574,40 +592,38 @@ export default function ShopModal({
           <div className="clash-topup-container">
             <div className="clash-section-header">
               <div className="clash-section-title-wrap">
-                <span className="clash-section-icon">🪙</span>
+                <Coins size={20} aria-hidden="true" />
                 <h3 className="clash-section-title">PILIH JUMLAH KOIN</h3>
               </div>
-              <span className="clash-section-tag">QRIS Nasional</span>
+              <span className="clash-section-tag">Pembayaran QRIS</span>
             </div>
 
-            {/* 3 PACKAGE CARDS */}
-            <div className="clash-topup-grid">
-              {TOPUP_PACKAGES.map((pkg, idx) => {
+            {/* Coin packages */}
+            <div className="clash-topup-grid" role="group" aria-label="Pilih paket koin">
+              {TOPUP_PACKAGES.map((pkg) => {
                 const isSelected = selectedPkg.id === pkg.id;
                 return (
-                  <div
+                  <button
+                    type="button"
+                    aria-pressed={isSelected}
+                    disabled={creatingQris || !!activeQris}
                     key={pkg.id}
                     className={'clash-topup-card' + (isSelected ? ' is-selected' : '')}
                     onClick={() => {
                       campusAudio.play('tap');
                       setSelectedPkg(pkg);
                     }}
-                    role="button"
-                    tabIndex={0}
                   >
-                    <div className="clash-topup-coin-icon">
-                      {pkg.coins === 5 && <span className="topup-icon-coin">🪙</span>}
-                      {pkg.coins === 100 && <span className="topup-icon-coin">🪙</span>}
-                      {pkg.coins === 250 && <span className="topup-icon-stack">🪙🪙</span>}
-                      {pkg.coins === 600 && <span className="topup-icon-chest">🪙🪙🪙</span>}
-                    </div>
-                    <div className="clash-topup-amount">
+                    <span className="clash-topup-coin-icon">
+                      <Coins size={28} aria-hidden="true" />
+                    </span>
+                    <span className="clash-topup-amount">
                       <strong>{pkg.coins}</strong> KOIN
-                    </div>
-                    <div className="clash-topup-price-badge">
+                    </span>
+                    <span className="clash-topup-price-badge">
                       Rp {pkg.price_idr.toLocaleString('id-ID')}
-                    </div>
-                  </div>
+                    </span>
+                  </button>
                 );
               })}
             </div>
@@ -641,12 +657,13 @@ export default function ShopModal({
                    ======================================================= */
                 <div className="clash-qris-display-card">
                   <div className="clash-qris-header">
-                    <span className="clash-qris-badge">⚡ QRIS DINAMIS OTOMATIS</span>
+                    <span className="clash-qris-badge">PEMBAYARAN QRIS</span>
                     <h4 className="clash-qris-price">
                       Rp {activeQris.amount.toLocaleString('id-ID')}
                     </h4>
                     <p className="clash-qris-sub">
-                      Nominal <strong>sudah otomatis terkunci</strong> saat discan menggunakan BCA Mobile, Livin Mandiri, GoPay, OVO, dll.
+                      Scan dengan aplikasi bank atau dompet digital. Pastikan nominal pembayaran
+                      sesuai.
                     </p>
                   </div>
 
@@ -713,10 +730,10 @@ export default function ShopModal({
                     disabled={creatingQris}
                   >
                     <span className="clash-btn-duitku-title">
-                      {creatingQris ? 'Membuat QRIS...' : `⚡ BAYAR DENGAN QRIS OTOMATIS`}
+                      {creatingQris ? 'Membuat QRIS...' : 'Buat kode pembayaran QRIS'}
                     </span>
                     <span className="clash-btn-duitku-sub">
-                      Nominal Rp {selectedPkg.price_idr.toLocaleString('id-ID')} terkunci otomatis di m-Banking
+                      {selectedPkg.coins} koin · Rp {selectedPkg.price_idr.toLocaleString('id-ID')}
                     </span>
                   </button>
 
@@ -727,7 +744,9 @@ export default function ShopModal({
                       className="clash-btn-toggle-saweria"
                       onClick={() => setShowSaweriaFallback(!showSaweriaFallback)}
                     >
-                      <span>{showSaweriaFallback ? '▲ Tutup Pilihan Saweria' : '▼ Atau Gunakan Saweria'}</span>
+                      <span>
+                        {showSaweriaFallback ? '▲ Tutup Pilihan Saweria' : '▼ Atau Gunakan Saweria'}
+                      </span>
                     </button>
                   </div>
 
@@ -775,9 +794,7 @@ export default function ShopModal({
                   {/* LIVE LISTENING RADAR */}
                   <div className="clash-radar-notice">
                     <div className="clash-radar-dot" />
-                    <span>
-                      Sistem mendeteksi pembayaran QRIS otomatis secara instan.
-                    </span>
+                    <span>Saldo diperbarui setelah pembayaran terkonfirmasi.</span>
                   </div>
                 </div>
               )
@@ -798,7 +815,7 @@ export default function ShopModal({
           /* =======================================================
              CATALOG VIEW (AVATAR ITEMS & FITTING ROOM)
              ======================================================= */
-          <>
+          <div className="shop-catalog-layout">
             {/* LIVE 3D FITTING ROOM STAGE (KAMAR PAS) */}
             <div className="clash-fitting-stage">
               <div className="clash-fitting-model">
@@ -806,32 +823,36 @@ export default function ShopModal({
               </div>
               <div className="clash-fitting-info">
                 <div className="clash-fitting-badge">
-                  <Sparkles size={13} /> KAMAR PAS LIVE
+                  <Sparkles size={13} /> AVATAR SAAT INI
                 </div>
-                <div className="clash-fitting-title">
-                  {profile?.nickname || 'Karakter Kamu'}
-                </div>
+                <div className="clash-fitting-title">{profile?.nickname || 'Karakter Kamu'}</div>
                 <div className="clash-fitting-slots">
                   <div className="clash-slot-pill">
-                    <span>🎩 Topi:</span>
+                    <span>
+                      <HardHat size={12} aria-hidden="true" /> Topi
+                    </span>
                     <strong>
                       {activeAvatar.headwear === 'topi_beret_bear'
                         ? 'Topi Beret Beruang'
-                        : 'Belum Pakai'}
+                        : 'Belum dipakai'}
                     </strong>
                   </div>
                   <div className="clash-slot-pill">
-                    <span>🕶️ Kacamata:</span>
+                    <span>
+                      <Glasses size={12} aria-hidden="true" /> Kacamata
+                    </span>
                     <strong>
                       {activeAvatar.eyewear === 'pixel_sunglasses'
                         ? 'Kacamata Pixel'
                         : activeAvatar.eyewear === 'anime_sunglasses'
                           ? 'Kacamata Anime'
-                          : 'Belum Pakai'}
+                          : 'Belum dipakai'}
                     </strong>
                   </div>
                   <div className="clash-slot-pill">
-                    <span>👕 Baju:</span>
+                    <span>
+                      <Shirt size={12} aria-hidden="true" /> Baju
+                    </span>
                     <strong>
                       {items.find((i) => i.id === activeAvatar.outfit)?.name ||
                         (activeAvatar.outfit && activeAvatar.outfit.startsWith('row4_')
@@ -841,74 +862,83 @@ export default function ShopModal({
                   </div>
                 </div>
                 <div className="clash-fitting-hint">
-                  ✓ Tombol Gunakan langsung mengaktifkan aksesoris di karaktermu!
+                  Pilih item, lalu gunakan untuk melengkapi gayamu.
                 </div>
               </div>
             </div>
 
-            {/* HEADWEAR SECTION (MINIS THEME) */}
-            {headwearItems.length > 0 && (
-              <div className="clash-section-box">
-                <div className="clash-section-header">
-                  <div className="clash-section-title-wrap">
-                    <span className="clash-section-icon">🧢</span>
-                    <h3 className="clash-section-title">TOPI &amp; KEPALA</h3>
-                  </div>
-                  <span className="clash-section-tag">Koleksi Kepala</span>
+            <section className="shop-catalog" aria-label="Katalog item avatar">
+              <div className="shop-catalog-heading">
+                <div>
+                  <h3>Temukan gaya kamu</h3>
+                  <p>Aksesoris dan pakaian untuk cerita berikutnya.</p>
                 </div>
-                <div className="clash-cards-grid">
-                  {headwearItems.map((item) => renderCard(item, 'minis'))}
-                </div>
+                <span className="shop-item-count" role="status">
+                  {filteredItems.length} item
+                </span>
               </div>
-            )}
-
-            {/* EYEWEAR SECTION (HEROES THEME) */}
-            {eyewearItems.length > 0 && (
-              <div className="clash-section-box">
-                <div className="clash-section-header">
-                  <div className="clash-section-title-wrap">
-                    <span className="clash-section-icon">🕶️</span>
-                    <h3 className="clash-section-title">KACAMATA &amp; AKSESORIS</h3>
-                  </div>
-                  <span className="clash-section-tag">Koleksi Wajah</span>
+              <label className="shop-search">
+                <Search size={17} aria-hidden="true" />
+                <input
+                  type="search"
+                  aria-label="Cari item toko"
+                  placeholder="Cari nama item…"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </label>
+              <div className="shop-filters">
+                <div className="shop-categories" role="group" aria-label="Kategori item">
+                  {categories.map(({ id, label, icon: Icon }) => (
+                    <button
+                      type="button"
+                      key={id}
+                      aria-pressed={category === id}
+                      onClick={() => setCategory(id)}
+                    >
+                      <Icon size={15} aria-hidden="true" />
+                      {label}
+                    </button>
+                  ))}
                 </div>
-                <div className="clash-cards-grid">
-                  {eyewearItems.map((item) => renderCard(item, 'heroes'))}
-                </div>
+                <button
+                  type="button"
+                  className="shop-owned-filter"
+                  aria-pressed={ownedOnly}
+                  onClick={() => setOwnedOnly(!ownedOnly)}
+                >
+                  <Check size={15} aria-hidden="true" />
+                  Milikku
+                </button>
               </div>
-            )}
-
-            {/* OUTFIT & TOPS SECTION */}
-            {outfitItems.length > 0 && (
-              <div className="clash-section-box">
-                <div className="clash-section-header">
-                  <div className="clash-section-title-wrap">
-                    <span className="clash-section-icon">👕</span>
-                    <h3 className="clash-section-title">KOLEKSI BAJU &amp; JAKET</h3>
-                  </div>
-                  <span className="clash-section-tag">30 Koin per Pcs</span>
-                </div>
-                <div className="clash-cards-grid">
-                  {outfitItems.map((item) => renderCard(item, 'heroes'))}
-                </div>
+              <div className="clash-cards-grid">
+                {filteredItems.map((item) =>
+                  renderCard(item, item.category === 'headwear' ? 'minis' : 'heroes'),
+                )}
               </div>
-            )}
-
-            {/* OTHER ITEMS (IF ANY) */}
-            {otherItems.length > 0 && (
-              <div className="clash-section-box">
-                <div className="clash-section-header">
-                  <div className="clash-section-title-wrap">
-                    <span className="clash-section-icon">✨</span>
-                    <h3 className="clash-section-title">ITEM LAINNYA</h3>
-                  </div>
+              {filteredItems.length === 0 && (
+                <div className="shop-empty">
+                  <ShoppingBag size={28} />
+                  <h3>{ownedOnly ? 'Koleksimu dimulai di sini' : 'Belum ada yang cocok'}</h3>
+                  <p>
+                    {ownedOnly
+                      ? 'Item yang sudah kamu miliki akan muncul di sini.'
+                      : 'Coba kata kunci atau kategori lain.'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCategory('all');
+                      setQuery('');
+                      setOwnedOnly(false);
+                    }}
+                  >
+                    Lihat semua item <ArrowRight size={16} />
+                  </button>
                 </div>
-                <div className="clash-cards-grid">
-                  {otherItems.map((item) => renderCard(item, 'heroes'))}
-                </div>
-              </div>
-            )}
-          </>
+              )}
+            </section>
+          </div>
         )}
       </div>
 
@@ -918,7 +948,7 @@ export default function ShopModal({
           <Sparkles size={14} className="clash-sparkle-icon" />
           <span>
             {view === 'topup'
-              ? 'Scan QRIS Saweria dan koin otomatis bertambah ke akunmu.'
+              ? 'Koin ditambahkan setelah pembayaran terkonfirmasi.'
               : 'Aksesoris otomatis aktif & tersimpan pada karaktermu!'}
           </span>
         </div>
@@ -928,7 +958,7 @@ export default function ShopModal({
           onClick={onClose}
           title="Kembali ke petualangan kampus"
         >
-          ✓ Kembali Menjelajah <ArrowRight size={16} />
+          Kembali ke dunia <ArrowRight size={16} />
         </button>
       </footer>
     </div>
