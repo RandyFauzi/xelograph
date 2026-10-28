@@ -2,6 +2,7 @@ import { Vector3 } from 'three';
 
 /** Bind baked vertices to their authored shoulder pivot, or a shared neck pivot. */
 export function avatarIdleJoint(object) {
+  if (object.userData.idleJoint) return object.userData.idleJoint;
   for (let node = object; node; node = node.parent) {
     if (node.name === 'Arm_R' || node.name === 'Arm_L') {
       const p = node.getWorldPosition(new Vector3());

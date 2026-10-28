@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   ArrowRight,
   Sparkles,
@@ -14,6 +14,8 @@ import {
   Glasses,
   HardHat,
   LoaderCircle,
+  Eye,
+  RotateCcw,
 } from 'lucide-react';
 import './shop.css';
 import { api } from '../api';
@@ -21,6 +23,12 @@ import { campusAudio } from './audio';
 import { AvatarPreview } from '../World';
 import { DEFAULT_AVATAR } from '../types';
 import type { AvatarConfig, Profile, StoreItem } from '../types';
+import {
+  fittingAvatar,
+  toggleFittingItem,
+  clearFittingSlot,
+  type FittingSelection,
+} from './shopPreview';
 
 interface TopUpPackage {
   id: string;
@@ -59,6 +67,8 @@ export default function ShopModal({
   const [inventory, setInventory] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyItem, setBusyItem] = useState<string | null>(null);
+  const [tryOn, setTryOn] = useState<FittingSelection>({});
+  const fittingRef = useRef<HTMLDivElement>(null);
 
   // Top Up State
   const [selectedPkg, setSelectedPkg] = useState<TopUpPackage>(TOPUP_PACKAGES[0]);
@@ -84,6 +94,23 @@ export default function ShopModal({
   const [activeAvatar, setActiveAvatar] = useState<AvatarConfig>(() => {
     return profile?.avatar ? { ...profile.avatar } : { ...DEFAULT_AVATAR };
   });
+  const previewAvatar = fittingAvatar(activeAvatar, tryOn);
+  const triedItems = items.filter(
+    (item) => tryOn[item.category] === item.id && activeAvatar[item.category] !== item.id,
+  );
+  const isTrying = triedItems.length > 0;
+  useEffect(() => setTryOn({}), [profile?.id]);
+
+  const handleTryOn = (item: StoreItem) => {
+    setTryOn((selection) => toggleFittingItem(selection, item));
+    campusAudio.play('tap');
+    if (window.matchMedia('(max-width: 600px)').matches) {
+      fittingRef.current?.scrollIntoView({
+        block: 'nearest',
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      });
+    }
+  };
 
   // Keep local avatar in sync if parent profile changes
   useEffect(() => {
@@ -211,6 +238,7 @@ export default function ShopModal({
 
   // Create Dynamic QRIS via Duitku
   const handleCreateDuitkuQris = async () => {
+    if (busyItem !== null) return;
     if (!profile) {
       onJoin();
       return;
@@ -295,6 +323,7 @@ export default function ShopModal({
 
   // Beli item: otomatis langsung dipakai tanpa perlu klik terpisah
   const handleBuy = async (item: StoreItem) => {
+    if (busyItem !== null) return;
     if (!profile) {
       onJoin();
       return;
@@ -307,92 +336,62 @@ export default function ShopModal({
     }
     setBusyItem(item.id);
 
-    // Optimistic instant equip & coin deduct
-    const prevCoins = coins;
-    const prevInv = inventory;
-    const prevAvatar = activeAvatar;
-
-    setCoins((c) => Math.max(0, c - item.price_coins));
-    setInventory((inv) => (inv.includes(item.id) ? inv : [...inv, item.id]));
-
-    const nextAvatar: AvatarConfig = {
-      ...activeAvatar,
-      [item.category]: item.id,
-    };
-    setActiveAvatar(nextAvatar);
-    onProfileUpdate({
-      ...profile,
-      avatar: nextAvatar,
-    });
-    campusAudio.play('success');
-    onToast(`Berhasil dibeli & langsung dipakai: ${item.name}! ✨`);
-
+    let purchased = false;
     try {
       const res = await api<{ ok: boolean; coins: number; itemId: string }>('/store/buy', {
         method: 'POST',
         body: JSON.stringify({ itemId: item.id }),
       });
-      if (res?.ok) {
-        setCoins(res.coins);
-        const updated = await api<Profile>('/store/equip', {
-          method: 'POST',
-          body: JSON.stringify({
-            itemId: item.id,
-            slot: item.category,
-            action: 'equip',
-          }),
-        });
-        if (updated) {
-          onProfileUpdate(updated);
-        }
-      }
+      if (!res.ok) throw new Error('Pembelian belum berhasil. Coba lagi.');
+      // The purchase is committed independently of equipping. Never restore spent coins locally.
+      purchased = true;
+      setCoins(res.coins);
+      setInventory((owned) => (owned.includes(item.id) ? owned : [...owned, item.id]));
+      const updated = await api<Profile>('/store/equip', {
+        method: 'POST',
+        body: JSON.stringify({ itemId: item.id, slot: item.category, action: 'equip' }),
+      });
+      setActiveAvatar({ ...updated.avatar });
+      setTryOn((selection) => clearFittingSlot(selection, item.category));
+      onProfileUpdate(updated);
+      campusAudio.play('success');
+      onToast(`${item.name} berhasil dibeli dan dipakai!`);
     } catch (e) {
-      setCoins(prevCoins);
-      setInventory(prevInv);
-      setActiveAvatar(prevAvatar);
-      onProfileUpdate({ ...profile, avatar: prevAvatar });
-      onToast((e as Error).message);
+      onToast(
+        purchased
+          ? `Item sudah dibeli dan tersimpan di Milikku. Coba tombol Gunakan lagi. ${(e as Error).message}`
+          : (e as Error).message,
+      );
     } finally {
       setBusyItem(null);
     }
   };
 
-  // Gunakan / Lepas item: otomatis aktif seketika (0ms)
   const handleEquip = async (item: StoreItem, action: 'equip' | 'unequip') => {
-    if (!profile) return;
+    if (!profile || busyItem !== null) return;
     setBusyItem(item.id);
-
     const prevAvatar = activeAvatar;
     const nextAvatar: AvatarConfig = {
       ...activeAvatar,
       [item.category]: action === 'equip' ? item.id : item.category === 'outfit' ? 'navy' : null,
     };
-
+    setTryOn((selection) => clearFittingSlot(selection, item.category));
     setActiveAvatar(nextAvatar);
-    onProfileUpdate({
-      ...profile,
-      avatar: nextAvatar,
-    });
     campusAudio.play('tap');
-    onToast(
-      action === 'equip' ? `${item.name} aktif digunakan! ✨` : `${item.name} berhasil dilepas.`,
-    );
-
+    // Keep the immediate fitting-room update local. Refreshing /me before this write
+    // completes can otherwise restore the old appearance in the parent/world.
     try {
       const updated = await api<Profile>('/store/equip', {
         method: 'POST',
-        body: JSON.stringify({
-          itemId: item.id,
-          slot: item.category,
-          action,
-        }),
+        body: JSON.stringify({ itemId: item.id, slot: item.category, action }),
       });
-      if (updated) {
-        onProfileUpdate(updated);
-      }
+      setActiveAvatar({ ...updated.avatar });
+      onProfileUpdate(updated);
+      onToast(
+        action === 'equip' ? `${item.name} aktif digunakan!` : `${item.name} berhasil dilepas.`,
+      );
     } catch (e) {
       setActiveAvatar(prevAvatar);
-      onProfileUpdate({ ...profile, avatar: prevAvatar });
       onToast((e as Error).message);
     } finally {
       setBusyItem(null);
@@ -427,6 +426,7 @@ export default function ShopModal({
   };
 
   const renderCard = (item: StoreItem, theme: 'minis' | 'heroes') => {
+    const isPreviewing = triedItems.some((tried) => tried.id === item.id);
     const isOwned = inventory.includes(item.id);
     const isEquipped =
       (item.category === 'headwear' && activeAvatar?.headwear === item.id) ||
@@ -439,12 +439,18 @@ export default function ShopModal({
       <div
         key={item.id}
         aria-busy={isBusy}
-        className={`clash-card theme-${theme} ${isEquipped ? 'is-equipped' : ''} ${isOwned ? 'is-owned' : ''}`}
+        className={`clash-card theme-${theme} ${isEquipped ? 'is-equipped' : ''} ${isOwned ? 'is-owned' : ''} ${isPreviewing ? 'is-trying' : ''}`}
       >
         <div className="clash-card-header">
           <span className="clash-card-title">{getCleanTitle(item)}</span>
           <span className="clash-card-subtag">
-            {isEquipped ? 'Dipakai' : isOwned ? 'Dimiliki' : 'Koleksi avatar'}
+            {isPreviewing
+              ? 'Sedang dicoba'
+              : isEquipped
+                ? 'Dipakai'
+                : isOwned
+                  ? 'Dimiliki'
+                  : 'Koleksi avatar'}
           </span>
         </div>
 
@@ -459,6 +465,19 @@ export default function ShopModal({
         </div>
 
         <div className="clash-card-footer">
+          {!isEquipped && (
+            <button
+              type="button"
+              className="shop-try-button"
+              aria-pressed={isPreviewing}
+              aria-label={`${isPreviewing ? 'Batal mencoba' : 'Coba'} ${item.name} di kamar pas`}
+              disabled={busyItem !== null}
+              onClick={() => handleTryOn(item)}
+            >
+              <Eye size={15} aria-hidden="true" />
+              {isPreviewing ? 'Batal coba' : 'Coba dulu'}
+            </button>
+          )}
           {isOwned ? (
             isEquipped ? (
               <button
@@ -817,13 +836,16 @@ export default function ShopModal({
              ======================================================= */
           <div className="shop-catalog-layout">
             {/* LIVE 3D FITTING ROOM STAGE (KAMAR PAS) */}
-            <div className="clash-fitting-stage">
+            <div
+              className={'clash-fitting-stage' + (isTrying ? ' is-trying' : '')}
+              ref={fittingRef}
+            >
               <div className="clash-fitting-model">
-                <AvatarPreview config={activeAvatar} />
+                <AvatarPreview config={previewAvatar} interactive />
               </div>
               <div className="clash-fitting-info">
                 <div className="clash-fitting-badge">
-                  <Sparkles size={13} /> AVATAR SAAT INI
+                  <Sparkles size={13} /> {isTrying ? 'KAMAR PAS · PREVIEW' : 'AVATAR SAAT INI'}
                 </div>
                 <div className="clash-fitting-title">{profile?.nickname || 'Karakter Kamu'}</div>
                 <div className="clash-fitting-slots">
@@ -832,7 +854,7 @@ export default function ShopModal({
                       <HardHat size={12} aria-hidden="true" /> Topi
                     </span>
                     <strong>
-                      {activeAvatar.headwear === 'topi_beret_bear'
+                      {previewAvatar.headwear === 'topi_beret_bear'
                         ? 'Topi Beret Beruang'
                         : 'Belum dipakai'}
                     </strong>
@@ -842,9 +864,9 @@ export default function ShopModal({
                       <Glasses size={12} aria-hidden="true" /> Kacamata
                     </span>
                     <strong>
-                      {activeAvatar.eyewear === 'pixel_sunglasses'
+                      {previewAvatar.eyewear === 'pixel_sunglasses'
                         ? 'Kacamata Pixel'
-                        : activeAvatar.eyewear === 'anime_sunglasses'
+                        : previewAvatar.eyewear === 'anime_sunglasses'
                           ? 'Kacamata Anime'
                           : 'Belum dipakai'}
                     </strong>
@@ -854,16 +876,38 @@ export default function ShopModal({
                       <Shirt size={12} aria-hidden="true" /> Baju
                     </span>
                     <strong>
-                      {items.find((i) => i.id === activeAvatar.outfit)?.name ||
-                        (activeAvatar.outfit && activeAvatar.outfit.startsWith('row4_')
+                      {items.find((i) => i.id === previewAvatar.outfit)?.name ||
+                        (previewAvatar.outfit && previewAvatar.outfit.startsWith('row4_')
                           ? 'Baju Khusus'
                           : 'Baju Standar')}
                     </strong>
                   </div>
                 </div>
                 <div className="clash-fitting-hint">
-                  Pilih item, lalu gunakan untuk melengkapi gayamu.
+                  Geser karakter untuk melihat dari sisi lain.
                 </div>
+                <div className="shop-fitting-notice" role="status">
+                  {isTrying
+                    ? `${triedItems.length} item sedang dicoba. Koin tidak berkurang.`
+                    : 'Coba item gratis sebelum menentukan pilihan.'}
+                </div>
+                {isTrying && (
+                  <>
+                    <div className="shop-tried-items" aria-label="Item yang sedang dicoba">
+                      {triedItems.map((item) => (
+                        <span key={item.id}>{item.name}</span>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className="shop-reset-fitting"
+                      onClick={() => setTryOn({})}
+                    >
+                      <RotateCcw size={14} aria-hidden="true" />
+                      Kembalikan tampilan
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 

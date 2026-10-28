@@ -1,5 +1,15 @@
 /** The same selection rules drive animated players, previews, and instanced alumni. */
-export function avatarPartVisible(name, { hair, character = 'male' }) {
+import { isStoreOutfit } from './wearableCatalog.mjs';
+export function avatarPartVisible(name, { hair, character = 'male', outfit }) {
+  if (
+    isStoreOutfit(outfit) &&
+    (name === 'Torso' ||
+      name === 'Collar' ||
+      name === 'Body_female_Torso' ||
+      name.startsWith('Sleeve_') ||
+      (name.startsWith('Look_') && !name.includes('Long_skirt')))
+  )
+    return false;
   const customBody =
     (character === 'female' && ['ponytail', 'hijab'].includes(hair)) ||
     (character === 'male' && ['quiff', 'cap'].includes(hair));

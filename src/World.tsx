@@ -19,8 +19,6 @@ import {
 } from '@react-three/drei';
 import * as THREE from 'three';
 import { findPath, MISSION_ZONES } from './game/navigation.mjs';
-import { createStaticAvatar } from './game/staticAvatar.mjs';
-import { avatarPartVisible } from './game/avatarParts.mjs';
 import { createOcclusionController, collectOccluderMeshes } from './game/occlusion.mjs';
 import { usePlayerMotion, CameraFollow, type PathPoint } from './game/PlayerController';
 import Joystick from './game/Joystick';
@@ -30,7 +28,8 @@ import KolamBecabur from './game/KolamBecabur';
 import GerobakPentol from './game/GerobakPentol';
 import ShopBuilding from './game/ShopBuilding';
 import OnlinePeers from './game/OnlinePeers';
-import { AvatarAccessories } from './game/AvatarAccessories';
+import { createAvatarAppearance } from './game/avatarAppearance.mjs';
+import { wearableAssetUrls } from './game/wearableCatalog.mjs';
 import { layoutAlumni } from './game/alumniLayout.mjs';
 import type { TravelRequest } from './GameScreen';
 import { Lock, Navigation, RotateCcw, Footprints, ArrowUp } from 'lucide-react';
@@ -81,27 +80,29 @@ function Character({
   [key: string]: any;
 }) {
   const { scene } = useGLTF('/models/avatar.glb');
-  const model = useMemo(() => {
-    if (!moving)
-      return createStaticAvatar(scene, {
-        hair: config.hair,
-        character: config.character,
+  const urls = useMemo(
+    () => wearableAssetUrls(config),
+    [config.headwear, config.eyewear, config.outfit],
+  );
+  const assets = useGLTF(urls, false, true);
+  const model = useMemo(
+    () =>
+      createAvatarAppearance(scene, config, new Map(urls.map((url, i) => [url, assets[i].scene])), {
         outfitColor: (COLORS as Record<string, string>)[config.outfit] || COLORS.navy,
         skinColor: COLORS[config.skin],
-      });
-    const copy = scene.clone(true);
-    copy.traverse((o) => {
-      if (o instanceof THREE.Mesh) {
-        o.castShadow = true;
-        o.visible = avatarPartVisible(o.name, config);
-        const m = (o.material as THREE.MeshStandardMaterial).clone();
-        if (m.name === 'AvatarShirt') m.color.set((COLORS as Record<string, string>)[config.outfit] || COLORS.navy);
-        if (m.name === 'AvatarSkin') m.color.set(COLORS[config.skin]);
-        o.material = m;
-      }
-    });
-    return copy;
-  }, [scene, config.outfit, config.skin, config.hair, config.character, moving]);
+      }),
+    [
+      scene,
+      assets,
+      urls,
+      config.outfit,
+      config.skin,
+      config.hair,
+      config.character,
+      config.headwear,
+      config.eyewear,
+    ],
+  );
   useEffect(
     () => () => {
       model.traverse((o) => {
@@ -133,7 +134,6 @@ function Character({
   return (
     <group {...props}>
       <primitive object={model} />
-      <AvatarAccessories headwear={config.headwear} eyewear={config.eyewear} outfit={config.outfit} />
     </group>
   );
 }
@@ -149,7 +149,13 @@ class SceneBoundary extends Component<
     return this.state.failed ? this.props.fallback : this.props.children;
   }
 }
-export function AvatarPreview({ config }: { config: AvatarConfig }) {
+export function AvatarPreview({
+  config,
+  interactive = false,
+}: {
+  config: AvatarConfig;
+  interactive?: boolean;
+}) {
   return (
     <SceneBoundary fallback={<div className="avatar-fallback">Avatar {config.outfit}</div>}>
       <Canvas camera={{ position: [2, 1.6, 3.2], fov: 32 }} dpr={[1, 1.5]}>
@@ -160,6 +166,15 @@ export function AvatarPreview({ config }: { config: AvatarConfig }) {
             <Character config={config} />
           </group>
           <ContactShadows position={[0, -0.72, 0]} opacity={0.2} scale={5} blur={3} />
+          {interactive && (
+            <OrbitControls
+              enablePan={false}
+              enableZoom={false}
+              target={[0, 0.15, 0]}
+              minPolarAngle={0.8}
+              maxPolarAngle={1.8}
+            />
+          )}
         </Suspense>
       </Canvas>
     </SceneBoundary>
@@ -653,11 +668,7 @@ export default function World({
               focusId={focusId}
               player={position}
             />
-            <OnlinePeers
-              peers={onlinePeers}
-              playing={playing}
-              activeBubbles={activeBubbles}
-            />
+            <OnlinePeers peers={onlinePeers} playing={playing} activeBubbles={activeBubbles} />
             {demo &&
               alumni.length === 0 &&
               [

@@ -5,8 +5,11 @@ import { avatarIdleJoint } from './crowdMotion.mjs';
 const templates = new WeakMap();
 
 /** Share immutable geometry for the three hairstyles; stationary alumni use one draw per material. */
-export function createStaticAvatar(source, { hair, character = 'male', outfitColor, skinColor }) {
-  const key = character + ':' + hair;
+export function createStaticAvatar(
+  source,
+  { hair, character = 'male', outfit, outfitColor, skinColor },
+) {
+  const key = character + ':' + hair + ':' + (outfit || '');
   let styles = templates.get(source);
   if (!styles) {
     styles = new Map();
@@ -16,7 +19,7 @@ export function createStaticAvatar(source, { hair, character = 'male', outfitCol
     source.updateMatrixWorld(true);
     const batches = new Map();
     source.traverse((object) => {
-      if (!object.isMesh || !avatarPartVisible(object.name, { hair, character })) return;
+      if (!object.isMesh || !avatarPartVisible(object.name, { hair, character, outfit })) return;
       const material = object.material;
       if (Array.isArray(material)) throw new Error('Avatar primitives must have one material.');
       const geometry = object.geometry.clone();
@@ -34,12 +37,20 @@ export function createStaticAvatar(source, { hair, character = 'male', outfitCol
         geometry.setAttribute(name, new Float32BufferAttribute(values, 3));
       }
       geometry.applyMatrix4(object.matrixWorld);
+      const sourceUv = geometry.getAttribute('uv');
+      const uv = new Float32Array(geometry.getAttribute('position').count * 2);
+      if (sourceUv)
+        for (let i = 0; i < sourceUv.count; i++) {
+          uv[i * 2] = sourceUv.getX(i);
+          uv[i * 2 + 1] = sourceUv.getY(i);
+        }
+      geometry.setAttribute('uv', new Float32BufferAttribute(uv, 2));
       const joint = avatarIdleJoint(object);
       const joints = new Float32Array(geometry.getAttribute('position').count * 4);
       for (let i = 0; i < joints.length; i += 4) joints.set(joint, i);
       geometry.setAttribute('idleJoint', new Float32BufferAttribute(joints, 4));
       for (const key of Object.keys(geometry.attributes))
-        if (!['position', 'normal', 'idleJoint'].includes(key)) geometry.deleteAttribute(key);
+        if (!['position', 'normal', 'uv', 'idleJoint'].includes(key)) geometry.deleteAttribute(key);
       if (!batches.has(material.name)) batches.set(material.name, { material, geometries: [] });
       batches.get(material.name).geometries.push(geometry);
     });

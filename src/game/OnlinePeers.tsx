@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { avatarPartVisible } from './avatarParts.mjs';
 import { headingForMovement, isWalkable } from './navigation.mjs';
 import { COLORS, DEFAULT_AVATAR, type OnlinePeer } from '../types';
-import { AvatarAccessories } from './AvatarAccessories';
+import { createAvatarAppearance } from './avatarAppearance.mjs';
+import { wearableAssetUrls } from './wearableCatalog.mjs';
 
 const reduceMotion =
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -22,20 +22,29 @@ function OnlinePeerCharacter({
   const { scene } = useGLTF('/models/avatar.glb');
   const config = peer.avatar || DEFAULT_AVATAR;
 
-  const model = useMemo(() => {
-    const copy = scene.clone(true);
-    copy.traverse((o) => {
-      if (o instanceof THREE.Mesh) {
-        o.castShadow = true;
-        o.visible = avatarPartVisible(o.name, config);
-        const m = (o.material as THREE.MeshStandardMaterial).clone();
-        if (m.name === 'AvatarShirt') m.color.set((COLORS as Record<string, string>)[config.outfit] || COLORS.navy);
-        if (m.name === 'AvatarSkin') m.color.set(COLORS[config.skin] || COLORS.warm);
-        o.material = m;
-      }
-    });
-    return copy;
-  }, [scene, config.outfit, config.skin, config.hair, config.character]);
+  const urls = useMemo(
+    () => wearableAssetUrls(config),
+    [config.headwear, config.eyewear, config.outfit],
+  );
+  const assets = useGLTF(urls, false, true);
+  const model = useMemo(
+    () =>
+      createAvatarAppearance(scene, config, new Map(urls.map((url, i) => [url, assets[i].scene])), {
+        outfitColor: (COLORS as Record<string, string>)[config.outfit] || COLORS.navy,
+        skinColor: COLORS[config.skin] || COLORS.warm,
+      }),
+    [
+      scene,
+      assets,
+      urls,
+      config.outfit,
+      config.skin,
+      config.hair,
+      config.character,
+      config.headwear,
+      config.eyewear,
+    ],
+  );
 
   useEffect(
     () => () => {
@@ -69,8 +78,7 @@ function OnlinePeerCharacter({
   const moveHold = useRef(0);
   const swing = useMemo(() => new THREE.Quaternion(), []);
   const phase = useMemo(
-    () =>
-      peer.id.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0) * 0.37,
+    () => peer.id.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0) * 0.37,
     [peer.id],
   );
 
@@ -128,18 +136,8 @@ function OnlinePeerCharacter({
       // Smooth adaptive speed: glides steadily without stopping between 800ms packets
       const speed = THREE.MathUtils.clamp(dist * 3.4 + 1.8, 2.4, 7.8);
       const step = Math.min(dist, speed * dt);
-      g.position.x = THREE.MathUtils.damp(
-        g.position.x,
-        g.position.x + (dx / dist) * step,
-        18,
-        dt,
-      );
-      g.position.z = THREE.MathUtils.damp(
-        g.position.z,
-        g.position.z + (dz / dist) * step,
-        18,
-        dt,
-      );
+      g.position.x = THREE.MathUtils.damp(g.position.x, g.position.x + (dx / dist) * step, 18, dt);
+      g.position.z = THREE.MathUtils.damp(g.position.z, g.position.z + (dz / dist) * step, 18, dt);
       g.position.y = 0.28;
       if (dist > 0.04) {
         const desiredYaw = headingForMovement(dx, dz);
@@ -175,7 +173,6 @@ function OnlinePeerCharacter({
   return (
     <group ref={group} position={[peer.x, 0.28, peer.z]}>
       <primitive object={model} />
-      <AvatarAccessories headwear={config.headwear} eyewear={config.eyewear} outfit={config.outfit} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
         <ringGeometry args={[0.33, 0.4, 24]} />
         <meshBasicMaterial color="#22c55e" transparent opacity={0.82} depthWrite={false} />

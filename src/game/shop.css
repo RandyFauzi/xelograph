@@ -1296,3 +1296,101 @@
     transition: none !important;
   }
 }
+/* Fitting-room selections are temporary and visually distinct from owned equipment. */
+.modal-clash-shop .clash-card.is-trying {
+  border-color: #899fdd;
+  box-shadow: 0 0 0 1px #8da6e330;
+}
+.modal-clash-shop .is-trying .clash-card-subtag {
+  color: #4d5b99;
+  background: #edf0ff;
+}
+.modal-clash-shop .clash-card-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.modal-clash-shop .shop-try-button,
+.modal-clash-shop .shop-reset-fitting {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 9px;
+  border: 1px solid #d2deeb;
+  border-radius: 9px;
+  background: #f8fbfe;
+  color: #355a80;
+  font-size: 12px;
+  font-weight: 600;
+}
+.modal-clash-shop .shop-try-button:hover:not(:disabled) {
+  border-color: #a7bce0;
+  background: #edf3fc;
+}
+.modal-clash-shop .shop-try-button[aria-pressed='true'] {
+  background: #edf0ff;
+  color: #4d5b99;
+  border-color: #b4bfe9;
+}
+.modal-clash-shop .shop-fitting-notice {
+  padding: 10px;
+  border: 1px solid #c4d9ed;
+  border-radius: 9px;
+  background: #f4f9ff;
+  color: #3c6083;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.modal-clash-shop .is-trying .shop-fitting-notice {
+  border-color: #c4cdee;
+  background: #f3f4ff;
+  color: #4d5b99;
+}
+.modal-clash-shop .shop-tried-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.modal-clash-shop .shop-tried-items span {
+  font-size: 10px;
+  line-height: 1.5;
+  padding: 4px 6px;
+  background: #ffffffaa;
+  border-radius: 6px;
+  color: #4d5b99;
+}
+.modal-clash-shop .shop-reset-fitting {
+  width: 100%;
+  background: white;
+  font-size: 11px;
+}
+.modal-clash-shop .clash-fitting-model {
+  touch-action: none;
+  cursor: grab;
+}
+.modal-clash-shop .clash-fitting-model:active {
+  cursor: grabbing;
+}
+@media (max-width: 600px) {
+  .modal-clash-shop .shop-tried-items {
+    display: none;
+  }
+  .modal-clash-shop .shop-fitting-notice {
+    padding: 7px;
+    font-size: 10px;
+  }
+  .modal-clash-shop .shop-reset-fitting {
+    min-height: 40px;
+    padding: 7px;
+    font-size: 10px;
+  }
+  .modal-clash-shop .clash-fitting-stage.is-trying .clash-fitting-model {
+    height: 190px;
+  }
+}
+.modal-clash-shop .clash-fitting-hint {
+  display: block;
+}

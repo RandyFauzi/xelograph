@@ -6,6 +6,8 @@ import { COLORS, type Alumnus } from '../types';
 import { createStaticAvatar } from './staticAvatar.mjs';
 import { layoutAlumni } from './alumniLayout.mjs';
 import { animateCrowdMaterial, crowdPhase } from './crowdMotion.mjs';
+import { createAvatarAppearance } from './avatarAppearance.mjs';
+import { appearanceKey, wearableAssetUrls } from './wearableCatalog.mjs';
 type MotionUniforms = { time: { value: number }; enabled: { value: number } };
 
 export default function AlumniCrowd({
@@ -31,33 +33,37 @@ export default function AlumniCrowd({
   }, [motion]);
   const { scene } = useGLTF('/models/avatar.glb', false, true),
     placements = useMemo(() => layoutAlumni(alumni), [alumni]);
-  const styleKeys = [
-    ...new Set(alumni.map((a) => `${a.avatar.character || 'male'}:${a.avatar.hair}`)),
-  ]
+  const assetKey = [...new Set(alumni.flatMap((a) => wearableAssetUrls(a.avatar)))]
     .sort()
     .join('|');
-  const templates = useMemo(
-    () =>
-      (styleKeys ? styleKeys.split('|') : []).map((key) => {
-        const [character, hair] = key.split(':');
-        return {
-          hair,
-          character,
-          model: createStaticAvatar(scene, {
-            hair,
-            character,
-            outfitColor: '#ffffff',
-            skinColor: '#ffffff',
-          }),
-        };
-      }),
-    [scene, styleKeys],
-  );
+  const urls = useMemo(() => (assetKey ? assetKey.split('|') : []), [assetKey]);
+  const assets = useGLTF(urls, false, true);
+  const styleKeys = [...new Set(alumni.map((a) => appearanceKey(a.avatar)))].sort().join('|');
+  const templates = useMemo(() => {
+    const sources = new Map(urls.map((url, i) => [url, assets[i].scene]));
+    return (styleKeys ? styleKeys.split('|') : []).map((key) => {
+      const [character, hair, outfit, headwear, eyewear] = key.split(':');
+      const config = { character, hair, outfit, headwear, eyewear };
+      const appearance = createAvatarAppearance(scene, config, sources);
+      const model = createStaticAvatar(appearance, {
+        ...config,
+        outfitColor: '#ffffff',
+        skinColor: '#ffffff',
+      });
+      appearance.traverse((o: THREE.Object3D) => {
+        if (o instanceof THREE.Mesh) (o.material as THREE.Material).dispose();
+      });
+      return { key, model };
+    });
+  }, [scene, styleKeys, urls, assets]);
   useEffect(
     () => () => {
       for (const { model } of templates)
         model.traverse((o) => {
-          if (o instanceof THREE.Mesh) (o.material as THREE.Material).dispose();
+          if (o instanceof THREE.Mesh) {
+            (o.material as THREE.Material).dispose();
+            o.geometry.dispose();
+          }
         });
     },
     [templates],
@@ -66,11 +72,7 @@ export default function AlumniCrowd({
     () =>
       templates.map((template) => ({
         ...template,
-        members: alumni.filter(
-          (a) =>
-            a.avatar.hair === template.hair &&
-            (a.avatar.character || 'male') === template.character,
-        ),
+        members: alumni.filter((a) => appearanceKey(a.avatar) === template.key),
       })),
     [templates, alumni],
   );
@@ -101,10 +103,10 @@ export default function AlumniCrowd({
   return (
     <>
       {batches.map(
-        ({ hair, character, model, members }) =>
+        ({ key, model, members }) =>
           members.length > 0 && (
             <CrowdBatch
-              key={character + hair}
+              key={key}
               members={members}
               template={model}
               placements={placements}
