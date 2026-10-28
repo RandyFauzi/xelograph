@@ -9,6 +9,14 @@ export const STORE_OUTFITS = [
   'row4_08_formal_tie',
 ];
 export const isStoreOutfit = (outfit) => STORE_OUTFITS.includes(outfit);
+export function baseAppearance(config) {
+  return {
+    ...config,
+    outfit: isStoreOutfit(config.outfit) ? 'navy' : config.outfit,
+    headwear: undefined,
+    eyewear: undefined,
+  };
+}
 export function wearableAssetUrls(config) {
   return [
     config.headwear === 'topi_beret_bear' ? '/models/topi_beret_bear.glb' : null,

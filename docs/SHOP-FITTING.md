@@ -9,3 +9,9 @@ Pemasangan memperbarui kamar pas secara lokal, lalu profil dunia diperbarui sete
 NPC dikelompokkan menurut model, baju dan aksesori, dengan pewarnaan per instance untuk pakaian dasar. Model toko serta teksturnya tetap digunakan, termasuk UV ketika geometry dibatch. Hanya sumber GLB yang dibaca; material dan transformasi per karakter berupa salinan. Memakai kembali baju dasar memulihkan mesh bawaan.
 
 Pengujian mencakup coba dengan saldo nol tanpa perubahan data, kombinasi dan reset, 48 kombinasi delapan baju dengan enam karakter, kelengkapan material/UV/pivot, serta hasil equip server dan saldo pembelian yang tidak dipotong kembali saat memakai item.
+
+Pakaian dan aksesori dimuat di dalam Suspense dan error boundary tersendiri untuk pemain, online peers, dan NPC. Saat aset tambahan belum tersedia atau gagal, avatar dasar tetap tampil; dunia tidak ikut diganti dengan fallback. Pergantian pilihan mereset error boundary, dan kegagalan jaringan dicoba ulang satu kali. Kamar pas memakai render sesuai kebutuhan, DPR 1, dan bayangan sekali render untuk mengurangi beban GPU saat berganti item.
+
+Kehilangan konteks WebGL tidak langsung membongkar canvas dunia: event dibatalkan agar renderer dapat memulihkan resource, dengan batas waktu 10 detik. Jika pemulihan gagal, tersedia tombol Muat ulang dunia. Uji Fiber tanpa browser mencakup pergantian baju/aksesori berulang dalam StrictMode, membuka ulang render, dan isolasi error aset. Uji ini tidak mensimulasikan driver GPU perangkat pengguna.
+
+Penyelesaian survei pertama melalui `/api/complete` memberikan tambahan 50 koin di atas saldo yang sudah ada. Penandaan selesai, penambahan saldo, dan pengumuman chat berjalan dalam satu transaksi. Penyelesaian berulang dan perubahan jawaban setelah selesai tidak menghasilkan hadiah tambahan. Data yang sudah ditandai selesai sebelum pembaruan tidak diberi hadiah secara retroaktif.

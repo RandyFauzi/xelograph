@@ -8,7 +8,7 @@ import {
   Component,
   type ReactNode,
 } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import {
   ContactShadows,
   Html,
@@ -29,7 +29,8 @@ import GerobakPentol from './game/GerobakPentol';
 import ShopBuilding from './game/ShopBuilding';
 import OnlinePeers from './game/OnlinePeers';
 import { createAvatarAppearance } from './game/avatarAppearance.mjs';
-import { wearableAssetUrls } from './game/wearableCatalog.mjs';
+import { wearableAssetUrls, appearanceKey, baseAppearance } from './game/wearableCatalog.mjs';
+import AvatarAssetBoundary from './game/AvatarAssetBoundary';
 import { layoutAlumni } from './game/alumniLayout.mjs';
 import type { TravelRequest } from './GameScreen';
 import { Lock, Navigation, RotateCcw, Footprints, ArrowUp } from 'lucide-react';
@@ -43,6 +44,32 @@ import {
 } from './types';
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function ContextRecovery({ onFailure }: { onFailure: () => void }) {
+  const { gl, setDpr, invalidate } = useThree();
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const lost = (event: Event) => {
+      // Keep the canvas mounted so Three can restore its resources after a GPU reset.
+      event.preventDefault();
+      setDpr(1);
+      clearTimeout(timeout);
+      timeout = setTimeout(onFailure, 10000);
+    };
+    const restored = () => {
+      clearTimeout(timeout);
+      invalidate();
+    };
+    const canvas = gl.domElement;
+    canvas.addEventListener('webglcontextlost', lost);
+    canvas.addEventListener('webglcontextrestored', restored);
+    return () => {
+      clearTimeout(timeout);
+      canvas.removeEventListener('webglcontextlost', lost);
+      canvas.removeEventListener('webglcontextrestored', restored);
+    };
+  }, [gl, setDpr, invalidate, onFailure]);
+  return null;
+}
 function RouteTrail({ path }: { path: React.RefObject<PathPoint[]> }) {
   const mesh = useRef<THREE.InstancedMesh>(null),
     dummy = useMemo(() => new THREE.Object3D(), []);
@@ -70,7 +97,7 @@ function RouteTrail({ path }: { path: React.RefObject<PathPoint[]> }) {
     </instancedMesh>
   );
 }
-function Character({
+function CharacterAppearance({
   config = DEFAULT_AVATAR,
   moving,
   ...props
@@ -84,7 +111,7 @@ function Character({
     () => wearableAssetUrls(config),
     [config.headwear, config.eyewear, config.outfit],
   );
-  const assets = useGLTF(urls, false, true);
+  const assets = useGLTF(urls.length ? urls : ['/models/avatar.glb'], false, true);
   const model = useMemo(
     () =>
       createAvatarAppearance(scene, config, new Map(urls.map((url, i) => [url, assets[i].scene])), {
@@ -106,7 +133,9 @@ function Character({
   useEffect(
     () => () => {
       model.traverse((o) => {
-        if (o instanceof THREE.Mesh) (o.material as THREE.Material).dispose();
+        if (o instanceof THREE.Mesh)
+          for (const material of Array.isArray(o.material) ? o.material : [o.material])
+            material.dispose();
       });
     },
     [model],
@@ -137,6 +166,27 @@ function Character({
     </group>
   );
 }
+export function Character(props: {
+  config?: AvatarConfig;
+  moving?: React.RefObject<boolean>;
+  [key: string]: any;
+}) {
+  const config = props.config || DEFAULT_AVATAR;
+  const fallback = <CharacterAppearance {...props} config={baseAppearance(config)} />;
+  const urls = wearableAssetUrls(config);
+  return (
+    <AvatarAssetBoundary
+      appearance={appearanceKey(config)}
+      fallback={fallback}
+      retryAssets={() => useGLTF.clear(urls.length ? urls : ['/models/avatar.glb'])}
+    >
+      <Suspense fallback={fallback}>
+        <CharacterAppearance {...props} config={config} />
+      </Suspense>
+    </AvatarAssetBoundary>
+  );
+}
+
 class SceneBoundary extends Component<
   { children: ReactNode; fallback: ReactNode },
   { failed: boolean }
@@ -144,6 +194,9 @@ class SceneBoundary extends Component<
   state = { failed: false };
   static getDerivedStateFromError() {
     return { failed: true };
+  }
+  componentDidCatch(error: Error) {
+    console.error('World renderer failed:', error);
   }
   render() {
     return this.state.failed ? this.props.fallback : this.props.children;
@@ -158,14 +211,19 @@ export function AvatarPreview({
 }) {
   return (
     <SceneBoundary fallback={<div className="avatar-fallback">Avatar {config.outfit}</div>}>
-      <Canvas camera={{ position: [2, 1.6, 3.2], fov: 32 }} dpr={[1, 1.5]}>
+      <Canvas
+        camera={{ position: [2, 1.6, 3.2], fov: 32 }}
+        dpr={1}
+        frameloop="demand"
+        gl={{ antialias: false, powerPreference: 'low-power' }}
+      >
         <ambientLight intensity={2} />
         <directionalLight position={[3, 4, 5]} intensity={3} />
         <Suspense fallback={null}>
           <group position={[0, -0.7, 0]}>
             <Character config={config} />
           </group>
-          <ContactShadows position={[0, -0.72, 0]} opacity={0.2} scale={5} blur={3} />
+          <ContactShadows position={[0, -0.72, 0]} opacity={0.2} scale={5} blur={3} frames={1} />
           {interactive && (
             <OrbitControls
               enablePan={false}
@@ -367,6 +425,8 @@ export default function World({
     controls = useRef<any>(null),
     mapDot = useRef<SVGCircleElement>(null),
     zoneLatch = useRef(-1);
+  const [sceneAttempt, setSceneAttempt] = useState(0);
+  const contextFailed = useCallback(() => setFailed(true), []);
   const [dpr, setDpr] = useState(window.innerWidth < 760 ? 1.25 : 1.5);
   const loading = useProgress((state) => state.active);
   const [near, setNear] = useState(-1),
@@ -513,14 +573,27 @@ export default function World({
     <div className="world-fallback">
       <h3>Perjalanan tetap berlanjut.</h3>
       <p>
-        Perangkat ini belum bisa menampilkan dunia 3D. Gunakan mode ringan di pengaturan untuk
-        melanjutkan misi satu per satu.
+        Dunia 3D belum berhasil dimuat. Coba muat ulang dunia atau gunakan mode ringan di pengaturan
+        untuk melanjutkan misi satu per satu.
       </p>
+      <button
+        type="button"
+        className="primary"
+        onClick={() => {
+          useGLTF.clear('/models/world.glb');
+          useGLTF.clear('/models/avatar.glb');
+          setDpr(1);
+          setFailed(false);
+          setSceneAttempt((attempt) => attempt + 1);
+        }}
+      >
+        Muat ulang dunia
+      </button>
     </div>
   );
   if (failed) return fallback;
   return (
-    <SceneBoundary fallback={fallback}>
+    <SceneBoundary key={sceneAttempt} fallback={fallback}>
       <div className="world-canvas">
         <Canvas
           shadows
@@ -529,9 +602,9 @@ export default function World({
           onCreated={({ gl }) => {
             gl.setClearColor('#c7e0ee');
             gl.toneMappingExposure = 1.05;
-            gl.domElement.addEventListener('webglcontextlost', () => setFailed(true));
           }}
         >
+          <ContextRecovery onFailure={contextFailed} />
           <fog attach="fog" args={['#c7e0ee', 65, 125]} />
           <ambientLight intensity={0.6} />
           <hemisphereLight args={['#f6fbff', '#91b96b', 0.9]} />

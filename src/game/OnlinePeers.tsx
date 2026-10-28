@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { headingForMovement, isWalkable } from './navigation.mjs';
 import { COLORS, DEFAULT_AVATAR, type OnlinePeer } from '../types';
 import { createAvatarAppearance } from './avatarAppearance.mjs';
-import { wearableAssetUrls } from './wearableCatalog.mjs';
+import { wearableAssetUrls, appearanceKey, baseAppearance } from './wearableCatalog.mjs';
+import AvatarAssetBoundary from './AvatarAssetBoundary';
 
 const reduceMotion =
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -26,7 +27,7 @@ function OnlinePeerCharacter({
     () => wearableAssetUrls(config),
     [config.headwear, config.eyewear, config.outfit],
   );
-  const assets = useGLTF(urls, false, true);
+  const assets = useGLTF(urls.length ? urls : ['/models/avatar.glb'], false, true);
   const model = useMemo(
     () =>
       createAvatarAppearance(scene, config, new Map(urls.map((url, i) => [url, assets[i].scene])), {
@@ -49,7 +50,9 @@ function OnlinePeerCharacter({
   useEffect(
     () => () => {
       model.traverse((o) => {
-        if (o instanceof THREE.Mesh) (o.material as THREE.Material).dispose();
+        if (o instanceof THREE.Mesh)
+          for (const material of Array.isArray(o.material) ? o.material : [o.material])
+            material.dispose();
       });
     },
     [model],
@@ -217,12 +220,25 @@ export default function OnlinePeers({
           (peer.nickname ? activeBubbles[peer.nickname.toLowerCase().trim()] : undefined) ||
           (peer.alumniId ? activeBubbles[peer.alumniId.toLowerCase()] : undefined);
         return (
-          <OnlinePeerCharacter
+          <AvatarAssetBoundary
             key={peer.id}
-            peer={peer}
-            playing={playing}
-            bubbleText={bubbleText}
-          />
+            appearance={appearanceKey(peer.avatar || DEFAULT_AVATAR)}
+            retryAssets={() => {
+              const urls = wearableAssetUrls(peer.avatar || DEFAULT_AVATAR);
+              useGLTF.clear(urls.length ? urls : ['/models/avatar.glb']);
+            }}
+            fallback={
+              <OnlinePeerCharacter
+                peer={{ ...peer, avatar: baseAppearance(peer.avatar || DEFAULT_AVATAR) }}
+                playing={playing}
+                bubbleText={bubbleText}
+              />
+            }
+          >
+            <Suspense fallback={null}>
+              <OnlinePeerCharacter peer={peer} playing={playing} bubbleText={bubbleText} />
+            </Suspense>
+          </AvatarAssetBoundary>
         );
       })}
     </group>

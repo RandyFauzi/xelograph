@@ -323,8 +323,10 @@ export default function App() {
       );
     } else {
       try {
-        const done = await api<Profile>('/complete', { method: 'POST' });
+        const done = await api<Profile & { rewardCoins: number }>('/complete', { method: 'POST' });
         setProfile(done);
+        if (done.rewardCoins > 0)
+          setToast('Survei selesai! Hadiah 50 koin sudah masuk ke dompetmu.');
         setModal('pass');
         refresh();
       } catch (e) {

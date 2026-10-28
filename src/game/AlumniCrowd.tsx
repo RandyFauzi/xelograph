@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -7,10 +7,11 @@ import { createStaticAvatar } from './staticAvatar.mjs';
 import { layoutAlumni } from './alumniLayout.mjs';
 import { animateCrowdMaterial, crowdPhase } from './crowdMotion.mjs';
 import { createAvatarAppearance } from './avatarAppearance.mjs';
-import { appearanceKey, wearableAssetUrls } from './wearableCatalog.mjs';
+import { appearanceKey, wearableAssetUrls, baseAppearance } from './wearableCatalog.mjs';
+import AvatarAssetBoundary from './AvatarAssetBoundary';
 type MotionUniforms = { time: { value: number }; enabled: { value: number } };
 
-export default function AlumniCrowd({
+function AlumniCrowdContent({
   alumni,
   playing,
   focusId,
@@ -37,7 +38,7 @@ export default function AlumniCrowd({
     .sort()
     .join('|');
   const urls = useMemo(() => (assetKey ? assetKey.split('|') : []), [assetKey]);
-  const assets = useGLTF(urls, false, true);
+  const assets = useGLTF(urls.length ? urls : ['/models/avatar.glb'], false, true);
   const styleKeys = [...new Set(alumni.map((a) => appearanceKey(a.avatar)))].sort().join('|');
   const templates = useMemo(() => {
     const sources = new Map(urls.map((url, i) => [url, assets[i].scene]));
@@ -130,6 +131,30 @@ export default function AlumniCrowd({
     </>
   );
 }
+export default function AlumniCrowd(props: Parameters<typeof AlumniCrowdContent>[0]) {
+  const key = props.alumni
+    .map((a) => appearanceKey(a.avatar))
+    .sort()
+    .join('|');
+  const basic = useMemo(
+    () => props.alumni.map((a) => ({ ...a, avatar: baseAppearance(a.avatar) })),
+    [props.alumni],
+  );
+  const fallback = <AlumniCrowdContent {...props} alumni={basic} />;
+  const urls = [...new Set(props.alumni.flatMap((a) => wearableAssetUrls(a.avatar)))].sort();
+  return (
+    <AvatarAssetBoundary
+      appearance={key}
+      fallback={fallback}
+      retryAssets={() => useGLTF.clear(urls.length ? urls : ['/models/avatar.glb'])}
+    >
+      <Suspense fallback={fallback}>
+        <AlumniCrowdContent {...props} />
+      </Suspense>
+    </AvatarAssetBoundary>
+  );
+}
+
 function CrowdBatch({
   members,
   template,

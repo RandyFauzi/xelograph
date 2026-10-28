@@ -1160,24 +1160,30 @@ export function createApiHandler({
           const cur = profile(id);
           if (cur.progress.length !== 7)
             throw new HttpError(400, 'Selesaikan ketujuh checkpoint terlebih dahulu.');
-          const wasCompleted = !!cur.completedAt;
-          db.prepare(
-            'UPDATE responses SET completed_at=COALESCE(completed_at,?) WHERE alumni_id=?',
-          ).run(new Date().toISOString(), id);
-          if (!wasCompleted) {
+          let rewardCoins = 0;
+          transaction(() => {
+            // The durable completion transition is the claim: retries cannot mint more coins.
+            const completed = db
+              .prepare(
+                'UPDATE responses SET completed_at=? WHERE alumni_id=? AND completed_at IS NULL',
+              )
+              .run(new Date().toISOString(), id);
+            if (!completed.changes) return;
+            db.prepare(
+              'INSERT INTO user_wallets(alumni_id, coins_balance) VALUES(?,150) ON CONFLICT(alumni_id) DO UPDATE SET coins_balance=coins_balance+50, updated_at=CURRENT_TIMESTAMP',
+            ).run(id);
+            rewardCoins = 50;
             const sysId = randomUUID();
             const iso = new Date().toISOString();
-            const broadcastText = `🎉 ${cur.nickname} baru saja menyelesaikan survei reuni dan mendapatkan Reunion Pass!`;
-            transaction(() => {
-              db.prepare(
-                'INSERT INTO chat_messages(id, alumni_id, visitor_id, nickname, text, is_system, created_at, created_ms) VALUES(?,?,?,?,?,1,?,?)',
-              ).run(sysId, id, null, 'Sistem', broadcastText, iso, Date.now());
-              db.prepare(
-                'DELETE FROM chat_messages WHERE id NOT IN (SELECT id FROM chat_messages ORDER BY created_ms DESC LIMIT 100)',
-              ).run();
-            });
-          }
-          return json(profile(id));
+            const broadcastText = `🎉 ${cur.nickname} baru saja menyelesaikan survei reuni dan mendapatkan Reunion Pass serta 50 Koin!`;
+            db.prepare(
+              'INSERT INTO chat_messages(id, alumni_id, visitor_id, nickname, text, is_system, created_at, created_ms) VALUES(?,?,?,?,?,1,?,?)',
+            ).run(sysId, id, null, 'Sistem', broadcastText, iso, Date.now());
+            db.prepare(
+              'DELETE FROM chat_messages WHERE id NOT IN (SELECT id FROM chat_messages ORDER BY created_ms DESC LIMIT 100)',
+            ).run();
+          });
+          return json({ ...profile(id), rewardCoins });
         }
         if (method === 'PATCH' && path === '/api/profile') {
           if (typeof body.consentPublic !== 'boolean')

@@ -120,6 +120,47 @@ test('Next.js proxy accepts only explicitly configured frontend origins from loo
     403,
   );
 });
+test('Survey completion awards 50 coins once, preserves spending, and rolls back on failure', async (t) => {
+  const { db, request, invite, join } = await fixture(t);
+  invite();
+  const joined = await join();
+  const cookie = joined.cookie;
+  const id = joined.body.id;
+  const complete = () => request('/complete', { cookie, method: 'POST' });
+  const balance = () =>
+    db.prepare('SELECT coins_balance AS n FROM user_wallets WHERE alumni_id=?').get(id).n;
+  assert.equal((await complete()).status, 400);
+  assert.equal(balance(), 100);
+  assert.equal(
+    (await request('/store/buy', { cookie, method: 'POST', body: { itemId: 'pixel_sunglasses' } }))
+      .status,
+    200,
+  );
+  assert.equal(balance(), 60);
+  for (let i = 0; i < answers.length; i++)
+    assert.equal(
+      (await request('/answers/' + i, { cookie, method: 'PUT', body: answers[i] })).status,
+      200,
+    );
+  db.exec(
+    "CREATE TRIGGER fail_reward BEFORE UPDATE ON user_wallets BEGIN SELECT RAISE(ABORT, 'test wallet failure'); END",
+  );
+  assert.notEqual((await complete()).status, 200);
+  assert.equal((await request('/me', { cookie })).body.completedAt, null);
+  assert.equal(balance(), 60);
+  db.exec('DROP TRIGGER fail_reward');
+  const results = await Promise.all([complete(), complete(), complete()]);
+  assert.deepEqual(
+    results.map((r) => r.body.rewardCoins).sort((a, b) => a - b),
+    [0, 0, 50],
+  );
+  assert.equal(balance(), 110);
+  await request('/answers/6', { cookie, method: 'PUT', body: { message: 'Pesan baru' } });
+  assert.equal((await complete()).body.rewardCoins, 0);
+  assert.equal(balance(), 110);
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM chat_messages WHERE is_system=1').get().n, 1);
+});
+
 test('Private invitations, secure sessions, resume, autosave, completion and public privacy', async (t) => {
   const { request, invite, join } = await fixture(t);
   invite();
