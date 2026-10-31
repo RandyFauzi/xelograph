@@ -304,6 +304,57 @@ test('Avatar Store & Inventory: coin balance, purchasing, equipping, and unautho
     const completedStatusData = await completedStatusRes.json();
     assert.equal(completedStatusData.status, 'completed');
     assert.equal(completedStatusData.coins_awarded, 250);
+
+    // 14. 12 Stylized Hats Collection Verification
+    const HATS_LIST = [
+      'hat_01_cap_blue',
+      'hat_02_snapback_red',
+      'hat_03_beanie_black',
+      'hat_04_bucket_safari',
+      'hat_05_snapback_black_red',
+      'hat_06_fedora_brown',
+      'hat_07_straw_luffy',
+      'hat_08_visor_green',
+      'hat_09_winter_pompom',
+      'hat_10_sweatband_sports',
+      'hat_11_crown_gold',
+      'hat_12_bandana_pirate',
+    ];
+    for (const hatId of HATS_LIST) {
+      const found = guestData.items.find((i) => i.id === hatId);
+      assert.ok(found, `Store item ${hatId} must exist in catalog`);
+      assert.equal(found.price_coins, 30, `${hatId} price must be 30 coins`);
+      assert.equal(found.category, 'headwear', `${hatId} category must be headwear`);
+    }
+
+    // Buy and equip one of the hats (hat_07_straw_luffy, 30 coins)
+    // 365 - 30 = 335
+    const buyHatRes = await handle(
+      new Request('http://localhost/api/store/buy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', cookie },
+        body: JSON.stringify({ itemId: 'hat_07_straw_luffy' }),
+      }),
+    );
+    assert.equal(buyHatRes.status, 200);
+    const buyHatData = await buyHatRes.json();
+    assert.equal(buyHatData.ok, true);
+    assert.equal(buyHatData.coins, 335);
+
+    const equipHatRes = await handle(
+      new Request('http://localhost/api/store/equip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', cookie },
+        body: JSON.stringify({
+          itemId: 'hat_07_straw_luffy',
+          slot: 'headwear',
+          action: 'equip',
+        }),
+      }),
+    );
+    assert.equal(equipHatRes.status, 200);
+    const equipHatData = await equipHatRes.json();
+    assert.equal(equipHatData.avatar.headwear, 'hat_07_straw_luffy');
   } finally {
     db.close();
   }

@@ -155,7 +155,12 @@ export default function ShopModal({
           setInventory(storeData.inventory || []);
 
           if (storeData.equipped && storeData.equipped.length > 0) {
-            const head = storeData.equipped.find((id) => id === 'topi_beret_bear');
+            const head = storeData.equipped.find(
+              (id) =>
+                id === 'topi_beret_bear' ||
+                id.startsWith('hat_') ||
+                storeData.items?.some((i) => i.id === id && i.category === 'headwear'),
+            );
             const eye = storeData.equipped.find(
               (id) => id === 'pixel_sunglasses' || id === 'anime_sunglasses',
             );
@@ -412,6 +417,18 @@ export default function ShopModal({
   ];
   const getCleanTitle = (item: StoreItem) => {
     if (item.id === 'topi_beret_bear') return 'TOPI BERET';
+    if (item.id === 'hat_01_cap_blue') return 'BASEBALL CAP';
+    if (item.id === 'hat_02_snapback_red') return 'SNAPBACK RED';
+    if (item.id === 'hat_03_beanie_black') return 'BLACK BEANIE';
+    if (item.id === 'hat_04_bucket_safari') return 'SAFARI BUCKET';
+    if (item.id === 'hat_05_snapback_black_red') return 'SNAPBACK DUAL';
+    if (item.id === 'hat_06_fedora_brown') return 'CLASSIC FEDORA';
+    if (item.id === 'hat_07_straw_luffy') return 'STRAW HAT';
+    if (item.id === 'hat_08_visor_green') return 'TENNIS VISOR';
+    if (item.id === 'hat_09_winter_pompom') return 'WINTER POMPOM';
+    if (item.id === 'hat_10_sweatband_sports') return 'SWEATBAND';
+    if (item.id === 'hat_11_crown_gold') return 'ROYAL CROWN';
+    if (item.id === 'hat_12_bandana_pirate') return 'PIRATE BANDANA';
     if (item.id === 'pixel_sunglasses') return 'KACAMATA PIXEL';
     if (item.id === 'anime_sunglasses') return 'KACAMATA ANIME';
     if (item.id === 'row4_01_varsity_black') return 'VARSITY JACKET';
@@ -854,9 +871,12 @@ export default function ShopModal({
                       <HardHat size={12} aria-hidden="true" /> Topi
                     </span>
                     <strong>
-                      {previewAvatar.headwear === 'topi_beret_bear'
-                        ? 'Topi Beret Beruang'
-                        : 'Belum dipakai'}
+                      {items.find((i) => i.id === previewAvatar.headwear)?.name ||
+                        (previewAvatar.headwear === 'topi_beret_bear'
+                          ? 'Topi Beret Beruang'
+                          : previewAvatar.headwear
+                            ? 'Topi Khusus'
+                            : 'Belum dipakai')}
                     </strong>
                   </div>
                   <div className="clash-slot-pill">

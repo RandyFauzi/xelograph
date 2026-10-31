@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
+import { getHeadwearTransform } from './avatarAppearance.mjs';
 
 export function TopiBeretBear({ scale = 0.92 }: { scale?: number }) {
   const { scene } = useGLTF('/models/topi_beret_bear.glb', false, true);
@@ -88,6 +89,34 @@ export function CustomShirtModel({
   );
 }
 
+export function StoreHatModel({
+  modelUrl,
+  id,
+}: {
+  modelUrl: string;
+  id?: string;
+}) {
+  const { scene } = useGLTF(modelUrl, false, true);
+  const model = useMemo(() => {
+    const copy = scene.clone(true);
+    copy.traverse((o) => {
+      if (o instanceof THREE.Mesh) {
+        o.castShadow = true;
+        o.receiveShadow = true;
+      }
+    });
+    return copy;
+  }, [scene]);
+
+  const { position, scale } = getHeadwearTransform(id);
+
+  return (
+    <group position={position as [number, number, number]} scale={scale}>
+      <primitive object={model} />
+    </group>
+  );
+}
+
 export function AvatarAccessories({
   headwear,
   eyewear,
@@ -102,6 +131,9 @@ export function AvatarAccessories({
   return (
     <>
       {headwear === 'topi_beret_bear' && <TopiBeretBear />}
+      {headwear && headwear.startsWith('hat_') && (
+        <StoreHatModel modelUrl={`/models/${headwear}.glb`} id={headwear} />
+      )}
       {eyewear === 'pixel_sunglasses' && <PixelSunglasses />}
       {eyewear === 'anime_sunglasses' && <AnimeSunglasses />}
       {isCustomOutfit && <CustomShirtModel modelUrl={`/models/${outfit}.glb`} />}
@@ -110,6 +142,22 @@ export function AvatarAccessories({
 }
 
 useGLTF.preload('/models/topi_beret_bear.glb', false, true);
+[
+  'hat_01_cap_blue',
+  'hat_02_snapback_red',
+  'hat_03_beanie_black',
+  'hat_04_bucket_safari',
+  'hat_05_snapback_black_red',
+  'hat_06_fedora_brown',
+  'hat_07_straw_luffy',
+  'hat_08_visor_green',
+  'hat_09_winter_pompom',
+  'hat_10_sweatband_sports',
+  'hat_11_crown_gold',
+  'hat_12_bandana_pirate',
+].forEach((id) => {
+  useGLTF.preload(`/models/${id}.glb`, false, true);
+});
 useGLTF.preload('/models/pixel_sunglasses.glb', false, true);
 useGLTF.preload('/models/anime_sunglasses.glb', false, true);
 [

@@ -9,6 +9,24 @@ export const STORE_OUTFITS = [
   'row4_08_formal_tie',
 ];
 export const isStoreOutfit = (outfit) => STORE_OUTFITS.includes(outfit);
+
+export const STORE_HATS = [
+  'topi_beret_bear',
+  'hat_01_cap_blue',
+  'hat_02_snapback_red',
+  'hat_03_beanie_black',
+  'hat_04_bucket_safari',
+  'hat_05_snapback_black_red',
+  'hat_06_fedora_brown',
+  'hat_07_straw_luffy',
+  'hat_08_visor_green',
+  'hat_09_winter_pompom',
+  'hat_10_sweatband_sports',
+  'hat_11_crown_gold',
+  'hat_12_bandana_pirate',
+];
+export const isStoreHat = (hat) => STORE_HATS.includes(hat);
+
 export function baseAppearance(config) {
   return {
     ...config,
@@ -19,7 +37,7 @@ export function baseAppearance(config) {
 }
 export function wearableAssetUrls(config) {
   return [
-    config.headwear === 'topi_beret_bear' ? '/models/topi_beret_bear.glb' : null,
+    isStoreHat(config.headwear) ? `/models/${config.headwear}.glb` : null,
     ['pixel_sunglasses', 'anime_sunglasses'].includes(config.eyewear)
       ? `/models/${config.eyewear}.glb`
       : null,

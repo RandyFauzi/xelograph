@@ -165,6 +165,115 @@ export function openDb(path = process.env.DATABASE_PATH || './data/xelograph.sql
       '/branding/store/row4_08_formal_tie.png',
       'Kemeja putih rapi lengan pendek berlipat dengan dasi formal hitam bersimpul Windsor dan saku dada.',
     );
+    // 12 Stylized Low-Poly Hats Collection (30 Koin per topi)
+    insertItem.run(
+      'hat_01_cap_blue',
+      'Topi Baseball Biru Klasik',
+      'headwear',
+      30,
+      '/models/hat_01_cap_blue.glb',
+      '/branding/store/hat_01_cap_blue.png',
+      'Topi baseball biru royal dengan crown 6 panel, eyelet udara, kancing atas, dan visor melengkung.',
+    );
+    insertItem.run(
+      'hat_02_snapback_red',
+      'Snapback Merah Terbalik',
+      'headwear',
+      30,
+      '/models/hat_02_snapback_red.glb',
+      '/branding/store/hat_02_snapback_red.png',
+      'Snapback merah cerah bergaya kasual terbalik dengan strap plastik hitam dan visor datar di belakang.',
+    );
+    insertItem.run(
+      'hat_03_beanie_black',
+      'Kupluk Rajut Hitam Beanie',
+      'headwear',
+      30,
+      '/models/hat_03_beanie_black.glb',
+      '/branding/store/hat_03_beanie_black.png',
+      'Beanie rajut hitam arang hangat dengan lipatan cuff tebal bertekstur rib untuk gaya santai.',
+    );
+    insertItem.run(
+      'hat_04_bucket_safari',
+      'Bucket Hat Safari Pita Biru',
+      'headwear',
+      30,
+      '/models/hat_04_bucket_safari.glb',
+      '/branding/store/hat_04_bucket_safari.png',
+      'Bucket hat kanvas krem safari dengan pita lingkar biru royal dan brim melingkar pelindung sinar.',
+    );
+    insertItem.run(
+      'hat_05_snapback_black_red',
+      'Snapback Hitam Visor Merah',
+      'headwear',
+      30,
+      '/models/hat_05_snapback_black_red.glb',
+      '/branding/store/hat_05_snapback_black_red.png',
+      'Topi snapback hip-hop crown hitam pekat berkancing merah dengan visor datar merah kontras.',
+    );
+    insertItem.run(
+      'hat_06_fedora_brown',
+      'Fedora Cokelat Klasik Detektif',
+      'headwear',
+      30,
+      '/models/hat_06_fedora_brown.glb',
+      '/branding/store/hat_06_fedora_brown.png',
+      'Topi fedora wol cokelat elegan dengan lekukan teardrop crown, brim melengkung, dan pita hitam.',
+    );
+    insertItem.run(
+      'hat_07_straw_luffy',
+      'Topi Jerami Petualang',
+      'headwear',
+      30,
+      '/models/hat_07_straw_luffy.glb',
+      '/branding/store/hat_07_straw_luffy.png',
+      'Topi anyaman jerami emas legendaris dengan pita merah melingkar untuk petualangan tanpa batas.',
+    );
+    insertItem.run(
+      'hat_08_visor_green',
+      'Sun Visor Tenis Hijau Putih',
+      'headwear',
+      30,
+      '/models/hat_08_visor_green.glb',
+      '/branding/store/hat_08_visor_green.png',
+      'Visor olahraga tenis hijau berpanel putih dengan visor panjang dan strap elastis nyaman.',
+    );
+    insertItem.run(
+      'hat_09_winter_pompom',
+      'Kupluk Salju Pompom Motif Zigzag',
+      'headwear',
+      30,
+      '/models/hat_09_winter_pompom.glb',
+      '/branding/store/hat_09_winter_pompom.png',
+      'Beanie musim dingin biru dengan motif zigzag salju, cuff tebal lipat, dan pompom wol empuk di pucuk.',
+    );
+    insertItem.run(
+      'hat_10_sweatband_sports',
+      'Headband Olahraga Garis Merah',
+      'headwear',
+      30,
+      '/models/hat_10_sweatband_sports.glb',
+      '/branding/store/hat_10_sweatband_sports.png',
+      'Headband terrycloth putih elastis dengan strip garis merah di tengah untuk menyerap keringat.',
+    );
+    insertItem.run(
+      'hat_11_crown_gold',
+      'Mahkota Emas Permata Kerajaan',
+      'headwear',
+      30,
+      '/models/hat_11_crown_gold.glb',
+      '/branding/store/hat_11_crown_gold.png',
+      'Mahkota kerajaan emas 5 puncak bertabur permata batu ruby merah dan safir biru berkilau.',
+    );
+    insertItem.run(
+      'hat_12_bandana_pirate',
+      'Bandana Bajak Laut Simpul Merah',
+      'headwear',
+      30,
+      '/models/hat_12_bandana_pirate.glb',
+      '/branding/store/hat_12_bandana_pirate.png',
+      'Bandana kepala hitam dengan ikat merah berikat simpul pita dan dua ekor kain menjuntai.',
+    );
     db.exec('COMMIT');
   } catch (error) {
     db.exec('ROLLBACK');

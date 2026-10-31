@@ -66,6 +66,33 @@ export function fittedShirt(source) {
   return result;
 }
 
+export function getHeadwearTransform(id) {
+  if (id === 'hat_10_sweatband_sports') {
+    return { position: [0, 1.56, -0.02], scale: 0.92 };
+  }
+  if (id === 'hat_08_visor_green') {
+    return { position: [0, 1.58, -0.02], scale: 0.92 };
+  }
+  if (
+    id === 'hat_03_beanie_black' ||
+    id === 'hat_09_winter_pompom' ||
+    id === 'hat_12_bandana_pirate'
+  ) {
+    return { position: [0, 1.66, -0.03], scale: 0.92 };
+  }
+  if (id === 'hat_11_crown_gold') {
+    return { position: [0, 1.69, -0.03], scale: 0.9 };
+  }
+  if (
+    id === 'hat_01_cap_blue' ||
+    id === 'hat_02_snapback_red' ||
+    id === 'hat_05_snapback_black_red'
+  ) {
+    return { position: [0, 1.67, -0.03], scale: 0.92 };
+  }
+  return { position: [0, 1.68, -0.03], scale: 0.92 };
+}
+
 /** One assembly path for the fitting room, local player, online peers and baked NPC batches.
  * @returns {import('three').Group}
  */
@@ -101,8 +128,9 @@ export function createAvatarAppearance(
         if (node.isMesh && !node.name.startsWith('Wearable_')) node.name = 'Wearable_' + node.name;
       });
   }
+  const headwearTransform = getHeadwearTransform(config.headwear);
   for (const [id, position, scale] of [
-    [config.headwear, [0, 1.68, -0.03], 0.92],
+    [config.headwear, headwearTransform.position, headwearTransform.scale],
     [config.eyewear, [0, 1.42, 0.27], 0.9],
   ]) {
     const sourceAsset = assets.get(`/models/${id}.glb`);

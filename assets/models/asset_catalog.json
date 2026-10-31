@@ -104,19 +104,19 @@
       "attachment": {
         "bone": "Head",
         "recommended_position": [
-          0.0,
+          0,
           -0.268,
           1.42
         ],
         "recommended_rotation": [
-          0.0,
-          0.0,
-          0.0
+          0,
+          0,
+          0
         ],
         "recommended_scale": [
-          1.0,
-          1.0,
-          1.0
+          1,
+          1,
+          1
         ]
       },
       "materials": [
@@ -154,19 +154,19 @@
       "attachment": {
         "bone": "Head",
         "recommended_position": [
-          0.0,
+          0,
           -0.268,
           1.42
         ],
         "recommended_rotation": [
-          0.0,
-          0.0,
-          0.0
+          0,
+          0,
+          0
         ],
         "recommended_scale": [
-          1.0,
-          1.0,
-          1.0
+          1,
+          1,
+          1
         ]
       },
       "materials": [
@@ -200,9 +200,9 @@
         "diameter_m": 0.4,
         "thickness_m": 0.048,
         "pivot": [
-          0.0,
-          0.0,
-          0.0
+          0,
+          0,
+          0
         ]
       },
       "materials": [
@@ -220,6 +220,128 @@
           "Shop currency display in 3D store"
         ]
       }
+    }
+  ],
+  "hats_collection": [
+    {
+      "id": "hat_01_cap_blue",
+      "name": "Topi Baseball Biru Klasik",
+      "category": "headwear",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/hat_01_cap_blue.glb",
+      "preview_url": "/branding/store/hat_01_cap_blue.png",
+      "description": "Topi baseball biru royal dengan crown 6 panel, eyelet udara, kancing atas, dan visor melengkung."
+    },
+    {
+      "id": "hat_02_snapback_red",
+      "name": "Snapback Merah Terbalik",
+      "category": "headwear",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/hat_02_snapback_red.glb",
+      "preview_url": "/branding/store/hat_02_snapback_red.png",
+      "description": "Snapback merah cerah bergaya kasual terbalik dengan strap plastik hitam dan visor datar di belakang."
+    },
+    {
+      "id": "hat_03_beanie_black",
+      "name": "Kupluk Rajut Hitam Beanie",
+      "category": "headwear",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/hat_03_beanie_black.glb",
+      "preview_url": "/branding/store/hat_03_beanie_black.png",
+      "description": "Beanie rajut hitam arang hangat dengan lipatan cuff tebal bertekstur rib untuk gaya santai."
+    },
+    {
+      "id": "hat_04_bucket_safari",
+      "name": "Bucket Hat Safari Pita Biru",
+      "category": "headwear",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/hat_04_bucket_safari.glb",
+      "preview_url": "/branding/store/hat_04_bucket_safari.png",
+      "description": "Bucket hat kanvas krem safari dengan pita lingkar biru royal dan brim melingkar pelindung sinar."
+    },
+    {
+      "id": "hat_05_snapback_black_red",
+      "name": "Snapback Hitam Visor Merah",
+      "category": "headwear",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/hat_05_snapback_black_red.glb",
+      "preview_url": "/branding/store/hat_05_snapback_black_red.png",
+      "description": "Topi snapback hip-hop crown hitam pekat berkancing merah dengan visor datar merah kontras."
+    },
+    {
+      "id": "hat_06_fedora_brown",
+      "name": "Fedora Cokelat Klasik Detektif",
+      "category": "headwear",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/hat_06_fedora_brown.glb",
+      "preview_url": "/branding/store/hat_06_fedora_brown.png",
+      "description": "Topi fedora wol cokelat elegan dengan lekukan teardrop crown, brim melengkung, dan pita hitam."
+    },
+    {
+      "id": "hat_07_straw_luffy",
+      "name": "Topi Jerami Petualang",
+      "category": "headwear",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/hat_07_straw_luffy.glb",
+      "preview_url": "/branding/store/hat_07_straw_luffy.png",
+      "description": "Topi anyaman jerami emas legendaris dengan pita merah melingkar untuk petualangan tanpa batas."
+    },
+    {
+      "id": "hat_08_visor_green",
+      "name": "Sun Visor Tenis Hijau Putih",
+      "category": "headwear",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/hat_08_visor_green.glb",
+      "preview_url": "/branding/store/hat_08_visor_green.png",
+      "description": "Visor olahraga tenis hijau berpanel putih dengan visor panjang dan strap elastis nyaman."
+    },
+    {
+      "id": "hat_09_winter_pompom",
+      "name": "Kupluk Salju Pompom Motif Zigzag",
+      "category": "headwear",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/hat_09_winter_pompom.glb",
+      "preview_url": "/branding/store/hat_09_winter_pompom.png",
+      "description": "Beanie musim dingin biru dengan motif zigzag salju, cuff tebal lipat, dan pompom wol empuk di pucuk."
+    },
+    {
+      "id": "hat_10_sweatband_sports",
+      "name": "Headband Olahraga Garis Merah",
+      "category": "headwear",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/hat_10_sweatband_sports.glb",
+      "preview_url": "/branding/store/hat_10_sweatband_sports.png",
+      "description": "Headband terrycloth putih elastis dengan strip garis merah di tengah untuk menyerap keringat."
+    },
+    {
+      "id": "hat_11_crown_gold",
+      "name": "Mahkota Emas Permata Kerajaan",
+      "category": "headwear",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/hat_11_crown_gold.glb",
+      "preview_url": "/branding/store/hat_11_crown_gold.png",
+      "description": "Mahkota kerajaan emas 5 puncak bertabur permata batu ruby merah dan safir biru berkilau."
+    },
+    {
+      "id": "hat_12_bandana_pirate",
+      "name": "Bandana Bajak Laut Simpul Merah",
+      "category": "headwear",
+      "price_coins": 30,
+      "status": "active_in_shop",
+      "model_url": "/models/hat_12_bandana_pirate.glb",
+      "preview_url": "/branding/store/hat_12_bandana_pirate.png",
+      "description": "Bandana kepala hitam dengan ikat merah berikat simpul pita dan dua ekor kain menjuntai."
     }
   ]
 }
